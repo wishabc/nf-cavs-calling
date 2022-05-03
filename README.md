@@ -9,7 +9,7 @@ Nextflow pipeline for calling background allelic copies maps from SNP calls
 
 ## Pipeline overview
 
-Samples are extracted by corresponding individual and then used for a ``bcftools``-based genotyping pipeline.
+Samples are extracted by corresponding individual and then used for BAD maps reconstruction. 
 
 ## Usage
 ```
