@@ -42,7 +42,7 @@ process filter_indiv_vcfs {
     """
 }
 
-def get_filtered_file_by_indiv_id(indiv_id): {
+def get_filtered_file_by_indiv_id(indiv_id) {
     "${indiv_id}.snps.bed"
 }
 
