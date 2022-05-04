@@ -33,14 +33,18 @@ process filter_indiv_vcfs {
     input:
 	    tuple val(indiv_id), path(indiv_vcf)
     output:
-        tuple val(indiv_id), path("${indiv_id}.snps.bed")
+        tuple val(indiv_id), path(get_filtered_file_by_indiv_id(indiv_id))
     script:
+    name = get_filtered_file_by_indiv_id(indiv_id)
     """
-    babachi filter ${indiv_vcf} -O ${indiv_id}.snps.bed
+    babachi filter ${indiv_vcf} -O ${name}
     rm ${indiv_vcf}
     """
 }
 
+def get_filtered_file_by_indiv_id(indiv_id): {
+    "${indiv_id}.snps.bed"
+}
 
 process apply_babachi {
 	cpus 2
@@ -156,7 +160,9 @@ workflow extract_and_filter {
 
 workflow {
     if (params.filtered_vcfs != '') {
-        extracted_vcfs = Channel.fromPath(params.filtered_vcfs)
+        extracted_vcfs = Channel.fromPath(params.samples_file)
+                .splitCsv(header:true, sep:'\t')
+                .map{ row -> tuple(row.indiv_id, path(get_filtered_file_by_indiv_id(row.indiv_id)) }
     } else {
         extracted_vcfs = extract_and_filter
     }
