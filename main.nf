@@ -162,7 +162,7 @@ workflow {
     if (params.filtered_vcfs != '') {
         extracted_vcfs = Channel.fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
-                .map{ row -> tuple(row.indiv_id, path(get_filtered_file_by_indiv_id(row.indiv_id)) }
+                .map{ row -> tuple(row.indiv_id, path(get_filtered_file_by_indiv_id(row.indiv_id))) }
     } else {
         extracted_vcfs = extract_and_filter
     }
