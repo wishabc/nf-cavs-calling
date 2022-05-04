@@ -42,8 +42,8 @@ process filter_indiv_vcfs {
     """
 }
 
-def get_filtered_file_by_indiv_id(indiv_id) {
-    "${indiv_id}.snps.bed"
+def get_filtered_file_by_indiv_id(ind) {
+    "${ind}.snps.bed"
 }
 
 process apply_babachi {
@@ -168,7 +168,7 @@ workflow {
                 .groupTuple(by:0)
                 .map{ it -> tuple(it[0], it[1].join(",")) }
                 .last()
-        println(sample_ag_merge)
+        sample_ag_merge.view()
         extracted_vcfs = extract_and_filter(sample_ag_merge)
     
     //apply_babachi(extracted_vcfs) | intersect_with_snps
