@@ -70,7 +70,7 @@ process intersect_with_snps {
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
     
     output:
-        path val(indiv_id), path("${indiv_id}.intersect.bed")
+        tuple val(indiv_id), path("${indiv_id}.intersect.bed")
 
 	script:
 	"""
