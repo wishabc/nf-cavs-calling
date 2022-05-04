@@ -1,7 +1,8 @@
 #!/usr/bin/env nextflow
 
+params.mode = filter
 params.samples_file = '/home/sabramov/nf-babachi/metadata+ag_number.tsv'
-params.outdir = '/home/sabramov/nf-babachi/babachi_all_states'
+params.outdir = '/home/sabramov/nf-babachi/babachi_all_states/'
 params.vcf_file = "/home/sabramov/nf-babachi/allele_counts.fixed.vcf.gz"
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
@@ -12,13 +13,15 @@ process extract_indiv_vcfs {
     tag "Extracting ${indiv_id}"
     publishDir params.outdir + 'indiv_vcfs'
 
+    cpus 5
+
     input:
 	    tuple val(indiv_id), val(agg_numbers)
     output:
         tuple val(indiv_id), path("${indiv_id}.snps.bed")
     script:
     """
-    bcftools view -s ${agg_numbers} ${params.vcf_file} > ${indiv_id}.vcf
+    bcftools view -s ${agg_numbers} --threads ${task.cpus} ${params.vcf_file} > ${indiv_id}.vcf
     """
 }
 
@@ -53,16 +56,7 @@ process apply_babachi {
 	 -j ${task.cpus} -p ${prior} -s ${states}
 	"""
 }
-process foo {
-  input:
-    val data
-  output:
-    val "$data"
 
-  """
-    echo $data
-  """
-}
 
 process intersect_with_snps {
 
@@ -148,19 +142,22 @@ process intersect_with_snps {
 //     """
 // }
 
-workflow {
-    if (params.samples_file) {
-        sample_ag_merge = Channel
+workflow extract_and_filter {
+    sample_ag_merge = Channel
             .fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
             .map{ row -> tuple(row.indiv_id, row.ag_number) }
             .groupTuple(by:0)
             .map{ it -> tuple(it[0], it[1].join(",")) }
             .last()
-        extract_indiv_vcfs(sample_ag_merge) | filter_indiv_vcfs
+    extract_indiv_vcfs(sample_ag_merge) | filter_indiv_vcfs
+}
+
+workflow {
+    if (params.filtered_vcfs) {
+        extracted_vcfs = Channel.fromPath(params.filtered_vcfs)
     } else {
-
-        
+        extracted_vcfs = extract_and_filter
     }
-
+    apply_babachi(extracted_vcfs) | intersect_with_snps
 }
