@@ -25,10 +25,9 @@ process extract_indiv_vcfs {
 	    tuple val(indiv_id), val(agg_numbers) from sample_ag_merge
     output:
         tuple val(indiv_id), path("${indiv_id}.snps.bed") into indiv_snps_file
-    when:
-        mode == true
     script:
     """
+    echo 'STARTING'
     bcftools view -s ${agg_numbers} allele_counts.fixed.vcf.gz > ${indiv_id}.vcf
     babachi filter ${indiv_id}.vcf -O ${indiv_id}.snps.bed
     """
