@@ -165,7 +165,7 @@ workflow {
                 .map{ row -> tuple(row.indiv_id, row.ag_number) }
                 .groupTuple(by:0)
                 .map{ it -> tuple(it[0], it[1].join(",")) }
-                .last()
+            
         extracted_vcfs = extract_and_filter(sample_ag_merge)
     
     apply_babachi(extracted_vcfs) | intersect_with_snps
