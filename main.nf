@@ -3,7 +3,7 @@
 params.mode = true
 params.samples_file = 'metadata+ag_number.tsv'
 params.outdir = 'babachi_all_states'
-params.vcf_file = "allele_counts.fixed.vcf.gz"
+params.vcf_file = "/home/abramov/nf-babachi/allele_counts.fixed.vcf.gz"
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
 
@@ -21,6 +21,7 @@ process extract_indiv_vcfs {
     """
     bcftools view -s ${agg_numbers} ${params.vcf_file} > ${indiv_id}.vcf
     babachi filter ${indiv_id}.vcf -O ${indiv_id}.snps.bed
+    rm ${indiv_id}.vcf
     """
 }
 
