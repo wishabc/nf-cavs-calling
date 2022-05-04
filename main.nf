@@ -156,6 +156,7 @@ workflow extract_and_filter {
                 .groupTuple(by:0)
                 .map{ it -> tuple(it[0], it[1].join(",")) }
                 .last()
+        println(sample_ag_merge)
         extract_indiv_vcfs(sample_ag_merge) | filter_indiv_vcfs 
     emit:
         filter_indiv_vcfs.out
@@ -166,8 +167,7 @@ workflow {
         extracted_vcfs = Channel.fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
                 .map{ row -> tuple(row.indiv_id, path(get_filtered_file_by_indiv_id(row.indiv_id))) }
-    else
-        println 'AAAA'   
+    else   
         extracted_vcfs = extract_and_filter()
     
     //apply_babachi(extracted_vcfs) | intersect_with_snps
