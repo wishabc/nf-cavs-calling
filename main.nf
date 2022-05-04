@@ -6,7 +6,7 @@ params.outdir = ''
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
 
-### DO NOT EDIT BELOW ###
+// DO NOT EDIT BELOW
 
 Channel
 	.fromPath(params.samples_file)
