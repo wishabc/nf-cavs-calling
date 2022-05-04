@@ -15,12 +15,11 @@ process extract_indiv_vcfs {
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
-        path vcf_file
     output:
         tuple val(indiv_id), path("${indiv_id}.snps.bed")
     script:
     """
-    bcftools view -s ${agg_numbers} ${vcf_file} > ${indiv_id}.vcf
+    bcftools view -s ${agg_numbers} ${params.vcf_file} > ${indiv_id}.vcf
     babachi filter ${indiv_id}.vcf -O ${indiv_id}.snps.bed
     """
 }
