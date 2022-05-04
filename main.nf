@@ -155,7 +155,7 @@ workflow extract_and_filter {
 }
 
 workflow {
-    if (params.filtered_vcfs) {
+    if (params.filtered_vcfs != '') {
         extracted_vcfs = Channel.fromPath(params.filtered_vcfs)
     } else {
         extracted_vcfs = extract_and_filter
