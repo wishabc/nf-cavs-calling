@@ -143,6 +143,7 @@ workflow {
             .map{ row -> tuple(row.indiv_id, row.ag_number) }
             .groupTuple(by:0)
             .map{ it -> tuple(it[0], it[1].join(",")) }
+            .last()
         extract_indiv_vcfs(sample_ag_merge)
     } else {
 
