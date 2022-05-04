@@ -39,7 +39,16 @@ process apply_babachi {
 	 -j ${task.cpus} -p ${prior} -s ${states}
 	"""
 }
+process foo {
+  input:
+    val data
+  output:
+    val "$data"
 
+  """
+    echo $data
+  """
+}
 
 process intersect_with_snps {
 
@@ -126,7 +135,9 @@ process intersect_with_snps {
 // }
 
 workflow {
-    params.samples_file.view()
+    if (params.samples_file) {
+        
+    }
     sample_ag_merge = channel
         .fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
