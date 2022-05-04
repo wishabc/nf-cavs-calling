@@ -136,14 +136,16 @@ process intersect_with_snps {
 
 workflow {
     if (params.samples_file) {
-        
+        foo(params.samples_file)
+    } else {
+        sample_ag_merge = channel
+            .fromPath(params.samples_file)
+            .splitCsv(header:true, sep:'\t')
+            .map{ row -> tuple(row.indiv_id, row.ag_number) }
+            .groupTuple(by:0)
+            .map{ it -> tuple(it[0], it[1].join(",")) }
+        sample_ag_merge.view()
+        extract_indiv_vcfs(sample_ag_merge)
     }
-    sample_ag_merge = channel
-        .fromPath(params.samples_file)
-        .splitCsv(header:true, sep:'\t')
-        .map{ row -> tuple(row.indiv_id, row.ag_number) }
-        .groupTuple(by:0)
-        .map{ it -> tuple(it[0], it[1].join(",")) }
-    sample_ag_merge.view()
-    extract_indiv_vcfs(sample_ag_merge)
+
 }
