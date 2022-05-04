@@ -148,15 +148,8 @@ process intersect_with_snps {
 // }
 
 workflow extract_and_filter {
+    take: sample_ag_merge
     main:
-        sample_ag_merge = Channel
-                .fromPath(params.samples_file)
-                .splitCsv(header:true, sep:'\t')
-                .map{ row -> tuple(row.indiv_id, row.ag_number) }
-                .groupTuple(by:0)
-                .map{ it -> tuple(it[0], it[1].join(",")) }
-                .last()
-        println(sample_ag_merge)
         extract_indiv_vcfs(sample_ag_merge) | filter_indiv_vcfs 
     emit:
         filter_indiv_vcfs.out
@@ -168,7 +161,15 @@ workflow {
                 .splitCsv(header:true, sep:'\t')
                 .map{ row -> tuple(row.indiv_id, path(get_filtered_file_by_indiv_id(row.indiv_id))) }
     else   
-        extracted_vcfs = extract_and_filter()
+        sample_ag_merge = Channel
+                .fromPath(params.samples_file)
+                .splitCsv(header:true, sep:'\t')
+                .map{ row -> tuple(row.indiv_id, row.ag_number) }
+                .groupTuple(by:0)
+                .map{ it -> tuple(it[0], it[1].join(",")) }
+                .last()
+        println(sample_ag_merge)
+        extracted_vcfs = extract_and_filter(sample_ag_merge)
     
     //apply_babachi(extracted_vcfs) | intersect_with_snps
 }
