@@ -1,8 +1,7 @@
 #!/usr/bin/env nextflow
 
-params.mode = true
-params.samples_file = 'metadata+ag_number.tsv'
-params.outdir = 'babachi_all_states'
+params.samples_file = '/home/sabramov/nf-babachi/metadata+ag_number.tsv'
+params.outdir = '/home/sabramov/nf-babachi/babachi_all_states'
 params.vcf_file = "/home/sabramov/nf-babachi/allele_counts.fixed.vcf.gz"
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
@@ -10,8 +9,8 @@ params.prior = "uniform"
 // DO NOT EDIT BELOW
 
 process extract_indiv_vcfs {
-    tag "${indiv_id}"
-    publishDir 'filtered_indiv_vcfs'
+    tag "Extracting ${indiv_id}"
+    publishDir params.outdir + 'indiv_vcfs'
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
@@ -20,10 +19,24 @@ process extract_indiv_vcfs {
     script:
     """
     bcftools view -s ${agg_numbers} ${params.vcf_file} > ${indiv_id}.vcf
-    babachi filter ${indiv_id}.vcf -O ${indiv_id}.snps.bed
-    rm ${indiv_id}.vcf
     """
 }
+
+process filter_indiv_vcfs {
+    tag "Filtering ${indiv_id}"
+    publishDir params.outdir + 'filtered_indiv_vcfs'
+
+    input:
+	    tuple val(indiv_id), path(indiv_vcf)
+    output:
+        tuple val(indiv_id), path("${indiv_id}.snps.bed")
+    script:
+    """
+    babachi filter ${indiv_vcf} -O ${indiv_id}.snps.bed
+    rm ${indiv_vcf}
+    """
+}
+
 
 process apply_babachi {
 	cpus 2
@@ -55,10 +68,10 @@ process intersect_with_snps {
 
     publishDir params.outdir + '/snp_annotation'
 	input:
-		tuple val(indiv_id), path(snps_file), path(badmap_file) from indiv_snps_badmap
+		tuple val(indiv_id), path(snps_file), path(badmap_file)
     
     output:
-        path val(indiv_id), path("${indiv_id}.intersect.bed") into indiv_badmap_intersect
+        path val(indiv_id), path("${indiv_id}.intersect.bed")
 
 	script:
 	"""
@@ -144,7 +157,7 @@ workflow {
             .groupTuple(by:0)
             .map{ it -> tuple(it[0], it[1].join(",")) }
             .last()
-        extract_indiv_vcfs(sample_ag_merge)
+        extract_indiv_vcfs(sample_ag_merge) | filter_indiv_vcfs
     } else {
 
         
