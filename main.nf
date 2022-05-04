@@ -6,6 +6,7 @@ params.outdir = '/home/sabramov/nf-babachi/babachi_all_states/'
 params.vcf_file = "/home/sabramov/nf-babachi/allele_counts.fixed.vcf.gz"
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
+params.filtered_vcfs = ''
 
 // DO NOT EDIT BELOW
 
