@@ -166,5 +166,5 @@ workflow {
     else 
         extracted_vcfs = extract_and_filter
     
-    apply_babachi(extracted_vcfs) | intersect_with_snps
+    //apply_babachi(extracted_vcfs) | intersect_with_snps
 }
