@@ -168,7 +168,7 @@ workflow {
                 .map{ row -> tuple(row.indiv_id, path(get_filtered_file_by_indiv_id(row.indiv_id))) }
     else
         println 'AAAA'   
-        extracted_vcfs = extract_and_filter
+        extracted_vcfs = extract_and_filter()
     
     //apply_babachi(extracted_vcfs) | intersect_with_snps
 }
