@@ -2,7 +2,7 @@
 
 params.mode = true
 params.samples_file = 'metadata+ag_number.tsv'
-params.outdir = ''
+params.outdir = 'babachi_all_states'
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
 
@@ -10,12 +10,12 @@ params.prior = "uniform"
 
 process extract_indiv_vcfs {
     tag "${indiv_id}"
-    publishDir params.outdir + '/filtered_indiv_vcfs'
+    publishDir 'filtered_indiv_vcfs'
 
     input:
-	    tuple val(indiv_id), val(agg_numbers) from sample_ag_merge
+	    tuple val(indiv_id), val(agg_numbers)
     output:
-        tuple val(indiv_id), path("${indiv_id}.snps.bed") into indiv_snps_file
+        tuple val(indiv_id), path("${indiv_id}.snps.bed")
     script:
     """
     echo 'STARTING $indiv_id'
@@ -29,9 +29,9 @@ process apply_babachi {
     publishDir params.outdir + '/badmaps'
 
 	input:
-		tuple val(indiv_id), path(snp_file) from indiv_snps_file
+		tuple val(indiv_id), path(snp_file)
 	output:
-		tuple val(indiv_id), path(snp_file), path("${indiv_id}.bad.bed") into indiv_snps_badmap
+		tuple val(indiv_id), path(snp_file), path("${indiv_id}.bad.bed")
 
 	script:
 	"""
@@ -143,10 +143,10 @@ workflow {
             .map{ row -> tuple(row.indiv_id, row.ag_number) }
             .groupTuple(by:0)
             .map{ it -> tuple(it[0], it[1].join(",")) }
-        sample_ag_merge.view {"value: $it"}
+        extract_indiv_vcfs(sample_ag_merge)
     } else {
 
-        extract_indiv_vcfs(sample_ag_merge)
+        
     }
 
 }
