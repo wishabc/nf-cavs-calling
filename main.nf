@@ -14,15 +14,13 @@ process extract_indiv_vcfs {
     tag "Extracting ${indiv_id}"
     publishDir params.outdir + 'indiv_vcfs'
 
-    cpus 5
-
     input:
 	    tuple val(indiv_id), val(agg_numbers)
     output:
-        tuple val(indiv_id), path("${indiv_id}.snps.bed")
+        tuple val(indiv_id), path("${indiv_id}.vcf")
     script:
     """
-    bcftools view -s ${agg_numbers} --threads ${task.cpus} ${params.vcf_file} > ${indiv_id}.vcf
+    bcftools view -s ${agg_numbers} ${params.vcf_file} > ${indiv_id}.vcf
     """
 }
 
