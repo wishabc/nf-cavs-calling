@@ -15,6 +15,7 @@ process extract_indiv_vcfs {
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
+        path vcf_file
     output:
         tuple val(indiv_id), path("${indiv_id}.snps.bed")
     script:
