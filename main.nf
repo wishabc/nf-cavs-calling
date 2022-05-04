@@ -68,9 +68,10 @@ process intersect_with_snps {
 }
 
 
-indiv_badmap_intersect.map{
-    it => it[1]
-}.collectFile(name: 'bad_annotations_files.txt', newLine: true).set{bad_annotations}
+indiv_badmap_intersect
+    .map{ it -> it[1] }
+    .collectFile(name: 'bad_annotations_files.txt', newLine: true)
+    .set{bad_annotations}
 
 
 process collect_stats_for_neg_bin {
