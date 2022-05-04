@@ -126,6 +126,7 @@ process intersect_with_snps {
 // }
 
 workflow {
+    params.samples_file.view()
     sample_ag_merge = channel
         .fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
