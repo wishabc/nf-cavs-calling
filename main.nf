@@ -3,6 +3,7 @@
 params.mode = true
 params.samples_file = 'metadata+ag_number.tsv'
 params.outdir = 'babachi_all_states'
+params.vcf_file = "allele_counts.fixed.vcf.gz"
 params.states = "1,1.5,2,2.5,3,4,5,6"
 params.prior = "uniform"
 
@@ -18,8 +19,7 @@ process extract_indiv_vcfs {
         tuple val(indiv_id), path("${indiv_id}.snps.bed")
     script:
     """
-    echo 'STARTING $indiv_id'
-    bcftools view -s ${agg_numbers} allele_counts.fixed.vcf.gz > ${indiv_id}.vcf
+    bcftools view -s ${agg_numbers} ${vcf_file} > ${indiv_id}.vcf
     babachi filter ${indiv_id}.vcf -O ${indiv_id}.snps.bed
     """
 }
@@ -136,7 +136,6 @@ process intersect_with_snps {
 
 workflow {
     if (params.samples_file) {
-        foo(params.samples_file)
         sample_ag_merge = Channel
             .fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
