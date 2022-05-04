@@ -33,7 +33,7 @@ process filter_indiv_vcfs {
     input:
 	    tuple val(indiv_id), path(indiv_vcf)
     output:
-        tuple val(indiv_id), path(get_filtered_file_by_indiv_id(indiv_id))
+        tuple val(indiv_id), path(name)
     script:
     name = get_filtered_file_by_indiv_id(indiv_id)
     """
