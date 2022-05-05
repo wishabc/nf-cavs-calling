@@ -67,5 +67,5 @@ workflow estimateBad {
 }
 
 workflow {
-    estimate_bad()
+    estimateBad()
 }
