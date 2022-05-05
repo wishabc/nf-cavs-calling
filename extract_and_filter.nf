@@ -10,8 +10,7 @@ process extract_indiv_vcfs {
         tuple val(indiv_id), path("${indiv_id}.vcf.gz"), path("${indiv_id}.vcf.gz.csi")
     script:
     """
-    bcftools view -s ${agg_numbers} ${params.vcfFile} > ${indiv_id}.vcf
-    bgzip ${indiv_id}.vcf
+    bcftools view -s ${agg_numbers} ${params.vcfFile} | bgzip > ${indiv_id}.vcf.gz
     tabix ${indiv_id}.vcf.gz
     """
 }
