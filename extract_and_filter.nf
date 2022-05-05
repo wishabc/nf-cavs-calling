@@ -10,7 +10,7 @@ process extract_indiv_vcfs {
         tuple val(indiv_id), path("${indiv_id}.vcf")
     script:
     """
-    bcftools view -s ${agg_numbers} ${params.vcf_file} > ${indiv_id}.vcf
+    bcftools view -s ${agg_numbers} ${params.vcfFile} > ${indiv_id}.vcf
     """
 }
 
@@ -38,7 +38,7 @@ def get_filtered_file_by_indiv_id(ind) {
 workflow extract_and_filter {
     main:
         sample_ag_merge = Channel
-                .fromPath(params.samples_file)
+                .fromPath(params.samplesFile)
                 .splitCsv(header:true, sep:'\t')
                 .map{ row -> tuple(row.indiv_id, row.ag_number) }
                 .groupTuple(by:0)
