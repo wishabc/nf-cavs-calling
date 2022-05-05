@@ -30,8 +30,9 @@ process intersect_with_snps {
 
 	script:
 	"""
-	bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb | awk \
-    '{for (i=1;i<=7;i+=1) print \$i, print \$11}' > ${indiv_id}.intersect.bed
+	bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb | awk -F"$\t" \ 
+    '{print $1, $2, $3, $4, $5, $6, $7, $8, $12}' | sed \
+     '1s/^/#chr\tstart\tend\trsID\tref\talt\tref_counts\talt_counts\tBAD\n/' > ${indiv_id}.intersect.bed
 	"""
 }
 
