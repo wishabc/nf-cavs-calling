@@ -52,7 +52,7 @@ workflow estimate_bad {
             .map(row -> tuple(row.indiv_id,
                 get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
             .distinct()
-        params.filteredVcfs.view()
+        println(params.filteredVcfs)
         extracted_vcfs.view()
         badmaps_map = apply_babachi(extracted_vcfs)
         badmaps_and_snps = extracted_vcfs.join(
