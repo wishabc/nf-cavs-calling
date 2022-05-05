@@ -4,6 +4,7 @@ include {get_filtered_file_by_indiv_id} from "./extract_and_filter"
 
 process apply_babachi {
 	cpus 2
+    tag "BABACHI ${indiv_id}"
     publishDir params.outdir + '/badmaps'
 
 	input:
@@ -40,6 +41,7 @@ def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     file = get_filtered_file_by_indiv_id(indiv_id)
     if (filtered_vcf_path != '')
         filtered_vcf_path + '/' + file
+        println(filtered_vcf_path + '/' + file)
     else
         file
 }
