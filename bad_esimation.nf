@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-import {get_filtered_file_by_indiv_id} from "./extract_and_filter"
+include {get_filtered_file_by_indiv_id} from "./extract_and_filter"
 
 process apply_babachi {
 	cpus 2
