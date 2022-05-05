@@ -18,7 +18,10 @@ process apply_babachi {
 	"""
 }
 
-
+process add_header {
+    shell:
+        template('header.txt')
+}
 process intersect_with_snps {
 
     publishDir params.outdir + '/snp_annotation'
@@ -30,9 +33,10 @@ process intersect_with_snps {
 
 	script:
 	"""
+    echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tBAD" > ${indiv_id}.intersect.bed
 	bedtools intersect -a ${snps_file} \
-     -b ${badmap_file} -wa -wb | awk -F"\$\t" '{print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$12}' | sed \
-     '1s/^/#chr\tstart\tend\trsID\tref\talt\tref_counts\talt_counts\tBAD\n/' > ${indiv_id}.intersect.bed
+     -b ${badmap_file} -wa -wb | awk -F"\$\t" '{print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$12}' >> ${indiv_id}.intersect.bed
+    
 	"""
 }
 
