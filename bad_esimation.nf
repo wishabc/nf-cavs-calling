@@ -13,6 +13,7 @@ process apply_babachi {
 
 	script:
 	"""
+    echo ${snps_file}
     babachi ${snps_file} -O ${indiv_id}.bad.bed --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
 	"""
 }
@@ -34,12 +35,20 @@ process intersect_with_snps {
 	"""
 }
 
+
+def get_filtered_vcf_path(filtered_vcf_path, indiv_id):
+    if (filtered_vcf_path != '')
+        filtered_vcf_path + '/' + get_filtered_file_by_indiv_id(indiv_id)
+    else
+        get_filtered_file_by_indiv_id(indiv_id)
+
+
 workflow estimate_bad {
     main:
         extracted_vcfs = Channel.fromPath(params.samplesFile)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.indiv_id,
-                params.filteredVcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id)))
+                get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
             .distinct()
 
         badmaps_map = apply_babachi(extracted_vcfs)
