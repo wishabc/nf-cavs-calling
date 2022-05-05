@@ -13,8 +13,7 @@ process apply_babachi {
 
 	script:
 	"""
-    babachi ${snps_file} -O ${indiv_id}.bad.bed --visualize -z -e png \
-	 -j ${task.cpus} -p ${params.prior} -s ${params.states}
+    babachi ${snps_file} -O ${indiv_id}.bad.bed --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
 	"""
 }
 
