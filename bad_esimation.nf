@@ -39,8 +39,9 @@ workflow estimate_bad {
     main:
         extracted_vcfs = Channel.fromPath(params.samplesFile)
             .splitCsv(header:true, sep:'\t')
-            .map{ row -> tuple(row.indiv_id,
-                params.filteredVcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id)) }
+            .map(row -> tuple(row.indiv_id,
+                params.filteredVcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id)))
+            .distinct()
 
         badmaps_map = apply_babachi(extracted_vcfs)
         badmaps_and_snps = extracted_vcfs.join(
