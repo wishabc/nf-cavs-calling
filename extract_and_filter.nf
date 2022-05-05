@@ -76,6 +76,6 @@ workflow extractAllSamples {
                 .splitCsv(header:true, sep:'\t')
                 .map{ row -> tuple(row.indiv_id + '@' + row.ag_number, row.ag_number)}
         extractAggNumbers(ag_merge)
-    out:
-        extractAggNumbers.out   
+    emit:
+        extractAggNumbers.out
 }
