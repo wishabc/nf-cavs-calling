@@ -57,7 +57,7 @@ workflow estimate_bad {
         badmaps_and_snps = extracted_vcfs.join(
             badmaps_map
         )
-        println(badmaps_and_snps)
+        badmaps_and_snps.view()
         intersect_with_snps(badmaps_and_snps)
     emit:
         intersect_with_snps.out
