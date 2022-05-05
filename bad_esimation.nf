@@ -40,8 +40,8 @@ process intersect_with_snps {
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     file = get_filtered_file_by_indiv_id(indiv_id)
     if (filtered_vcf_path != '')
-        filtered_vcf_path + '/' + file
-        println(filtered_vcf_path + '/' + file)
+        "${filtered_vcf_path}/${file}"
+        println "${filtered_vcf_path}/${file}"
     else
         file
 }
