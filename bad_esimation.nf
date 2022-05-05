@@ -36,12 +36,12 @@ process intersect_with_snps {
 }
 
 
-def get_filtered_vcf_path(filtered_vcf_path, indiv_id)
+def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     if (filtered_vcf_path != '')
         filtered_vcf_path + '/' + get_filtered_file_by_indiv_id(indiv_id)
     else
         get_filtered_file_by_indiv_id(indiv_id)
-
+}
 
 workflow estimate_bad {
     main:
