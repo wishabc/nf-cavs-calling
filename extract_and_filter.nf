@@ -39,8 +39,7 @@ def get_filtered_file_by_indiv_id(ind) {
 
 // Extract samples by map file
 workflow extractAggNumbers {
-    take:
-        tuple id_agg_numbers
+    take: id_agg_numbers
     main:
         extract_indiv_vcfs(id_agg_numbers)
     emit:
