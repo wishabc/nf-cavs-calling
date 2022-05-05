@@ -67,7 +67,7 @@
 //     """
 // }
 /*
-workflow calc_pval {
+workflow calcPval {
     main:
         extracted_vcfs = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
@@ -80,6 +80,6 @@ workflow calc_pval {
 }
 
 workflow {
-    calc_pval()
+    calcPval()
 }
 */

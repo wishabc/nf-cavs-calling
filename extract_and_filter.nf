@@ -2,7 +2,7 @@
 
 process extract_indiv_vcfs {
     tag "Extracting ${indiv_id}"
-    publishDir params.outdir + 'indiv_vcfs'
+    publishDir params.outdir + '/indiv_vcfs'
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
@@ -13,6 +13,15 @@ process extract_indiv_vcfs {
     bcftools view -s ${agg_numbers} ${params.vcfFile} > ${indiv_id}.vcf
     """
 }
+workflow extract_agg_numbers {
+    take:
+        tuple id_agg_numbers
+    main:
+        extract_indiv_vcfs(id_agg_numbers)
+    emit:
+        extract_indiv_vcfs.out
+}
+
 
 process filter_indiv_vcfs {
     tag "Filtering ${indiv_id}"
@@ -35,7 +44,7 @@ def get_filtered_file_by_indiv_id(ind) {
 }
 
 
-workflow extract_and_filter {
+workflow extractAndFilter {
     main:
         sample_ag_merge = Channel
                 .fromPath(params.samplesFile)
@@ -43,11 +52,23 @@ workflow extract_and_filter {
                 .map{ row -> tuple(row.indiv_id, row.ag_number) }
                 .groupTuple(by:0)
                 .map{ it -> tuple(it[0], it[1].join(",")) }
-        extract_indiv_vcfs(sample_ag_merge) | filter_indiv_vcfs 
+        extract_agg_numbers(sample_ag_merge) | filter_indiv_vcfs 
     emit:
         filter_indiv_vcfs.out
 }
 
-workflow {
-    extract_and_filter()
+workflow extractAggNumbers {
+    main:
+        ag_merge = Channel
+                .fromPath(params.samplesFile)
+                .splitCsv(header:true, sep:'\t')
+                .map{ row -> tuple(row.ag_number, row.ag_number)}
+        extract_agg_numbers(ag_merge)
+    out:
+        extract_agg_numbers.out   
 }
+
+workflow {
+    extractAndFilter()
+}
+

@@ -23,7 +23,7 @@ process add_header {
         template('header.txt')
 }
 process intersect_with_snps {
-
+    tag "Annotating SNPs ${indiv_id}"
     publishDir params.outdir + '/snp_annotation'
 	input:
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
@@ -36,7 +36,6 @@ process intersect_with_snps {
     echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tBAD" > ${indiv_id}.intersect.bed
 	bedtools intersect -a ${snps_file} \
      -b ${badmap_file} -wa -wb | awk -F"\$\t" '{print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$12}' >> ${indiv_id}.intersect.bed
-    
 	"""
 }
 
@@ -51,7 +50,7 @@ def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     }
 }
 
-workflow estimate_bad {
+workflow estimateBad {
     main:
         extracted_vcfs = Channel.fromPath(params.samplesFile)
             .splitCsv(header:true, sep:'\t')
