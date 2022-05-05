@@ -9,7 +9,7 @@ process apply_babachi {
 	input:
 		tuple val(indiv_id), path(snps_file)
 	output:
-		tuple val(indiv_id), path(snps_file), path("${indiv_id}.bad.bed")
+		tuple val(indiv_id), path("${indiv_id}.bad.bed")
 
 	script:
 	"""
@@ -42,7 +42,11 @@ workflow estimate_bad {
             .map{ row -> tuple(row.indiv_id,
                 params.filteredVcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id)) }
 
-        apply_babachi(extracted_vcfs) | intersect_with_snps
+        badmaps_map = apply_babachi(extracted_vcfs)
+        badmaps_and_snps = extracted_vcfs.join(
+            badmaps_map
+        )
+        intersect_with_snps(badmaps_and_snps)
     emit:
         intersect_with_snps.out
 }
