@@ -40,7 +40,6 @@ process intersect_with_snps {
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     file = get_filtered_file_by_indiv_id(indiv_id)
     if (filtered_vcf_path != '')
-        println "${filtered_vcf_path}/${file}"
         return "${filtered_vcf_path}/${file}"
     else
         return file
@@ -58,6 +57,7 @@ workflow estimate_bad {
         badmaps_and_snps = extracted_vcfs.join(
             badmaps_map
         )
+        println(badmaps_and_snps)
         intersect_with_snps(badmaps_and_snps)
     emit:
         intersect_with_snps.out
