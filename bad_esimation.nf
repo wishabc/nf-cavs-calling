@@ -14,7 +14,6 @@ process apply_babachi {
 
 	script:
 	"""
-    echo ${snps_file}
     babachi ${snps_file} -O ${indiv_id}.bad.bed --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
 	"""
 }
@@ -55,10 +54,10 @@ workflow estimate_bad {
                 get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
             .distinct()
         badmaps_map = apply_babachi(extracted_vcfs)
+        badmaps_map.last().view()
         badmaps_and_snps = extracted_vcfs.join(
             badmaps_map
         )
-        badmaps_and_snps.view()
         intersect_with_snps(badmaps_and_snps)
     emit:
         intersect_with_snps.out
