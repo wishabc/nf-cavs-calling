@@ -34,7 +34,7 @@ process extract_indiv_vcfs {
 // BABACHI filter
 process filter_indiv_vcfs {
     tag "Filtering ${indiv_id}"
-    publishDir params.outdir + '/filtered_indiv_vcfs'
+    publishDir params.outdir + '/filtered_vcfs'
 
     input:
 	    tuple val(indiv_id), path(indiv_vcf)
@@ -44,7 +44,6 @@ process filter_indiv_vcfs {
     name = get_filtered_file_by_indiv_id(indiv_id, "filter")
     """
     babachi filter ${indiv_vcf} -O ${name}
-    rm ${indiv_vcf}
     """
 }
 
@@ -98,7 +97,8 @@ workflow filterAllSamples {
                 .fromPath(params.samplesFile)
                 .splitCsv(header:true, sep:'\t')
                 .map(row -> row.indiv_id + '@' + row.ag_number)
-                .map(it -> tuple(it, raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
+                .map(it -> tuple(it,
+                 raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
         filter_indiv_vcfs(ag_merge)
     emit:
         filter_indiv_vcfs.out
