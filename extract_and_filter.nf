@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-raw_vcfs_dir = params.outdir + '/raw_vcfs'
+raw_vcfs_dir = params.outdir + '/raw_vcfs/'
 
 
 def get_filtered_file_by_indiv_id(ind, file_type='vcf') {
