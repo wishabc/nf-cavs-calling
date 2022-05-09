@@ -85,7 +85,7 @@ workflow extractAllSamples {
         ag_merge = Channel
                 .fromPath(params.samplesFile)
                 .splitCsv(header:true, sep:'\t')
-                .map{ row -> tuple(row.indiv_id + '@' + row.ag_number, row.ag_number)}
+                .map(row -> tuple(row.indiv_id + '@' + row.ag_number, row.ag_number))
         extractAggNumbers(ag_merge)
     emit:
         extractAggNumbers.out
@@ -97,8 +97,8 @@ workflow filterAllSamples {
         ag_merge = Channel
                 .fromPath(params.samplesFile)
                 .splitCsv(header:true, sep:'\t')
-                .map(row -> row.indiv_id + '@' + row.ag_number).map(it =>
-                 tuple(it, raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
+                .map(row -> row.indiv_id + '@' + row.ag_number)
+                .map(it -> tuple(it, raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
         filter_indiv_vcfs(ag_merge)
     emit:
         filter_indiv_vcfs.out
