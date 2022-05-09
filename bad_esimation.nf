@@ -18,10 +18,7 @@ process apply_babachi {
 	"""
 }
 
-process add_header {
-    shell:
-        template('header.txt')
-}
+
 process intersect_with_snps {
     tag "Annotating SNPs ${indiv_id}"
     publishDir params.outdir + '/snp_annotation'
@@ -41,7 +38,7 @@ process intersect_with_snps {
 
 
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
-    file = get_filtered_file_by_indiv_id(indiv_id)
+    file = get_filtered_file_by_indiv_id(indiv_id, "filter")
     if (filtered_vcf_path != '') {
         return "${filtered_vcf_path}/${file}"
     }

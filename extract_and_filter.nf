@@ -1,8 +1,24 @@
 #!/usr/bin/env nextflow
 
+raw_vcfs_dir = params.outdir + '/raw_vcfs'
+
+
+def get_filtered_file_by_indiv_id(ind, file_type='vcf') {
+    switch (file_type) {
+        case "vcf":
+            return "${ind}.vcf.gz"
+        case "filter":
+            return "${ind}.snps.bed"
+        default:
+            return "default"
+    }
+
+}
+
+
 process extract_indiv_vcfs {
     tag "Extracting ${indiv_id}"
-    publishDir params.outdir + '/indiv_vcfs'
+    publishDir raw_vcfs_dir
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
@@ -18,22 +34,18 @@ process extract_indiv_vcfs {
 // BABACHI filter
 process filter_indiv_vcfs {
     tag "Filtering ${indiv_id}"
-    publishDir params.outdir + 'filtered_indiv_vcfs'
+    publishDir params.outdir + '/filtered_indiv_vcfs'
 
     input:
 	    tuple val(indiv_id), path(indiv_vcf)
     output:
         tuple val(indiv_id), path(name)
     script:
-    name = get_filtered_file_by_indiv_id(indiv_id)
+    name = get_filtered_file_by_indiv_id(indiv_id, "filter")
     """
     babachi filter ${indiv_vcf} -O ${name}
     rm ${indiv_vcf}
     """
-}
-
-def get_filtered_file_by_indiv_id(ind) {
-    "${ind}.snps.bed"
 }
 
 // Extract samples by map file
@@ -66,6 +78,10 @@ workflow {
     extractAndFilter()
 }
 
+workflow readSamplesFromMeta {
+    main:
+        
+}
 // Extract each sample in separate file
 workflow extractAllSamples {
     main:
@@ -76,4 +92,22 @@ workflow extractAllSamples {
         extractAggNumbers(ag_merge)
     emit:
         extractAggNumbers.out
+}
+
+// Filter each sample with BABACHI
+workflow filterAllSamples {
+    main:
+        ag_merge = Channel
+                .fromPath(params.samplesFile)
+                .splitCsv(header:true, sep:'\t')
+                .map(row -> row.indiv_id + '@' + row.ag_number).map(it =>
+                 tuple(it, raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
+        filter_indiv_vcfs(ag_merge)
+    emit:
+        filter_indiv_vcfs.out
+
+}
+
+workflow extractAndFilterAllSamples {
+    extractAllSamples | filterAllSamples
 }
