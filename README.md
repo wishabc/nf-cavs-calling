@@ -1,6 +1,6 @@
 # BABACHI pipeline
 
-Nextflow pipeline for calling background allelic copies maps from SNP calls
+Nextflow pipeline for calling background allelic copies maps from SNP calls and 
 
 ## Requirements
 - Nextflow (https://www.nextflow.io/)
@@ -9,9 +9,17 @@ Nextflow pipeline for calling background allelic copies maps from SNP calls
 
 ## Pipeline overview
 
-Samples are extracted by corresponding individual and then used for BAD maps reconstruction. 
+BAD maps reconstruction from SNP calls with BABACHI and P-value estimation of allele-specific events
 
 ## Usage
+### Extract and filter
+Extract vcfs by INDIV (according to metadata file) and filter with babachi
 ```
-nextflow run main.nf -config nextflow.config -profile Altius
+nextflow run extract_and_filter.nf -c nextflow.config -profile Altius
 ```
+
+Extract all samples from vcf file (for advanced users)
+```
+nextflow run extract_and_filter.nf -c nextflow.config -profile Altius -entry extractAllSamples
+```
+
