@@ -78,10 +78,7 @@ workflow {
     extractAndFilter()
 }
 
-workflow readSamplesFromMeta {
-    main:
-        
-}
+
 // Extract each sample in separate file
 workflow extractAllSamples {
     main:
