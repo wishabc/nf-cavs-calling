@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 
-include {get_filtered_file_by_indiv_id} from "./extract_and_filter"
+include {get_file_by_indiv_id} from "./helpers"
+include {get_id_by_sample} from "./helpers"
+
 
 process apply_babachi {
 	cpus 2
@@ -10,11 +12,12 @@ process apply_babachi {
 	input:
 		tuple val(indiv_id), path(snps_file)
 	output:
-		tuple val(indiv_id), path("${indiv_id}.bad.bed")
+		tuple val(indiv_id), path(name)
 
 	script:
+    name = get_file_by_indiv_id(indiv_id, 'badmap')
 	"""
-    babachi ${snps_file} -O ${indiv_id}.bad.bed --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
+    babachi ${snps_file} -O ${name} --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
 	"""
 }
 
@@ -26,9 +29,10 @@ process intersect_with_snps {
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
     
     output:
-        tuple val(indiv_id), path("${indiv_id}.intersect.bed")
+        tuple val(indiv_id), path(name)
 
 	script:
+    name = get_file_by_indiv_id(indiv_id, 'intersect')
 	"""
     echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tBAD" > ${indiv_id}.intersect.bed
 	bedtools intersect -a ${snps_file} \
@@ -38,7 +42,7 @@ process intersect_with_snps {
 
 
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
-    file = get_filtered_file_by_indiv_id(indiv_id, "filter")
+    file = get_file_by_indiv_id(indiv_id, "filter")
     if (filtered_vcf_path != '') {
         return "${filtered_vcf_path}/${file}"
     }
@@ -47,14 +51,11 @@ def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     }
 }
 
-workflow estimateBad {
+workflow estimateBadAndIntersect {
+    take:
+        extracted_vcfs
     main:
-        extracted_vcfs = Channel.fromPath(params.samplesFile)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.indiv_id,
-                get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
-            .distinct()
-        badmaps_map = apply_babachi(extracted_vcfs)
+        apply_babachi(extracted_vcfs)
         badmaps_and_snps = extracted_vcfs.join(
             badmaps_map
         )
@@ -63,6 +64,27 @@ workflow estimateBad {
         intersect_with_snps.out
 }
 
+workflow estimateBadByIndiv {
+    main:
+        filtered_vcfs = Channel.fromPath(params.samplesFile)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(row.indiv_id,
+            get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
+        .distinct()
+        estimateBadAndIntersect(filtered_vcfs)
+    emit:
+        estimateBadAndIntersect.out
+}
+
 workflow {
-    estimateBad()
+    estimateBadByIndiv()
+}
+
+workflow estimateBadBySample {
+    filtered_vcfs = Channel.fromPath(params.samplesFile)
+    .splitCsv(header:true, sep:'\t')
+    .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
+    .map(it -> tuple(it,
+        get_filtered_vcf_path(params.filteredVcfs, it)))
+    estimateBadAndIntersect(filtered_vcfs)
 }

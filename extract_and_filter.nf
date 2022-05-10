@@ -1,19 +1,8 @@
 #!/usr/bin/env nextflow
+include {get_file_by_indiv_id} from "./helpers"
+include {get_id_by_sample} from "./helpers"
 
 raw_vcfs_dir = params.outdir + '/raw_vcfs/'
-
-
-def get_filtered_file_by_indiv_id(ind, file_type='vcf') {
-    switch (file_type) {
-        case "vcf":
-            return "${ind}.vcf.gz"
-        case "filter":
-            return "${ind}.snps.bed"
-        default:
-            return "default"
-    }
-
-}
 
 
 process extract_indiv_vcfs {
@@ -23,11 +12,12 @@ process extract_indiv_vcfs {
     input:
 	    tuple val(indiv_id), val(agg_numbers)
     output:
-        tuple val(indiv_id), path("${indiv_id}.vcf.gz"), path("${indiv_id}.vcf.gz.csi")
+        tuple val(indiv_id), path(name), path("${name}.csi")
     script:
+    name = get_file_by_indiv_id(indiv_id)
     """
-    bcftools view --output-type z -s ${agg_numbers} ${params.vcfFile} > ${indiv_id}.vcf.gz
-    bcftools index ${indiv_id}.vcf.gz
+    bcftools view --output-type z -s ${agg_numbers} ${params.vcfFile} > ${name}
+    bcftools index ${name}
     """
 }
 
@@ -41,7 +31,7 @@ process filter_indiv_vcfs {
     output:
         tuple val(indiv_id), path(name)
     script:
-    name = get_filtered_file_by_indiv_id(indiv_id, "filter")
+    name = get_file_by_indiv_id(indiv_id, "filter")
     """
     babachi filter ${indiv_vcf} -O ${name}
     """
@@ -84,7 +74,7 @@ workflow extractAllSamples {
         ag_merge = Channel
                 .fromPath(params.samplesFile)
                 .splitCsv(header:true, sep:'\t')
-                .map(row -> tuple(row.indiv_id + '@' + row.ag_number, row.ag_number))
+                .map(row -> tuple(get_id_by_sample(row.indiv_id, row.ag_number), row.ag_number))
         extractAggNumbers(ag_merge)
     emit:
         extractAggNumbers.out
@@ -96,7 +86,7 @@ workflow filterAllSamples {
         ag_merge = Channel
                 .fromPath(params.samplesFile)
                 .splitCsv(header:true, sep:'\t')
-                .map(row -> row.indiv_id + '@' + row.ag_number)
+                .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
                 .map(it -> tuple(it,
                  raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
         filter_indiv_vcfs(ag_merge)
