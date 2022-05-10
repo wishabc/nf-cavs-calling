@@ -1,8 +1,17 @@
 #!/usr/bin/env nextflow
 
-include {get_file_by_indiv_id} from "./helpers"
-include {get_id_by_sample} from "./helpers"
+include {get_file_by_indiv_id, get_id_by_sample} from "./helpers"
 
+
+def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
+    file = get_file_by_indiv_id(indiv_id, "filter")
+    if (filtered_vcf_path != '') {
+        return "${filtered_vcf_path}/${file}"
+    }
+    else {
+        return file
+    }
+}
 
 process apply_babachi {
 	cpus 2
@@ -41,16 +50,6 @@ process intersect_with_snps {
 }
 
 
-def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
-    file = get_file_by_indiv_id(indiv_id, "filter")
-    if (filtered_vcf_path != '') {
-        return "${filtered_vcf_path}/${file}"
-    }
-    else {
-        return file
-    }
-}
-
 workflow estimateBadAndIntersect {
     take:
         extracted_vcfs
@@ -77,6 +76,9 @@ workflow estimateBadByIndiv {
 }
 
 workflow {
+    if (params.filteredVcfs == "") {
+        params.filteredVcfs = "${params.outdir}/filtered_vcfs"
+    }
     estimateBadByIndiv()
 }
 
