@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-include {get_file_by_indiv_id, get_id_by_sample} from "./helpers"
+include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
 raw_vcfs_dir = params.outdir + '/raw_vcfs/'
 

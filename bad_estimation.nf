@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-include {get_file_by_indiv_id, get_id_by_sample} from "./helpers"
+include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
 
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
