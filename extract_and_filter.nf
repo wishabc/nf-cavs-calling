@@ -13,7 +13,7 @@ process extract_indiv_vcfs {
     output:
         tuple val(indiv_id), path(name), path("${name}.csi")
     script:
-    name = get_file_by_indiv_id(indiv_id, 'vcf')
+    name = get_file_by_indiv_id(indiv_id, "vcf")
     """
     bcftools view --output-type z -s ${agg_numbers} ${params.vcfFile} > ${name}
     bcftools index ${name}

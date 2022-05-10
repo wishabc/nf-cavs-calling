@@ -24,7 +24,7 @@ process apply_babachi {
 		tuple val(indiv_id), path(name)
 
 	script:
-    name = get_file_by_indiv_id(indiv_id, 'badmap')
+    name = get_file_by_indiv_id(indiv_id, "badmap")
 	"""
     babachi ${snps_file} -O ${name} --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
 	"""
@@ -41,11 +41,11 @@ process intersect_with_snps {
         tuple val(indiv_id), path(name)
 
 	script:
-    name = get_file_by_indiv_id(indiv_id, 'intersect')
+    name = get_file_by_indiv_id(indiv_id, "intersect")
 	"""
-    echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tBAD" > ${indiv_id}.intersect.bed
+    echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tBAD" > ${name}
 	bedtools intersect -a ${snps_file} \
-     -b ${badmap_file} -wa -wb | awk -F"\$\t" '{print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$12}' >> ${indiv_id}.intersect.bed
+     -b ${badmap_file} -wa -wb | awk -F"\$\t" '{print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$12}' >> ${name}
 	"""
 }
 

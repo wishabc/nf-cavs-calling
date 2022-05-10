@@ -7,7 +7,7 @@ def get_file_by_indiv_id(ind, file_type='vcf') {
         case "badmap":
             return "${ind}.bad.bed"
         case "intersect":
-            return "${intersect}.bad.bed"
+            return "${intersect}.intersect.bed"
         default:
             return "default"
     }
