@@ -54,7 +54,7 @@ workflow estimateBadAndIntersect {
     take:
         extracted_vcfs
     main:
-        apply_babachi(extracted_vcfs)
+        badmaps_map = apply_babachi(extracted_vcfs)
         badmaps_and_snps = extracted_vcfs.join(
             badmaps_map
         )
