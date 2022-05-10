@@ -43,9 +43,8 @@ process intersect_with_snps {
 	script:
     name = get_file_by_indiv_id(indiv_id, "intersect")
 	"""
-    echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tBAD" > ${name}
-	bedtools intersect -a ${snps_file} \
-     -b ${badmap_file} -wa -wb | awk -F"\$\t" '{print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$12}' >> ${name}
+    head -1 badmap_file | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\t%" > ${name}
+	bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb > ${name}
 	"""
 }
 
