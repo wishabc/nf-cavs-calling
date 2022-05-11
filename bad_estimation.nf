@@ -78,7 +78,7 @@ workflow {
     if (params.filteredVcfs == "") {
         params.filteredVcfs = "${params.outdir}/filtered_vcfs"
     }
-    estimateBadByIndiv
+    estimateBadByIndiv()
 }
 
 workflow estimateBadBySample {
