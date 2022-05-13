@@ -1,85 +1,84 @@
 #!/usr/bin/env nextflow
+include { get_file_by_indiv_id } from "./helpers"
+stats_dir = outdir + '/stats'
 
-//indiv_badmap_intersect
-//    .map{ it -> it[1] }
-//    .collectFile(name: 'bad_annotations_files.txt', newLine: true)
-//    .set{bad_annotations}
+process collect_stats_for_neg_bin {
+    publishDir stats_dir
+    input:
+        path bad_annotations
+    output:
+        path "stats"
+    script:
+    """
+    echo collecting negbin stats
+    """
+}
+// python3 collect_nb_stats.py ${bad_annotations} ${stats}
+
+process calculate_pvalue {
+    input:
+        tuple val(indiv_id), path(badmap_intersect_file)
+        path stats_file
+        val strategy
+    output:
+        tuple val(indiv_id), path(name)
+
+    script:
+    name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
+    """
+    echo Calc bin pval ${indiv_id}
+    """
+}
+
+process aggregate_pvals {
+    input:
+        tuple val(indiv_id), path(pval_vcf)
+        val strategy
+    output:
+        tuple val(indiv_id), path(name)
+    script:
+    name = get_file_by_indiv_id(indiv_id, "aggregation-${strategy}")
+    """
+    echo Aggregating pvals ${pval_vcf} ${strategy}
+    """
+}
 
 
-// process collect_stats_for_neg_bin {
-//     input:
-//         path bad_annotations
-//     output:
-//         path "nb_fit" into nb_fit
-    
-//     script:
-//     """
-//     python3 collect_nb_stats.py ${bad_annotations} ${nb_stats_dir}
-//     """
-
-// }
-
-// process annotate_with_db {
-//     input:
-//         tuple val(indiv_id), path(snps_file) from indiv_snps_file
-
-//     output:
-//         tuple val(indiv_id), path('')
-
-//     script:
-//     """
-//     echo ANNOTATE WITH COSMIC
-//     """
-// }
-
-// process add_read_counts {
-//     input:
-//         tuple val(indiv_id), path(badmap_intersect_file) from indiv_badmap_intersect
-
-//     script:
-//     """
-//     echo ADD READ COUNTS ${indiv_id}
-//     """
-// }
-
-// process calculate_bin_pvalue {
-//     input:
-//         tuple val(indiv_id), path(badmap_intersect_file) from indiv_badmap_intersect
-//     output:
-//         tuple val(indiv_id), path("${indiv_id}.pvalue") into indiv_pvalues
-
-//     script:
-//     """
-//     echo Calc bin pval ${indiv_id}
-//     """
-// }
-
-// process calculate_nbin_pvalue {
-//     input:
-//         tuple val(indiv_id), path(pvalue_file) from indiv_pvalues
-//         path nb_fit
-//     output:
-//         tuple val(indiv_id), path("${indiv_id}.negbin.pvalue") into indiv_pvalues
-
-//     script:
-//     """
-//     echo Calc negbin pval ${indiv_id} ${nb_fit}
-//     """
-// }
-/*
 workflow calcPval {
+    take:
+        data
+        strategy
+        stats_file
     main:
-        extracted_vcfs = Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map{ row -> tuple(row.indiv_id,
-                path(params.filtered_vcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id))) }
-
-        apply_babachi(extracted_vcfs) | intersect_with_snps
+        pval_files = calculate_pvalue(data, stats_file, strategy)
+        agg_files = aggregate_pvals(pval_files, strategy)
     emit:
-        intersect_with_snps.out
+        agg_files
+}
+
+workflow callCavsFromVcfs {
+    take:
+        bad_annotations
+    main:
+        stats_file = bad_annotations
+            .map{ it -> it[1] }
+            .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
+        stats_file = calculate_stats_for_neg_bin(bad_annotations)
+        calcPval(bad_annotations, 'binom', '')
+        calcPval(bad_annotations, 'negbin', stats_file)
+        
+}
+
+
+workflow callCavs {
+    extracted_vcfs = Channel.fromPath(params.samples_file)
+        .splitCsv(header:true, sep:'\t')
+        .map{ row -> tuple(row.indiv_id,
+            path(params.filtered_vcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id, 'intersect'))) }
+    
+    callCavsFromVcfs(extracted_vcfs)
 }
 
 workflow {
-    calcPval()
+    callCavs()
 }
-*/
