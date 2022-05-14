@@ -59,9 +59,9 @@ workflow calcPvalBinom {
         data
     main:
         pval_files = calculate_pvalue(data, params.outdir, 'binom')
-        //agg_files = aggregate_pvals(pval_files, 'binom')
-    // emit:
-    //     agg_files
+        agg_files = aggregate_pvals(pval_files, 'binom')
+    emit:
+        agg_files
 }
 
 workflow calcPvalNegbin {
