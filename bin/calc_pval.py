@@ -47,7 +47,7 @@ def censored_binom_pvalue(x, n, p, allele_tr):
 
 def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='binom', allele_tr=5):
     df = pd.read_table(input_filename)
-    if stats_file is not None:
+    if mode == 'negbin' and stats_file is not None:
         stats_df = pd.read_table(stats_file)
     else:
         stats_df = None
