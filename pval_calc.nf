@@ -11,7 +11,7 @@ process collect_stats_for_negbin {
     script:
     stats = stats_dir
     """
-    python3 bin/collect_nb_stats.py ${bad_annotations} ${stats}
+    python3 /home/sabramov/nf-babachi/bin/collect_nb_stats.py ${bad_annotations} ${stats}
     """
 }
 // 
@@ -87,7 +87,7 @@ workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map{ row -> tuple(row.indiv_id,
-            "${params.outdir}/snp_annotation/${get_file_by_indiv_id(row.indiv_id, 'intersect')}") }
+            "${params.outdir}/snp_annotation/" + ${get_file_by_indiv_id(row.indiv_id, 'intersect')}) }
     
     callCavsFromVcfs(extracted_vcfs)
 }
