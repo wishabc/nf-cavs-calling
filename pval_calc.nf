@@ -14,8 +14,7 @@ process collect_stats_for_negbin {
     """
     python3 /home/sabramov/nf-babachi/bin/collect_nb_stats.py ${bad_annotations} ${stats}
     """
-}
-// 
+} 
 
 process calculate_pvalue {
 
@@ -31,7 +30,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
-    python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
+    python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} 2> /home/sabramov/nf-babachi/err.log
     """
 }
 
