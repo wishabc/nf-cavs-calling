@@ -4,6 +4,7 @@ stats_dir = params.outdir + '/stats'
 
 process collect_stats_for_negbin {
     publishDir stats_dir
+    conda "/home/sabramov/miniconda3/envs/babachi-env"
     input:
         path bad_annotations
     output:
