@@ -1,6 +1,6 @@
 import argparse
 import pandas as pd
-from bin.helpers import get_pval_field
+from helpers import get_pval_field
 from helpers import alleles
 from scipy.stats import combine_pvalues
 from statsmodels.stats.multitest import multipletests
