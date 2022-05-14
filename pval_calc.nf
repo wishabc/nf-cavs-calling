@@ -48,7 +48,7 @@ workflow calcPvalBinom {
     take:
         data
     main:
-        pval_files = calculate_pvalue(data, stats_file, 'binom')
+        pval_files = calculate_pvalue(data, "", 'binom')
         agg_files = aggregate_pvals(pval_files, 'binom')
     emit:
         agg_files
@@ -83,7 +83,7 @@ workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map{ row -> tuple(row.indiv_id,
-            path(params.filtered_vcfs + '/' + get_filtered_file_by_indiv_id(row.indiv_id, 'intersect'))) }
+            path("${params.outdir}/${get_filtered_file_by_indiv_id(row.indiv_id, 'intersect')}")) }
     
     callCavsFromVcfs(extracted_vcfs)
 }
