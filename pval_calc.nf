@@ -7,15 +7,19 @@ process collect_stats_for_negbin {
     input:
         path bad_annotations
     output:
-        path "stats"
+        path "${stats}"
     script:
+    stats = stats_dir
     """
-    echo collecting negbin stats
+    python3 collect_nb_stats.py ${bad_annotations} ${stats}
     """
 }
-// python3 collect_nb_stats.py ${bad_annotations} ${stats}
+// 
 
 process calculate_pvalue {
+
+    publishDir outdir + "pval_${strategy}"
+
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
         path stats_file
@@ -26,7 +30,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
-    echo Calc bin pval ${indiv_id}
+    python3 calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
 
@@ -74,7 +78,7 @@ workflow callCavsFromVcfs {
             .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         stats_file = collect_stats_for_negbin(all_badmaps)
         calcPvalBinom(bad_annotations)
-        calcPvalNegbin(bad_annotations, stats_file)
+        //calcPvalNegbin(bad_annotations, stats_file)
         
 }
 
