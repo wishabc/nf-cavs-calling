@@ -49,8 +49,7 @@ process aggregate_pvals {
     script:
     name = get_file_by_indiv_id(indiv_id, "aggregation-${strategy}")
     """
-    echo Aggregating pvals ${pval_vcf} ${strategy}
-    touch ${name}
+    python3 /home/sabramov/nf-babachi/bin/aggregation.py -I ${pval_vcf} -O ${name}
     """
 }
 
