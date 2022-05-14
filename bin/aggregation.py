@@ -27,15 +27,16 @@ def df_to_group(df):
     return df.groupby(['#chr', 'start', 'alt'], as_index=False)
 
 def aggregate_apply(df):
+    new_df = df.copy()
     mean_BAD, pval_ref, pval_alt = aggregate_snp(df)
-    df['mean_BAD'] = mean_BAD
-    df['logit_pval_ref'] = pval_ref
-    df['logit_pval_alt'] = pval_alt
-    df['# of SNPs'] = len(df.index)
-    df['max_cover'] = df.eval('ref_counts + alt_counts').max()
-    df = df.drop_duplicates(subset=['#chr', 'start', 'alt']).copy()
-    df = df.drop(columns=['ref_counts', 'alt_counts', 'BAD', 'pval_ref', 'pval_alt'])
-    return df
+    new_df['mean_BAD'] = mean_BAD
+    new_df['logit_pval_ref'] = pval_ref
+    new_df['logit_pval_alt'] = pval_alt
+    new_df['# of SNPs'] = len(df.index)
+    new_df['max_cover'] = df.eval('ref_counts + alt_counts').max()
+    new_df = new_df.drop_duplicates(subset=['#chr', 'start', 'alt'])
+    new_df = new_df.drop(columns=['ref_counts', 'alt_counts', 'BAD', 'pval_ref', 'pval_alt'])
+    return new_df
 
 
 def aggregate_pvalues_df(pval_df_path):
