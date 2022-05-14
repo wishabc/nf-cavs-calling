@@ -22,7 +22,7 @@ process collect_stats_for_negbin {
 process calculate_pvalue {
 
     tag "Pval calc ${indiv_id}"
-    publishDir params.outdir + "/pval_files_${strategy}"
+    publishDir params.outdir + "/pval_files"
     conda "/home/sabramov/miniconda3/envs/babachi-env"
 
     input:
