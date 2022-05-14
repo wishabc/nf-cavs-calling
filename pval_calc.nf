@@ -2,7 +2,7 @@
 include { get_file_by_indiv_id } from "./helpers"
 stats_dir = params.outdir + '/stats'
 
-process collect_stats_for_neg_bin {
+process collect_stats_for_negbin {
     publishDir stats_dir
     input:
         path bad_annotations
@@ -63,7 +63,7 @@ workflow callCavsFromVcfs {
         stats_file = bad_annotations
             .map{ it -> it[1] }
             .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
-        stats_file = calculate_stats_for_neg_bin(bad_annotations)
+        stats_file = collect_stats_for_negbin(bad_annotations)
         calcPval(bad_annotations, 'binom', '')
         calcPval(bad_annotations, 'negbin', stats_file)
         
