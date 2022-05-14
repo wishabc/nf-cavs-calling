@@ -44,14 +44,23 @@ process aggregate_pvals {
 }
 
 
-workflow calcPval {
+workflow calcPvalBinom {
     take:
         data
-        strategy
+    main:
+        pval_files = calculate_pvalue(data, stats_file, 'binom')
+        agg_files = aggregate_pvals(pval_files, 'binom')
+    emit:
+        agg_files
+}
+
+workflow calcPvalNegbin {
+    take:
+        data
         stats_file
     main:
-        pval_files = calculate_pvalue(data, stats_file, strategy)
-        agg_files = aggregate_pvals(pval_files, strategy)
+        pval_files = calculate_pvalue(data, stats_file, 'negbin')
+        agg_files = aggregate_pvals(pval_files, 'negbinom')
     emit:
         agg_files
 }
@@ -64,8 +73,8 @@ workflow callCavsFromVcfs {
             .map{ it -> it[1] }
             .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         stats_file = collect_stats_for_negbin(bad_annotations)
-        calcPval(bad_annotations, 'binom', '')
-        calcPval(bad_annotations, 'negbin', stats_file)
+        calcPvalBinom(bad_annotations)
+        calcPvalNegbin(bad_annotations, stats_file)
         
 }
 
