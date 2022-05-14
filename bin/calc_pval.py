@@ -1,10 +1,10 @@
 import pandas as pd
 from scipy.stats import binom, nbinom
-from helpers import alleles
+from helpers import alleles, get_pval_field
 import argparse
 
 
-result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD', 'pval_ref', 'pval_alt']
+result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_pval_field(allele) for allele in alleles]
 
 
 def nbinom_sf(x, r, p, w):
@@ -58,14 +58,13 @@ def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='
 def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
     if df.empty:
         for allele in alleles:
-            df[f'pval_{allele}'] = None
+            df[get_pval_field(allele)] = None
         return df
     p = df.eval('1 / (BAD + 1)').to_numpy()
     n = df.eval('alt_counts + ref_counts').to_numpy()
     for allele in alleles:
-        pval_field = f'pval_{allele}'
         if mode == 'binom':
-            df[pval_field] = censored_binom_pvalue(df[f'{allele}_counts'].to_numpy(), n, p, allele_tr)
+            df[get_pval_field(allele)] = censored_binom_pvalue(df[f'{allele}_counts'].to_numpy(), n, p, allele_tr)
         elif mode == 'negbin':
             if nb_params is None:
                 raise ValueError('NB params are required for p-value calculations')
@@ -82,7 +81,7 @@ def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
             merged.loc[merged.eval('r == 0'), 'r'] = merged.loc[merged.eval('r == 0'), 'fix_c']
             rs = merged['r'].to_numpy()
             ws = merged['w'].to_numpy()
-            df[pval_field] = censored_nbinom_pvalue(df[f'{allele}_counts'].to_numpy(), rs, p, ws, allele_tr)
+            df[get_pval_field(allele)] = censored_nbinom_pvalue(df[f'{allele}_counts'].to_numpy(), rs, p, ws, allele_tr)
         else:
             raise AssertionError
     return df

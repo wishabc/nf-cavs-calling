@@ -37,3 +37,6 @@ def check_states(string):
         raise ValueError
     else:
         return ret_val
+
+def get_pval_field(allele):
+    return f'pval_{allele}'
