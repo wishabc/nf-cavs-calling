@@ -3,8 +3,11 @@ include { get_file_by_indiv_id } from "./helpers"
 stats_dir = params.outdir + '/stats'
 
 process collect_stats_for_negbin {
+
     publishDir stats_dir
+
     conda "/home/sabramov/miniconda3/envs/babachi-env"
+
     input:
         path bad_annotations
     output:
@@ -18,8 +21,10 @@ process collect_stats_for_negbin {
 
 process calculate_pvalue {
 
-    publishDir params.outdir + "/pval_files"
+    //publishDir params.outdir + "/pval_files"
+
     conda "/home/sabramov/miniconda3/envs/babachi-env"
+
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
         path stats_file
@@ -30,12 +35,13 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
-    echo  ${badmap_intersect_file} ${name}
-    python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} 2> /home/sabramov/nf-babachi/err.log
+    echo ${params.outdir}/pval_files"
+    python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
 
 process aggregate_pvals {
+    publishDir params.outdir + "/pval_files"
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
