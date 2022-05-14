@@ -53,7 +53,6 @@ def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='
         stats_df = None
     df = calc_pval_for_df(df, stats_df, mode, allele_tr)
     df = df[result_columns]
-    print('Saving\n', df)
     df.to_csv(output_filename, sep='\t', index=None)
         
 def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
@@ -101,4 +100,3 @@ if __name__ == '__main__':
         stats_file=args.stats_file,
         allele_tr=args.a
     )
-    print(args.O)
