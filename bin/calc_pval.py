@@ -101,4 +101,4 @@ if __name__ == '__main__':
         stats_file=args.stats_file,
         allele_tr=args.a
     )
-    exit(0)
+    print(args.O)
