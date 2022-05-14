@@ -30,6 +30,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
+    echo  ${badmap_intersect_file} ${name}
     python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} 2> /home/sabramov/nf-babachi/err.log
     """
 }
@@ -89,7 +90,6 @@ workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map( row -> tuple(row.indiv_id, get_snp_annotation_file_by_id(row.indiv_id)))
-    extracted_vcfs.last().view()
     callCavsFromVcfs(extracted_vcfs)
 }
 
