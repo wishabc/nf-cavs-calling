@@ -45,6 +45,7 @@ process aggregate_pvals {
     name = get_file_by_indiv_id(indiv_id, "aggregation-${strategy}")
     """
     echo Aggregating pvals ${pval_vcf} ${strategy}
+    touch ${name}
     """
 }
 
@@ -74,9 +75,9 @@ workflow callCavsFromVcfs {
     take:
         bad_annotations
     main:
-        all_badmaps = bad_annotations
-            .map{ it -> it[1] }
-            .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
+        // all_badmaps = bad_annotations
+        //     .map{ it -> it[1] }
+        //     .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         //stats_file = collect_stats_for_negbin(all_badmaps)
         calcPvalBinom(bad_annotations)
         //calcPvalNegbin(bad_annotations, stats_file)
