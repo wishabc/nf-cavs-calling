@@ -1,5 +1,5 @@
 import pandas as pd
-from .helpers import alleles, check_states
+from helpers import alleles, check_states
 import os
 import sys
 
