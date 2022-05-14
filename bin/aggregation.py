@@ -41,10 +41,14 @@ def aggregate_apply(df):
 
 def aggregate_pvalues_df(pval_df_path):
     pval_df = pd.read_table(pval_df_path)
+    if pval_df.empty:
+        return pval_df
     aggr_df = df_to_group(pval_df).apply(aggregate_apply)
     return aggr_df
     
 def calc_fdr(aggr_df, max_cover_tr):
+    if aggr_df.empty:
+        return aggr_df
     mc_filter_array = np.array(aggr_df['max_cover'] >= max_cover_tr)
     for allele in alleles:
         if sum(mc_filter_array) != 0:
