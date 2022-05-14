@@ -88,6 +88,7 @@ def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
 
 
 if __name__ == '__main__':
+    print('HOHO')
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
