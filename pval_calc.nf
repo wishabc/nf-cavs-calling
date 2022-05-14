@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 include { get_file_by_indiv_id } from "./helpers"
-stats_dir = outdir + '/stats'
+stats_dir = params.outdir + '/stats'
 
 process collect_stats_for_neg_bin {
     publishDir stats_dir
