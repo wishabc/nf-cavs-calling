@@ -11,7 +11,7 @@ process collect_stats_for_negbin {
     script:
     stats = stats_dir
     """
-    python3 collect_nb_stats.py ${bad_annotations} ${stats}
+    python3 bin/collect_nb_stats.py ${bad_annotations} ${stats}
     """
 }
 // 
@@ -30,7 +30,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
-    python3 calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
+    python3 bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
 
