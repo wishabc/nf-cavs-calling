@@ -69,10 +69,10 @@ workflow callCavsFromVcfs {
     take:
         bad_annotations
     main:
-        stats_file = bad_annotations
+        all_badmaps = bad_annotations
             .map{ it -> it[1] }
             .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
-        stats_file = collect_stats_for_negbin(bad_annotations)
+        stats_file = collect_stats_for_negbin(all_badmaps)
         calcPvalBinom(bad_annotations)
         calcPvalNegbin(bad_annotations, stats_file)
         
@@ -83,7 +83,7 @@ workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map{ row -> tuple(row.indiv_id,
-            "${params.outdir}/${get_file_by_indiv_id(row.indiv_id, 'intersect')}") }
+            "${params.outdir}/snp_annotation/${get_file_by_indiv_id(row.indiv_id, 'intersect')}") }
     
     callCavsFromVcfs(extracted_vcfs)
 }
