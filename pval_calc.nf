@@ -20,7 +20,7 @@ process collect_stats_for_negbin {
 process calculate_pvalue {
 
     publishDir params.outdir + "/pval_files"
-
+    conda "/home/sabramov/miniconda3/envs/babachi-env"
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
         path stats_file
