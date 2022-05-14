@@ -48,7 +48,7 @@ workflow calcPvalBinom {
     take:
         data
     main:
-        pval_files = calculate_pvalue(data, "", 'binom')
+        pval_files = calculate_pvalue(data, params.outdir, 'binom')
         agg_files = aggregate_pvals(pval_files, 'binom')
     emit:
         agg_files
