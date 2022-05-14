@@ -82,12 +82,14 @@ workflow callCavsFromVcfs {
         //calcPvalNegbin(bad_annotations, stats_file)
         
 }
-
+def get_snp_annotation_file_by_id(indiv_id) {
+    "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
+}
 
 workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
-        .map( row -> tuple(row.indiv_id, "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(row.indiv_id, "intersect")))
+        .map( row -> tuple(row.indiv_id, get_snp_annotation_file_by_id(row.indiv_id)))
     
     callCavsFromVcfs(extracted_vcfs)
 }
