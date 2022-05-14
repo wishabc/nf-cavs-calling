@@ -18,7 +18,7 @@ process collect_stats_for_negbin {
 
 process calculate_pvalue {
 
-    publishDir outdir + "pval_${strategy}"
+    publishDir params.outdir + "/pval_${strategy}"
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
