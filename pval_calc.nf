@@ -13,7 +13,7 @@ process collect_stats_for_negbin {
     output:
         path "${stats}"
     script:
-    stats = stats_dir
+    stats = './'
     """
     python3 /home/sabramov/nf-babachi/bin/collect_nb_stats.py ${bad_annotations} ${stats}
     """
@@ -22,7 +22,7 @@ process collect_stats_for_negbin {
 process calculate_pvalue {
 
     publishDir params.outdir + "/pval_files"
-
+    tag "Pval calc ${indiv_id}"
     conda "/home/sabramov/miniconda3/envs/babachi-env"
 
     input:
@@ -36,11 +36,12 @@ process calculate_pvalue {
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
     python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
+    echo ${name}
     """
 }
 
 process aggregate_pvals {
-    publishDir params.outdir + "/pval_files"
+    publishDir params.outdir + "/ag_files"
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
@@ -59,7 +60,6 @@ workflow calcPvalBinom {
     take:
         data
     main:
-        data.view()
         pval_files = calculate_pvalue(data, params.outdir, 'binom')
         //agg_files = aggregate_pvals(pval_files, 'binom')
     // emit:
