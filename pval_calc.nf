@@ -87,8 +87,8 @@ workflow callCavsFromVcfs {
 workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
-        .map{ row -> tuple(row.indiv_id,
-            "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(row.indiv_id, 'intersect'))}
+        .map( row -> tuple(row.indiv_id,
+            "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(row.indiv_id, "intersect")))
     
     callCavsFromVcfs(extracted_vcfs)
 }
