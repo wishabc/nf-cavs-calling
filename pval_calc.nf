@@ -96,7 +96,10 @@ def get_snp_annotation_file_by_id(indiv_id) {
 workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
-        .map( row -> tuple(row.indiv_id, get_snp_annotation_file_by_id(row.indiv_id)))
+        .map(row -> row.indiv_id)
+        .distinct()
+        .map( indiv_id -> tuple(indiv_id, get_snp_annotation_file_by_id(indiv_id)))
+        
     callCavsFromVcfs(extracted_vcfs)
 }
 
