@@ -56,6 +56,9 @@ def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='
     df.to_csv(output_filename, sep='\t', index=None)
         
 def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
+    if df.empty:
+        for allele in alleles:
+            df[f'pval_{allele}'] = None
     p = df.eval('1 / (BAD + 1)').to_numpy()
     n = df.eval('alt_counts + ref_counts').to_numpy()
     for allele in alleles:

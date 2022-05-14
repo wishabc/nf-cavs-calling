@@ -21,8 +21,8 @@ process collect_stats_for_negbin {
 
 process calculate_pvalue {
 
-    publishDir params.outdir + "/pval_files"
     tag "Pval calc ${indiv_id}"
+    publishDir params.outdir + "/pval_files_${strategy}"
     conda "/home/sabramov/miniconda3/envs/babachi-env"
 
     input:
@@ -36,7 +36,6 @@ process calculate_pvalue {
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
     python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
-    echo ${name}
     """
 }
 
