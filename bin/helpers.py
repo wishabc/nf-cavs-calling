@@ -1,0 +1,1 @@
+alleles = ['ref', 'alt']
