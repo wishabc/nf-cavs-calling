@@ -21,7 +21,7 @@ process collect_stats_for_negbin {
 
 process calculate_pvalue {
 
-    //publishDir params.outdir + "/pval_files"
+    publishDir params.outdir + "/pval_files"
 
     conda "/home/sabramov/miniconda3/envs/babachi-env"
 
@@ -35,7 +35,6 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
-    echo ${params.outdir}/pval_files
     python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
@@ -60,10 +59,11 @@ workflow calcPvalBinom {
     take:
         data
     main:
+        data.view()
         pval_files = calculate_pvalue(data, params.outdir, 'binom')
-        agg_files = aggregate_pvals(pval_files, 'binom')
-    emit:
-        agg_files
+        //agg_files = aggregate_pvals(pval_files, 'binom')
+    // emit:
+    //     agg_files
 }
 
 workflow calcPvalNegbin {
