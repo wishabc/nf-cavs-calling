@@ -35,7 +35,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
-    echo ${params.outdir}/pval_files"
+    echo ${params.outdir}/pval_files
     python3 /home/sabramov/nf-babachi/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
