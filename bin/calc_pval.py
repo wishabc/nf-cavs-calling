@@ -95,9 +95,9 @@ if __name__ == '__main__':
     parser.add_argument('-a', type=int, help='Allelic reads threshold', default=5)
     args = parser.parse_args()
     calc_pval_for_indiv(
-        input_filename=args['-I'],
-        output_filename=args['-O'],
-        mode=args['-s'],
-        stats_file=args['--stats_file'],
-        allele_tr=args['-a']
+        input_filename=args.I,
+        output_filename=args.O,
+        mode=args.s,
+        stats_file=args.stats_file,
+        allele_tr=args.a
     )
