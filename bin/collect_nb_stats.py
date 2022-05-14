@@ -1,4 +1,4 @@
-from .helpers import check_states
+from helpers import check_states
 import sys
 
 for BAD in check_states(sys.argv[2]):

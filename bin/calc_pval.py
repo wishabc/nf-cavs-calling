@@ -1,9 +1,6 @@
-from re import I
-import sys
-import os
 import pandas as pd
 from scipy.stats import binom, nbinom
-from .helpers import alleles
+from helpers import alleles
 import argparse
 
 
