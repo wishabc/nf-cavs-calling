@@ -26,7 +26,7 @@ process apply_babachi {
 	script:
     name = get_file_by_indiv_id(indiv_id, "badmap")
 	"""
-    babachi ${snps_file} -O ${name} --visualize -z -e png -j ${task.cpus} -p ${params.prior} -s ${params.states}
+    babachi ${snps_file} -O ${name} -j ${task.cpus} -p ${params.prior} -s ${params.states}
 	"""
 }
 
