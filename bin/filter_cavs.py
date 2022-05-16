@@ -4,7 +4,8 @@ from helpers import alleles
 
 def main(input_file, output_file, fdr_tr):
     df = pd.read_table(input_file)
-    df = df[df[[f'fdrp_bh_{allele}' for allele in alleles]].min(axis=1) >= fdr_tr]
+    if not df.empty:
+        df = df[df[[f'fdrp_bh_{allele}' for allele in alleles]].min(axis=1) >= fdr_tr]
     df.to_csv(output_file, sep='\t', index=False)
 
 if __name__ == '__main__':
