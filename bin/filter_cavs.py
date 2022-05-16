@@ -13,4 +13,4 @@ if __name__ == '__main__':
     parser.add_argument('-O', help='File to save calculated p-value into')
     parser.add_argument('--fdr', type=float, help='Max cover threshold for fdr', default=0.05)
     args = parser.parse_args()
-    main(args.I, args.O, args.mc)
+    main(args.I, args.O, args.fdr)
