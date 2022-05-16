@@ -97,7 +97,7 @@ workflow callCavsFromVcfs {
         //     .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         //stats_file = collect_stats_for_negbin(all_badmaps)
         agg_files = calcPvalBinom(bad_annotations)
-        
+        excludeCavs(agg_files)
         //calcPvalNegbin(bad_annotations, stats_file)
         
 }
