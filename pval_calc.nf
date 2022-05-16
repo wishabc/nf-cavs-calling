@@ -53,7 +53,18 @@ process aggregate_pvals {
     """
 }
 
-
+process excludeCavs {
+    publishDir params.outdir + "/nocavs_files"
+    input:
+        tuple val(indiv_id), path(agg_vcf)
+    output:
+        tuple val(indiv_id), path(name)
+    script:
+    name = get_file_by_indiv_id(indiv_id, "nocavs")
+    """
+    python3 /home/sabramov/nf-babachi/bin/filter_cavs.py -I ${agg_vcf} -O ${name} --fdr 0.01
+    """
+}
 workflow calcPvalBinom {
     take:
         data
@@ -75,6 +86,8 @@ workflow calcPvalNegbin {
         agg_files
 }
 
+
+
 workflow callCavsFromVcfs {
     take:
         bad_annotations
@@ -83,7 +96,8 @@ workflow callCavsFromVcfs {
         //     .map{ it -> it[1] }
         //     .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         //stats_file = collect_stats_for_negbin(all_badmaps)
-        calcPvalBinom(bad_annotations)
+        agg_files = calcPvalBinom(bad_annotations)
+        
         //calcPvalNegbin(bad_annotations, stats_file)
         
 }
