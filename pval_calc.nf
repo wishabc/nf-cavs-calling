@@ -53,7 +53,7 @@ process aggregate_pvals {
     """
 }
 
-process excludeCavs {
+process exclude_cavs {
     publishDir params.outdir + "/nocavs_files"
     input:
         tuple val(indiv_id), path(agg_vcf)
@@ -97,7 +97,7 @@ workflow callCavsFromVcfs {
         //     .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         //stats_file = collect_stats_for_negbin(all_badmaps)
         agg_files = calcPvalBinom(bad_annotations)
-        excludeCavs(agg_files)
+        exclude_cavs(agg_files)
         //calcPvalNegbin(bad_annotations, stats_file)
         
 }
