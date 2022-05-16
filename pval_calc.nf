@@ -60,7 +60,7 @@ process exclude_cavs {
     output:
         tuple val(indiv_id), path(name)
     script:
-    name = get_file_by_indiv_id(indiv_id, "nocavs")
+    name = get_file_by_indiv_id(indiv_id, "filter")
     """
     python3 /home/sabramov/nf-babachi/bin/filter_cavs.py -I ${agg_vcf} -O ${name} --fdr 0.01
     """
