@@ -5,7 +5,7 @@ include { callCavsFromVcfs; calcPvalBinom } from "./pval_calc"
 
 workflow {
     intersect_map = estimateBadByIndiv()
-    no_cavs_snps = callCavsFromVcfs(intersect_map) | excludeCavs
+    no_cavs_snps = callCavsFromVcfs(intersect_map)
     new_badmap = estimateBad(no_cavs_snps)
     new_badmap_join = intersect_map.join(new_badmap)
     new_intersect_map = intersectWithBadmap(new_badmap_join)
