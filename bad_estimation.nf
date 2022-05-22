@@ -14,10 +14,11 @@ def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
 process apply_babachi {
 	cpus 2
     tag "BABACHI ${indiv_id}"
-    publishDir params.outdir + '/badmaps'
+    publishDir "${params.outdir}/${outpath}"
 
 	input:
 		tuple val(indiv_id), path(snps_file)
+        val outpath
 	output:
 		tuple val(indiv_id), path(name)
 
@@ -31,10 +32,10 @@ process apply_babachi {
 
 process intersect_with_snps {
     tag "Annotating SNPs ${indiv_id}"
-    publishDir params.outdir + '/snp_annotation'
+    publishDir "${params.outdir}/${outpath}"
 	input:
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
-    
+        val outpath
     output:
         tuple val(indiv_id), path(name)
 
@@ -51,17 +52,19 @@ process intersect_with_snps {
 workflow estimateBad {
     take:
         extracted_vcfs
+        outpath
     main:
-        apply_babachi(extracted_vcfs)
+        apply_babachi(extracted_vcfs, outpath)
     emit:
         apply_babachi.out
 }
 
 workflow intersectWithBadmap {
     take:
-        badmaps_and_snps
+        badmaps_and_snps,
+        outpath
     main:
-        intersect_with_snps(badmaps_and_snps)
+        intersect_with_snps(badmaps_and_snps, outpath)
     emit:
         intersect_with_snps.out
 }
@@ -74,11 +77,13 @@ workflow estimateBadByIndiv {
             get_filtered_vcf_path(params.filteredVcfs, row.indiv_id))
             )
         .distinct()
-        badmaps_map = estimateBad(filtered_vcfs) 
+        outpath = 'badmaps'
+
+        badmaps_map = estimateBad(filtered_vcfs, outpath) 
         badmaps_and_snps = filtered_vcfs.join(
             badmaps_map
         )
-        intersectWithBadmap(badmaps_and_snps)
+        intersectWithBadmap(badmaps_and_snps, outpath)
     emit:
         intersectWithBadmap.out
 }
