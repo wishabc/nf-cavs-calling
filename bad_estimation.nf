@@ -1,5 +1,4 @@
 #!/usr/bin/env nextflow
-
 include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
 
@@ -75,6 +74,7 @@ workflow estimateBadByIndiv {
         .map(row -> tuple(row.indiv_id,
             get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
         .distinct()
+        filtered_vcfs.first().view()
         badmaps_map = estimateBad(filtered_vcfs) 
         badmaps_and_snps = filtered_vcfs.join(
             badmaps_map
