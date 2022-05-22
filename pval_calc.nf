@@ -41,10 +41,11 @@ process calculate_pvalue {
 }
 
 process aggregate_pvals {
-    publishDir params.outdir + "/ag_files"
+    publishDir "${params.outdir}/${output}ag_files"
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
+        val output
     output:
         tuple val(indiv_id), path(name)
     script:
@@ -68,9 +69,10 @@ process exclude_cavs {
 workflow calcPvalBinom {
     take:
         data
+        output
     main:
-        pval_files = calculate_pvalue(data, params.outdir, 'binom')
-        agg_files = aggregate_pvals(pval_files, 'binom')
+        pval_files = calculate_pvalue(data, params.outdir, 'binom', output)
+        agg_files = aggregate_pvals(pval_files, 'binom', output)
     emit:
         agg_files
 }
@@ -96,7 +98,7 @@ workflow callCavsFromVcfs {
         //     .map{ it -> it[1] }
         //     .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
         //stats_file = collect_stats_for_negbin(all_badmaps)
-        agg_files = calcPvalBinom(bad_annotations)
+        agg_files = calcPvalBinom(bad_annotations, '')
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
         //calcPvalNegbin(bad_annotations, stats_file)
