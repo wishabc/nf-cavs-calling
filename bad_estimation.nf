@@ -4,8 +4,8 @@ include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     file = get_file_by_indiv_id(indiv_id, "filter")
-    println(file)
     if (filtered_vcf_path != '') {
+        println("${filtered_vcf_path}/${file}")
         return "${filtered_vcf_path}/${file}"
     }
     else {
