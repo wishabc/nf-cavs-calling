@@ -32,7 +32,7 @@ process filter_indiv_vcfs {
     script:
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
-    babachi filter ${indiv_vcf} -O ${name}
+    babachi filter ${indiv_vcf} -O ${name} -a ${param.alleleTr}
     """
 }
 

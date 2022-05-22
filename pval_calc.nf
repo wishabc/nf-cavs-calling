@@ -2,8 +2,6 @@
 include { get_file_by_indiv_id } from "./helpers"
 stats_dir = params.outdir + '/stats'
 
-exclude_fdr_tr = 0.05
-
 def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
 }
@@ -64,7 +62,7 @@ process exclude_cavs {
     script:
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
-    python3 $baseDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${exclude_fdr_tr}
+    python3 $baseDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${param.excludeFdrTr}
     """
 }
 workflow calcPvalBinom {
