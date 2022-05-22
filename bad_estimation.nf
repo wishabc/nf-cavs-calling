@@ -61,7 +61,7 @@ workflow estimateBad {
 
 workflow intersectWithBadmap {
     take:
-        badmaps_and_snps,
+        badmaps_and_snps
         outpath
     main:
         intersect_with_snps(badmaps_and_snps, outpath)
