@@ -1,4 +1,4 @@
-def get_file_by_indiv_id(ind, file_type='vcf') {
+def get_file_by_indiv_id(ind, file_type) {
     switch (file_type) {
         case "vcf":
             return "${ind}.vcf.gz"
