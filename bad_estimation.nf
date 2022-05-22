@@ -50,15 +50,19 @@ process intersect_with_snps {
 	"""
 }
 
-
-workflow estimateBadAndIntersect {
+workflow estimateBad {
     take:
         extracted_vcfs
     main:
-        badmaps_map = apply_babachi(extracted_vcfs)
-        badmaps_and_snps = extracted_vcfs.join(
-            badmaps_map
-        )
+        apply_babachi(extracted_vcfs)
+    emit:
+        apply_babachi.out
+}
+
+workflow intersectWithBadmap {
+    take:
+        badmaps_and_snps
+    main:
         intersect_with_snps(badmaps_and_snps)
     emit:
         intersect_with_snps.out
@@ -71,9 +75,13 @@ workflow estimateBadByIndiv {
         .map(row -> tuple(row.indiv_id,
             get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
         .distinct()
-        estimateBadAndIntersect(filtered_vcfs)
+        badmaps_map = estimateBad(filtered_vcfs) 
+        badmaps_and_snps = extracted_vcfs.join(
+            badmaps_map
+        )
+        intersectWithBadmap(badmaps_and_snps)
     emit:
-        estimateBadAndIntersect.out
+        intersectWithBadmap.out
 }
 
 workflow {
