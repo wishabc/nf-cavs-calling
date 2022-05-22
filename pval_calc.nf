@@ -24,12 +24,13 @@ process collect_stats_for_negbin {
 process calculate_pvalue {
 
     tag "P-value calculation ${indiv_id}"
-    publishDir params.outdir + "/pval_files"
+    publishDir "${params.outdir}/${output}pval_files"
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
         path stats_file
         val strategy
+        val output
     output:
         tuple val(indiv_id), path(name)
 
