@@ -9,5 +9,5 @@ workflow {
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_badmap')
     new_badmap_join = intersect_map.join(new_badmap)
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_intersect')
-    calcPvalBinom(new_intersect_map)
+    calcPvalBinom(new_intersect_map, 'nocavs_')
 }
