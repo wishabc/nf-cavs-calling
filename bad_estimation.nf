@@ -4,11 +4,11 @@ include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
 def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
     file = get_file_by_indiv_id(indiv_id, "filter")
+    println(filtered_vcf_path)
+    println(file)
     if (filtered_vcf_path != '') {
-        println("${filtered_vcf_path}/${file}")
         return "${filtered_vcf_path}/${file}"
-    }
-    else {
+    } else {
         return file
     }
 }
@@ -73,7 +73,8 @@ workflow estimateBadByIndiv {
         filtered_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.indiv_id,
-            get_filtered_vcf_path(params.filteredVcfs, row.indiv_id)))
+            get_filtered_vcf_path(params.filteredVcfs, row.indiv_id))
+            )
         .distinct()
         filtered_vcfs.first().view()
         badmaps_map = estimateBad(filtered_vcfs) 
