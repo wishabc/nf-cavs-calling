@@ -13,21 +13,6 @@ process collect_stats_for_negbin {
     input:
         path bad_annotations
     output:
-        path "BAD*/*"
-    script:
-    out_path = 
-    """
-    python3 $baseDir/bin/collect_nb_stats.py ${bad_annotations} ${stats_dir}
-    """
-}
-
-process collect_stats_for_negbin {
-
-    publishDir stats_dir
-
-    input:
-        path bad_annotations
-    output:
         path "BAD*/stats.tsv"
     script:
     out_path = ''
