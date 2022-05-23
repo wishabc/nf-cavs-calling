@@ -15,7 +15,7 @@ workflow {
             break
         case 'negbin':
             new_intersect_map
-            .map(it -> it[1].name)
+            .map(it -> it[1].text)
             .collectFile(name: 'badmaps.tsv', newLine: true)
             .set{ badmaps }
             badmaps.view()
