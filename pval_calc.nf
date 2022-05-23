@@ -48,6 +48,8 @@ process fit_negbin_dist {
 }
 
 process merge_fit_results {
+    publishDir stats_dir
+    conda "/home/sabramov/miniconda3/envs/negbinfit"
     input:
         path files
     output:
