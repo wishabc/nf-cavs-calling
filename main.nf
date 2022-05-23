@@ -15,8 +15,8 @@ workflow {
             break
         case 'negbin':
             new_intersect_map
-            .map(it -> it[1])
-            .collectFile(name: 'badmaps2.tsv', newLine: true)
+            .map(it -> it[1].name)
+            .collectFile(name: 'badmaps.tsv', newLine: true)
             .set{ badmaps }
             badmaps.view()
             weights_files = fitNegBinom(badmaps)
