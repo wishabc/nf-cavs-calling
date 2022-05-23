@@ -64,7 +64,7 @@ process exclude_cavs {
     script:
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
-    python3 $baseDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${param.excludeFdrTr}
+    python3 $baseDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
     """
 }
 workflow calcPvalBinom {
