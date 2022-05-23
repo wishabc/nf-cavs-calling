@@ -1,13 +1,25 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad; intersectWithBadmap } from "./bad_estimation"
 //include { extractAndFilter } from "./extract_and_filter"
-include { callCavsFromVcfs; calcPvalBinom } from "./pval_calc"
+include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom } from "./pval_calc"
 
 workflow {
     intersect_map = estimateBadByIndiv()
-    no_cavs_snps = callCavsFromVcfs(intersect_map)
+    no_cavs_snps = callCavsFromVcfsBinom(intersect_map)
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_badmap')
     new_badmap_join = intersect_map.join(new_badmap)
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_intersect')
-    calcPvalBinom(new_intersect_map, 'nocavs_')
+    switch (params.strategy) {
+        case 'binom':
+            calcPvalBinom(new_intersect_map, 'nocavs_')
+            break
+        case 'negbin':
+            badmaps = new_intersect_map.collectFile(name: 'badmaps.txt', newLine: true)
+            weights_files = fitNegBinom(badmaps)
+            calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
+            break
+        default:
+            println("Wrong strategy provided. ${strategy} not in ('binom', 'negbin')")
+    }
+    
 }

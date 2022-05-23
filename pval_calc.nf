@@ -13,13 +13,63 @@ process collect_stats_for_negbin {
     input:
         path bad_annotations
     output:
-        path "${stats}"
+        path "BAD*/*"
     script:
-    stats = './'
+    out_path = 
     """
-    python3 $baseDir/bin/collect_nb_stats.py ${bad_annotations} ${stats}
+    python3 $baseDir/bin/collect_nb_stats.py ${bad_annotations} ${stats_dir}
     """
-} 
+}
+
+process collect_stats_for_negbin {
+
+    publishDir stats_dir
+
+    input:
+        path bad_annotations
+    output:
+        path "BAD*/stats.tsv"
+    script:
+    out_path = ''
+    """
+    python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path}
+    """
+}
+process fit_negbin_dist {
+    publishDir stats_dir
+    input:
+        path negbin_fit_statstics_path
+    output:
+        path "BAD*/NBweights_*.tsv"
+    script:
+    """
+    negbin_fit -O ${negbin_fit_statstics_path} -m NB_AS
+    """
+}
+
+process merge_fit_results {
+    input:
+        path files
+    output:
+        path name
+    script:
+    name: 'negbin_params.tsv'
+    """
+    python3 $baseDir/bin/stats_to_df.py ${files} ${params.states} ${name}
+    """
+}
+
+workflow fitNegBinom {
+    take:
+        bad_annotations
+    main:
+        negbin_statistics = collect_stats_for_negbin(bad_annotations).collect() 
+        fit_dir = fit_negbin_dist(negbin_statistics).collect()
+        merge_fit_results(fit_dir)
+    emit:
+        merge_fit_results.out
+}
+
 
 process calculate_pvalue {
 
@@ -82,27 +132,23 @@ workflow calcPvalNegbin {
     take:
         data
         stats_file
+        output
     main:
-        pval_files = calculate_pvalue(data, stats_file, 'negbin')
-        agg_files = aggregate_pvals(pval_files, 'negbinom')
+        pval_files = calculate_pvalue(data, stats_file, 'negbin', output)
+        agg_files = aggregate_pvals(pval_files, 'negbinom', output)
     emit:
         agg_files
 }
 
 
 
-workflow callCavsFromVcfs {
+workflow callCavsFromVcfsBinom {
     take:
         bad_annotations
     main:
-        // all_badmaps = bad_annotations
-        //     .map{ it -> it[1] }
-        //     .collectFile(name: 'bad_annotations_files.txt', newLine: true, storeDir: stats_dir)
-        //stats_file = collect_stats_for_negbin(all_badmaps)
         agg_files = calcPvalBinom(bad_annotations, '')
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
-        //calcPvalNegbin(bad_annotations, stats_file)
     emit:
         no_cavs_snps
 }

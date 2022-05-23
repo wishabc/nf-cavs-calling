@@ -15,4 +15,4 @@ for allele in alleles:
         nb_as_params.append(df)
 nb_as_params = pd.concat(nb_as_params).reset_index().rename(columns={'index': 'fix_c'})[
     ['allele', 'fix_c', 'BAD', 'r', 'w']
-]
+].to_csv(sys.argv[3], sep='\t', index=False)
