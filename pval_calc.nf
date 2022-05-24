@@ -52,9 +52,9 @@ workflow collectStats {
         merged_file
         bads
     main:
-        negbin_statistics = collect_stats_for_negbin(merged_file, bads)
+        collect_stats_for_negbin(merged_file, bads)
     emit:
-        negbin_statistics
+        collect_stats_for_negbin.out
 }
 
 workflow fitNegBinom {
@@ -74,7 +74,7 @@ workflow fitNegBinom {
         //fit_dir = fit_negbin_dist(negbin_statistics).collect()
         //merge_fit_results(fit_dir)
     emit:
-        files_bads
+        collectStats.out
         //merge_fit_results.out
 }
 
