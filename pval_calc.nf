@@ -7,7 +7,7 @@ def get_snp_annotation_file_by_id(indiv_id) {
 }
 
 process collect_stats {
-    publishDir stats_dir
+    publishDir stats_dir + '_total'
     input:
         tuple val(bad) path(bad_annotations)
     output:
