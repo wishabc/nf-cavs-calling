@@ -12,7 +12,7 @@ workflow {
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_')
     new_badmap_join = filtered_vcfs.join(new_badmap)
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_')    
-    weights_files = fitNegBinom(new_intersect_map, bads)
+    //weights_files = fitNegBinom(new_intersect_map, bads)
     //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
     //calcPvalBinom(new_intersect_map, 'nocavs_')
     
