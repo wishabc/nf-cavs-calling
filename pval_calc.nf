@@ -11,8 +11,7 @@ process collect_stats_for_negbin {
     publishDir stats_dir
 
     input:
-        path bad_annotations
-        each bad
+        tuple val(bad) path(bad_annotations)
     output:
         tuple val(bad) path("./BAD*/stats.tsv")
     script:
@@ -53,7 +52,7 @@ workflow collectStats {
     main:
         //bads = Channel.from(params.states).splitCsv(header: false)
         bads = Channel.from(params.states).splitCsv(header: false).combine([merged_file]).view()
-        collect_stats_for_negbin(merged_file, bads)
+        collect_stats_for_negbin(merged_file)
     emit:
         collect_stats_for_negbin.out
 }
