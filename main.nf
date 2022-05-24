@@ -3,17 +3,6 @@ include { estimateBadByIndiv; estimateBad; intersectWithBadmap } from "./bad_est
 //include { extractAndFilter } from "./extract_and_filter"
 include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom } from "./pval_calc"
 
-process concat_files {
-  input:
-  tuple val(id) path(x)
-  val out_file
-  output:
-  file out_file
-  script:
-  """
-  < $x zcat > ${out_file}
-  """
-}
 
 workflow {
     intersect_map = estimateBadByIndiv()
@@ -26,7 +15,7 @@ workflow {
             calcPvalBinom(new_intersect_map, 'nocavs_')
             break
         case 'negbin':
-            badmaps = concat_files(new_intersect_map, 'badmaps.tsv').collectFile()
+            badmaps = new_intersect_map.collectFile(name: 'badmaps.tsv', skip: 1) { item -> item[1].txt}
             badmaps.view()
             //weights_files = fitNegBinom(badmaps)
             //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
