@@ -58,11 +58,12 @@ workflow fitNegBinom {
         bads = channel.from(params.states).splitCsv(header: false)
         files_bads = merged_files.combine(bads)
         files_bads.view()
-        negbin_statistics = collect_stats_for_negbin(files_bads).collect() 
-        fit_dir = fit_negbin_dist(negbin_statistics).collect()
-        merge_fit_results(fit_dir)
+        //negbin_statistics = collect_stats_for_negbin(files_bads).collect() 
+        //fit_dir = fit_negbin_dist(negbin_statistics).collect()
+        //merge_fit_results(fit_dir)
     emit:
-        merge_fit_results.out
+        bads
+        //merge_fit_results.out
 }
 
 
