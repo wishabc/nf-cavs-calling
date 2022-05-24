@@ -5,11 +5,10 @@ include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom } fr
 
 
 workflow {
-    intersect_map = estimateBadByIndiv()
+    [filtered_vcfs, intersect_map] = estimateBadByIndiv()
     no_cavs_snps = callCavsFromVcfsBinom(intersect_map)
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_')
-    new_badmap_join = intersect_map.join(new_badmap)
-    new_badmap_join.view()
+    new_badmap_join = filtered_vcfs.join(new_badmap)
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_')
     switch (params.strategy) {
         case 'binom':

@@ -84,6 +84,7 @@ workflow estimateBadByIndiv {
         )
         out = intersectWithBadmap(badmaps_and_snps, '')
     emit:
+        filtered_vcfs
         out
 }
 
