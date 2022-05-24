@@ -55,7 +55,7 @@ workflow fitNegBinom {
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
-        negbin_statistics = collect_stats_for_negbin(bad_annotations).collect() 
+        negbin_statistics = collect_stats_for_negbin(merged_files).collect() 
         fit_dir = fit_negbin_dist(negbin_statistics).collect()
         merge_fit_results(fit_dir)
     emit:
