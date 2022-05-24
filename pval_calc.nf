@@ -65,6 +65,8 @@ workflow fitNegBinom {
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
+        merged_files.view()
+        merged_files.toList().view()
         bads = Channel.from(params.states).splitCsv(header: false)
         
         collectStats(merged_files, bads)
