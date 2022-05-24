@@ -32,6 +32,7 @@ process apply_babachi {
 
 process intersect_with_snps {
     tag "Annotating SNPs ${indiv_id}"
+    cache false
     publishDir "${params.outdir}/${outpath}intersect"
 	input:
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
