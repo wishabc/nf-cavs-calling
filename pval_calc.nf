@@ -22,6 +22,8 @@ process collect_stats_for_negbin {
 }
 process fit_negbin_dist {
     publishDir stats_dir
+    conda "/home/sabramov/miniconda3/envs/negbinfit"
+
     input:
         tuple val(bad) path(negbin_fit_statstics_path)
     output:
@@ -34,7 +36,7 @@ process fit_negbin_dist {
 
 process merge_fit_results {
     publishDir stats_dir
-    conda "/home/sabramov/miniconda3/envs/negbinfit"
+    
     input:
         path files
     output:
@@ -44,18 +46,6 @@ process merge_fit_results {
     """
     python3 $baseDir/bin/stats_to_df.py ${files} ${params.states} ${name}
     """
-}
-
-workflow collectStats {
-    take:
-        merged_file
-    main:
-        bads = Channel.of(params.states.split(','))
-        bads.combine(merged_file).view()
-        
-        collect_stats_for_negbin(merged_file)
-    emit:
-        collect_stats_for_negbin.out
 }
 
 workflow fitNegBinom {
