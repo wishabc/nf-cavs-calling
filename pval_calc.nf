@@ -23,9 +23,9 @@ process collect_stats_for_negbin {
 process fit_negbin_dist {
     publishDir stats_dir
     input:
-        path negbin_fit_statstics_path
+        tuple val(bad) path(negbin_fit_statstics_path)
     output:
-        path "BAD*/NBweights_*.tsv"
+        tuple val(bad) path("BAD*/NBweights_*.tsv")
     script:
     """
     negbin_fit -O ${negbin_fit_statstics_path} -m NB_AS
@@ -67,15 +67,14 @@ workflow fitNegBinom {
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
-        merged_files.view()
-        merged_files.toList().view()
+        bads = Channel.of(params.states.split(','))
+        bads.combine(merged_file).view()
         
-        collectStats(merged_files)
-        //fit_dir = fit_negbin_dist(negbin_statistics).collect()
-        //merge_fit_results(fit_dir)
+        fit_dir = collect_stats_for_negbin(merged_file) | fit_negbin_dist
+        fit_dir.collect().view()
+        merge_fit_results(fit_dir)
     emit:
-        collectStats.out
-        //merge_fit_results.out
+        merge_fit_results.out
 }
 
 
