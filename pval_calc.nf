@@ -60,7 +60,8 @@ workflow fitNegBinom {
         files_bads = bads.multiMap{ it -> 
             0: it
             1: merged_files
-            }.view()
+        }
+        files_bads.view()
         //negbin_statistics = collect_stats_for_negbin(files_bads).collect() 
         //fit_dir = fit_negbin_dist(negbin_statistics).collect()
         //merge_fit_results(fit_dir)
