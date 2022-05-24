@@ -76,7 +76,7 @@ workflow estimateBadByIndiv {
         .map(row -> tuple(row.indiv_id,
             get_filtered_vcf_path(params.filteredVcfs, row.indiv_id))
             )
-        .distinct().take(3)
+        .distinct()
 
         badmaps_map = estimateBad(filtered_vcfs, '') 
         badmaps_and_snps = filtered_vcfs.join(
