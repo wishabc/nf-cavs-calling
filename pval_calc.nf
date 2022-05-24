@@ -95,7 +95,6 @@ process aggregate_pvals {
 
 process exclude_cavs {
     publishDir "${params.outdir}/excluded_cavs"
-    cache false
     input:
         tuple val(indiv_id), path(bad_annotations), path(agg_vcf)
     output:
