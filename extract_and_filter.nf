@@ -88,6 +88,7 @@ workflow filterAllSamples {
                 .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
                 .map(it -> tuple(it,
                  raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
+                 .take(3)
         filter_indiv_vcfs(ag_merge)
     emit:
         filter_indiv_vcfs.out
