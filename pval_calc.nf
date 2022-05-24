@@ -62,7 +62,7 @@ workflow fitNegBinom {
         //fit_dir = fit_negbin_dist(negbin_statistics).collect()
         //merge_fit_results(fit_dir)
     emit:
-        bads
+        files_bads
         //merge_fit_results.out
 }
 
