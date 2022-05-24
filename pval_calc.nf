@@ -50,10 +50,8 @@ workflow collectStats {
     take:
         merged_file
     main:
-        //bads = Channel.from(params.states).splitCsv(header: false)
-        bad_file = Channel.from(merged_file, merged_file ).view()
-        bads = Channel.fromList(params.states).split(',')
-        bads.combine(bad_file).view()
+        bads = Channel.fromList(params.states.split(','))
+        bads.combine(merged_file).view()
         
         //collect_stats_for_negbin(merged_file)
     emit:
