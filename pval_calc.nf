@@ -13,7 +13,7 @@ process collect_stats_for_negbin {
     input:
         tuple path(bad_annotations) val(bad)
     output:
-        path "./BAD*/stats.tsv"
+        tuple val(bad) path("./BAD*/stats.tsv")
     script:
     out_path = './'
     """
@@ -46,6 +46,16 @@ process merge_fit_results {
     """
 }
 
+workflow collectStats {
+    take:
+        merged_file
+        bads
+    main:
+        negbin_statistics = collect_stats_for_negbin(merged_file, bads)
+    emit:
+        negbin_statistics
+}
+
 workflow fitNegBinom {
     take:
         bad_intersections
@@ -57,12 +67,7 @@ workflow fitNegBinom {
              storeDir: stats_dir)
         bads = Channel.from(params.states).splitCsv(header: false)
         
-        files_bads = bads.multiMap{ it -> 
-            0: it
-            1: merged_files
-        }
-        files_bads.view()
-        //negbin_statistics = collect_stats_for_negbin(files_bads).collect() 
+        collectStats(merged_files, bads)
         //fit_dir = fit_negbin_dist(negbin_statistics).collect()
         //merge_fit_results(fit_dir)
     emit:
