@@ -22,7 +22,7 @@ workflow {
             calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
             break
         default:
-            println("Strategy ${strategy} provided is not supported. Please use either 'binom' or 'negbin'")
+            println("Provided strategy ${strategy} is not supported. Please use either 'binom' or 'negbin'")
     }
     
 }
