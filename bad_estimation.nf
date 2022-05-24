@@ -78,13 +78,12 @@ workflow estimateBadByIndiv {
             get_filtered_vcf_path(params.filteredVcfs, row.indiv_id))
             )
         .distinct().take(3)
-        outpath = ''
 
-        badmaps_map = estimateBad(filtered_vcfs, outpath) 
+        badmaps_map = estimateBad(filtered_vcfs, '') 
         badmaps_and_snps = filtered_vcfs.join(
             badmaps_map
         )
-        out = intersectWithBadmap(badmaps_and_snps, outpath)
+        out = intersectWithBadmap(badmaps_and_snps, '')
     emit:
         out
 }
