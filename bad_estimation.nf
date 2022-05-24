@@ -33,6 +33,7 @@ process apply_babachi {
 process intersect_with_snps {
     tag "Annotating SNPs ${indiv_id}"
     publishDir "${params.outdir}/${outpath}intersect"
+    cache false
 	input:
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
         val outpath
@@ -43,7 +44,7 @@ process intersect_with_snps {
     name = get_file_by_indiv_id(indiv_id, "intersect")
 	"""
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\t%" > ${name}
-    if ! [ -s ${snps_file} ]; then
+    if [[ $(wc -l < ${snps_file}) -ge 2 ]]; then
 	    bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb >> ${name}
     fi
 	"""
