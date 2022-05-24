@@ -16,7 +16,7 @@ workflow {
         case 'negbin':
             new_intersect_map
             .collectFile(name: 'badmaps.tsv', keepHeader: true) { item -> item[1] }
-            .view(it.text)
+            .view()
            // badmaps.view()
             //weights_files = fitNegBinom(badmaps)
             //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
