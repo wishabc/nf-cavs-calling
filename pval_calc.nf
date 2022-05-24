@@ -48,8 +48,13 @@ process merge_fit_results {
 
 workflow fitNegBinom {
     take:
-        bad_annotations
+        bad_intersections
     main:
+        merged_files = bad_intersections
+            .map(item -> item[1])
+            .collectFile(name: 'badmaps.tsv',
+             keepHeader: true,
+             storeDir: stats_dir)
         negbin_statistics = collect_stats_for_negbin(bad_annotations).collect() 
         fit_dir = fit_negbin_dist(negbin_statistics).collect()
         merge_fit_results(fit_dir)
