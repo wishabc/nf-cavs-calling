@@ -13,7 +13,7 @@ process collect_stats_for_negbin {
     input:
         path bad_annotations
     output:
-        path "./BAD*"
+        path "./BAD*/"
     script:
     out_path = './'
     """
