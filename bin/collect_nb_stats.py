@@ -4,11 +4,9 @@ import pandas as pd
 import os
 
 def main(badmaps, fit_dir):
-    dfs = []
-    with open(badmaps) as f:
-        for line in f:
-            dfs.append(pd.read_table(line.strip()))
-    concat_pval_dfs = pd.concat(dfs)
+    concat_pval_dfs = pd.read_table(badmaps)
+    if concat_pval_dfs.empty:
+        raise ValueError(f'No data in {badmaps}')
     for BAD in concat_pval_dfs['BAD'].unique():
         bad_dir = os.path.join(fit_dir, 'BAD{:.2f}'.format(BAD))
         if not os.path.exists(bad_dir):
