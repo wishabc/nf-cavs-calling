@@ -49,15 +49,13 @@ process merge_fit_results {
 workflow fitNegBinom {
     take:
         bad_intersections
+        bads
     main:
         merged_files = bad_intersections
             .map(item -> item[1])
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
-        bads = Channel.of(params.states.split(',')).combine(merged_files)
-        bads.view()
-        
         fit_dir = collect_stats(bads) | fit_negbin_dist
         fit_dir.collect().view()
         merge_fit_results(fit_dir)
