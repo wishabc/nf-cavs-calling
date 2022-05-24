@@ -11,13 +11,13 @@ process collect_stats_for_negbin {
     publishDir stats_dir
 
     input:
-        path bad_annotations
+        tuple path(bad_annotations) val(bad)
     output:
-        path "./BAD*/"
+        path "./BAD*/stats.tsv"
     script:
     out_path = './'
     """
-    python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path}
+    python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
     """
 }
 process fit_negbin_dist {
@@ -55,7 +55,10 @@ workflow fitNegBinom {
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
-        negbin_statistics = collect_stats_for_negbin(merged_files).collect() 
+        bads = channel.from(params.states).splitCsv(header: false)
+        files_bads = merged_files.combine(bads)
+        files_bads.view()
+        negbin_statistics = collect_stats_for_negbin(files_bads).collect() 
         fit_dir = fit_negbin_dist(negbin_statistics).collect()
         merge_fit_results(fit_dir)
     emit:
