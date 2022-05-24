@@ -57,10 +57,10 @@ workflow fitNegBinom {
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
-        bads = Channel.of(params.states.split(','))
-        bads.combine(merged_file).view()
+        bads = Channel.of(params.states.split(',')).combine(merged_files)
+        bads.view()
         
-        fit_dir = collect_stats_for_negbin(merged_file) | fit_negbin_dist
+        fit_dir = collect_stats_for_negbin(bads) | fit_negbin_dist
         fit_dir.collect().view()
         merge_fit_results(fit_dir)
     emit:
