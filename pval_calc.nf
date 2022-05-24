@@ -7,13 +7,11 @@ def get_snp_annotation_file_by_id(indiv_id) {
 }
 
 process collect_stats {
-
     publishDir stats_dir
-
     input:
         tuple val(bad) path(bad_annotations)
     output:
-        tuple val(bad) path("./BAD*/stats.tsv")
+        tuple val(bad) path("BAD*/stats.tsv")
     script:
     out_path = './'
     """
