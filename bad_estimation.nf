@@ -45,8 +45,6 @@ process intersect_with_snps {
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\t%" > ${name}
     if [[ \$(wc -l <${snps_file}) -ge 2 ]]; then
 	    bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb >> ${name}
-    else
-        echo 'WTF' ${snps_file} > ${snps_file}
     fi
 	"""
 }
