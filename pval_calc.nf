@@ -6,7 +6,7 @@ def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
 }
 
-process collect_stats_for_negbin {
+process collect_stats {
 
     publishDir stats_dir
 
@@ -60,7 +60,7 @@ workflow fitNegBinom {
         bads = Channel.of(params.states.split(',')).combine(merged_files)
         bads.view()
         
-        fit_dir = collect_stats_for_negbin(bads) | fit_negbin_dist
+        fit_dir = collect_stats(bads) | fit_negbin_dist
         fit_dir.collect().view()
         merge_fit_results(fit_dir)
     emit:
