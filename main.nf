@@ -18,8 +18,8 @@ workflow {
             merged_files = new_intersect_map
             .map(item -> item[1])
             .collectFile(name: 'badmaps.tsv', keepHeader: true, cache: false)
-            weights_files = fitNegBinom(badmaps)
-            //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
+            weights_files = fitNegBinom(merged_files)
+            calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
             break
         default:
             println("Wrong strategy provided. ${strategy} not in ('binom', 'negbin')")
