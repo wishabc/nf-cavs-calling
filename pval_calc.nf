@@ -53,10 +53,9 @@ workflow collectStats {
         bads = Channel.of(params.states.split(','))
         bads.combine(merged_file).view()
         
-        //collect_stats_for_negbin(merged_file)
+        collect_stats_for_negbin(merged_file)
     emit:
-        bads
-        //collect_stats_for_negbin.out
+        collect_stats_for_negbin.out
 }
 
 workflow fitNegBinom {
