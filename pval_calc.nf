@@ -50,8 +50,8 @@ process merge_fit_results {
 workflow collectStats {
     take:
         merged_file
-        bads
     main:
+        bads = Channel.from(params.states).splitCsv(header: false)
         collect_stats_for_negbin(merged_file, bads)
     emit:
         collect_stats_for_negbin.out
@@ -68,9 +68,8 @@ workflow fitNegBinom {
              storeDir: stats_dir)
         merged_files.view()
         merged_files.toList().view()
-        bads = Channel.from(params.states).splitCsv(header: false)
         
-        collectStats(merged_files, bads)
+        collectStats(merged_files)
         //fit_dir = fit_negbin_dist(negbin_statistics).collect()
         //merge_fit_results(fit_dir)
     emit:
