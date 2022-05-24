@@ -16,8 +16,7 @@ workflow {
             break
         case 'negbin':
             badmaps = new_intersect_map.map(item -> item[1])
-            badmaps.view()
-            badmaps.collectFile(name: 'badmaps.tsv', skip: 1, cache: false)
+            badmaps.collectFile(name: 'badmaps.tsv', cache: false)
             //weights_files = fitNegBinom(badmaps)
             //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
             break
