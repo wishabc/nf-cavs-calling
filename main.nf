@@ -9,6 +9,7 @@ workflow {
     no_cavs_snps = callCavsFromVcfsBinom(intersect_map)
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_')
     new_badmap_join = intersect_map.join(new_badmap)
+    new_badmap_join.view()
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_')
     switch (params.strategy) {
         case 'binom':
