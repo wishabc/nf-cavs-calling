@@ -8,11 +8,9 @@ def main(agg_file, snps_file, output_file, fdr_tr):
     if not df.empty:
         df = df[df[[f'fdrp_bh_{allele}' for allele in alleles]].min(axis=1) >= fdr_tr]
     snps_df = pd.read_table(snps_file)
-    print(df)
     if not snps_df.empty:
-        snps_df = snps_df.join(df, on=join_columns, how='inner')[join_columns + ['ref_counts', 'alt_counts']]
-
-    snps_df.to_csv(output_file, sep='\t', index=False)
+        res_df = snps_df.join(df, on=join_columns, how='inner')[join_columns + ['ref_counts', 'alt_counts']]
+    res_df.to_csv(output_file, sep='\t', index=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
