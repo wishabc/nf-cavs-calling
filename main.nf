@@ -16,7 +16,7 @@ workflow {
         case 'negbin':
             new_intersect_map
             .collectFile(name: 'badmaps.tsv', keepHeader: true) {
-                it[1]
+                it -> it[1]
             }
             .view(it.text)
            // badmaps.view()
