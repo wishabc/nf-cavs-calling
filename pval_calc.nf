@@ -11,7 +11,7 @@ process collect_stats_for_negbin {
     publishDir stats_dir
 
     input:
-        path(bad_annotations) 
+        path bad_annotations
         each bad
     output:
         tuple val(bad) path("./BAD*/stats.tsv")
