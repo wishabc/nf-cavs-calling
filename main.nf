@@ -5,7 +5,7 @@ include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom } fr
 
 process concat_files {
   input:
-  tupple val(id) path(x)
+  tuple val(id) path(x)
   val out_file
   output:
   file out_file
