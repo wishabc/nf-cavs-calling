@@ -6,18 +6,6 @@ def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
 }
 
-process collect_stats {
-    publishDir stats_dir + '_total'
-    input:
-        tuple val(bad) path(bad_annotations)
-    output:
-        tuple val(bad) path("BAD*/stats.tsv")
-    script:
-    out_path = './'
-    """
-    python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
-    """
-}
 process fit_negbin_dist {
     publishDir stats_dir
     conda "/home/sabramov/miniconda3/envs/negbinfit"
@@ -45,25 +33,6 @@ process merge_fit_results {
     python3 $baseDir/bin/stats_to_df.py ${files} ${params.states} ${name}
     """
 }
-
-workflow fitNegBinom {
-    take:
-        bad_intersections
-        bads
-    main:
-        merged_files = bad_intersections
-            .map(item -> item[1])
-            .collectFile(name: 'badmaps.tsv',
-             keepHeader: true,
-             storeDir: stats_dir)
-        bad_merge_file = bads.combine(merged_files)
-        fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
-        fit_dir.collect().view()
-        merge_fit_results(fit_dir)
-    emit:
-        merge_fit_results.out
-}
-
 
 process calculate_pvalue {
 
@@ -112,6 +81,21 @@ process exclude_cavs {
     python3 $baseDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
     """
 }
+
+process collect_stats {
+    publishDir stats_dir + '_total'
+    input:
+        tuple val(bad) path(bad_annotations)
+    output:
+        tuple val(bad) path("BAD*/stats.tsv")
+    script:
+    out_path = './'
+    """
+    python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
+    """
+}
+
+
 workflow calcPvalBinom {
     take:
         data
@@ -157,6 +141,26 @@ workflow callCavs {
         
     callCavsFromVcfs(extracted_vcfs)
 }
+
+workflow fitNegBinom {
+    take:
+        bad_intersections
+        bads
+    main:
+        merged_files = bad_intersections
+            .map(item -> item[1])
+            .collectFile(name: 'badmaps.tsv',
+             keepHeader: true,
+             storeDir: stats_dir)
+        bad_merge_file = bads.combine(merged_files)
+        fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
+        fit_dir.collect().view()
+        merge_fit_results(fit_dir)
+    emit:
+        merge_fit_results.out
+}
+
+
 
 workflow {
     callCavs()
