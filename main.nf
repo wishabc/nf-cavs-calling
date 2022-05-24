@@ -12,16 +12,8 @@ workflow {
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_')
     new_badmap_join = filtered_vcfs.join(new_badmap)
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_')
-    switch (params.strategy) {
-        case 'binom':
-            calcPvalBinom(new_intersect_map, 'nocavs_')
-            break
-        case 'negbin':
-            weights_files = fitNegBinom(new_intersect_map)
-            calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
-            break
-        default:
-            println("Provided strategy ${strategy} is not supported. Please use either 'binom' or 'negbin'")
-    }
+    weights_files = fitNegBinom(new_intersect_map)
+    calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
+    calcPvalBinom(new_intersect_map, 'nocavs_')
     
 }
