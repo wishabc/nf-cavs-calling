@@ -14,6 +14,6 @@ workflow {
     new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_')    
     //weights_files = fitNegBinom(new_intersect_map, bads)
     //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
-    //calcPvalBinom(new_intersect_map, 'nocavs_')
+    calcPvalBinom(new_intersect_map, 'nocavs_')
     
 }
