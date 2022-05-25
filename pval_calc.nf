@@ -82,7 +82,8 @@ process fit_negbin_dist {
         tuple val(bad), path("BAD*/NBweights_*.tsv")
     script:
     """
-    negbin_fit -O ${negbin_fit_statstics_path} -m NB_AS
+    python3 $baseDir/bin/collect_nb_stats.py -s ${negbin_fit_statstics_path} -b ${bad}
+    negbin_fit -O './' -m NB_AS
     """
 }
 

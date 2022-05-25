@@ -1,7 +1,17 @@
 import re
+import os
 
 
 alleles = ['ref', 'alt']
+
+
+def make_bad_dir(fit_dir, bad):
+    BAD = convert_frac_to_float(bad)
+    bad_dir = os.path.join(fit_dir, 'BAD{:.2f}'.format(BAD))
+    if not os.path.exists(bad_dir):
+        os.mkdir(bad_dir)
+    return BAD, bad_dir
+
 
 def convert_frac_to_float(string):
     if re.match(r"^[1-9]+[0-9]*/[1-9]+[0-9]*$", string):
