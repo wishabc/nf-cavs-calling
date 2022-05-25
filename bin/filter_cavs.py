@@ -18,6 +18,6 @@ if __name__ == '__main__':
     parser.add_argument('-a', help='Aggregated CAVs file')
     parser.add_argument('-b', help='BABACHI annotated SNPs BED file')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('--fdr', type=float, help='Max cover threshold for fdr', default=0.05)
+    parser.add_argument('--fdr', type=float, help='FDR threshold for CAVs', default=0.05)
     args = parser.parse_args()
     main(args.a, args.b, args.O, args.fdr)

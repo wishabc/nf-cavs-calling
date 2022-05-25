@@ -58,6 +58,8 @@ process calculate_pvalue {
 
 process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files"
+
+    cpus 2
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
@@ -67,7 +69,7 @@ process aggregate_pvals {
     script:
     name = get_file_by_indiv_id(indiv_id, "aggregation-${strategy}")
     """
-    python3 $baseDir/bin/aggregation.py -I ${pval_vcf} -O ${name}
+    python3 $baseDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
     """
 }
 
