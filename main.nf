@@ -20,8 +20,7 @@ workflow {
         .collectFile(name: 'badmaps.tsv',
             keepHeader: true,
             storeDir: stats_dir)   
-    bad_merge_file = bads.combine(merged_files).first()
-    bad_merge_file.view()
+    bad_merge_file = bads.combine(merged_files)
 
     weights_files = fitNegBinom(bad_merge_file)
     calcPvalNegbin(bad_intersections, weights_files, 'nocavs_')
