@@ -144,17 +144,9 @@ workflow callCavs {
 
 workflow fitNegBinom {
     take:
-        bad_intersections
-        bads
+        bad_merge_file
     main:
-        merged_files = bad_intersections
-            .map(item -> item[1])
-            .collectFile(name: 'badmaps.tsv',
-             keepHeader: true,
-             storeDir: stats_dir)
-        bad_merge_file = bads.combine(merged_files).first()
-        fit_dir = fit_negbin_dist(bad_merge_file)
-        fit_dir.collect().view()
+        fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
         merge_fit_results(fit_dir)
     emit:   
         merge_fit_results.out

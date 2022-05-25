@@ -11,8 +11,17 @@ workflow {
     no_cavs_snps = callCavsFromVcfsBinom(intersect_files)
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_')
     new_badmap_join = filtered_vcfs.join(new_badmap)
-    new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_')    
-    weights_files = fitNegBinom(new_intersect_map, bads)
+    new_intersect_map = intersectWithBadmap(new_badmap_join, 'nocavs_') 
+
+    merged_files = bad_intersections
+        .map(item -> item[1])
+        .collectFile(name: 'badmaps.tsv',
+            keepHeader: true,
+            storeDir: stats_dir)   
+    bad_merge_file = bads.combine(merged_files).first()
+    bad_merge_file.view()
+    
+    weights_files = fitNegBinom(new_intersect_map, bads, merged_files)
     //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
     calcPvalBinom(new_intersect_map, 'nocavs_')
     
