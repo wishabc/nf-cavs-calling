@@ -40,8 +40,8 @@ def aggregate_apply(df):
     return new_df
 
 
-def aggregate_subgroup(subgroup, mode):
-    return pd.concat([aggregate_apply(x.copy(), mode=mode) for x in subgroup])
+def aggregate_subgroup(subgroup):
+    return pd.concat([aggregate_apply(x.copy()) for x in subgroup])
 
 def aggregate_pvalues_df(pval_df_path, jobs):
     pval_df = pd.read_table(pval_df_path)
