@@ -89,7 +89,7 @@ process collect_stats {
     input:
         tuple val(bad) path(bad_annotations)
     output:
-        tuple val(bad) path("BAD*/stats.tsv")
+        tuple val(bad) path("BAD*")
     script:
     out_path = './'
     """
@@ -148,7 +148,8 @@ workflow fitNegBinom {
     take:
         bad_merge_file
     main:
-        fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
+        fit_dir = collect_stats(bad_merge_file)
+        // | fit_negbin_dist
         merge_fit_results(fit_dir)
     emit:   
         merge_fit_results.out
