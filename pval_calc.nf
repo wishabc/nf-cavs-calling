@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
-include { get_file_by_indiv_id; stats_dir } from "./helpers"
+include { get_file_by_indiv_id; get_stats_dir } from "./helpers"
 
+
+stats_dir = get_stats_dir()
 
 def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")

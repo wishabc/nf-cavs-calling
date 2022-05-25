@@ -1,7 +1,9 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad; intersectWithBadmap } from "./bad_estimation"
 include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom } from "./pval_calc"
-include { stats_dir } from "./helpers"
+include { get_stats_dir } from "./helpers"
+
+stats_dir = get_stats_dir()
 
 workflow {
     bads = Channel.of(params.states.split(','))
