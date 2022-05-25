@@ -151,9 +151,8 @@ workflow fitNegBinom {
     take:
         bad_merge_file
     main:
-        fit_dir = collect_stats(bad_merge_file)
-        // | fit_negbin_dist
-        merge_fit_results(fit_dir)
+        fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
+        merge_fit_results(fit_dir.collect())
     emit:   
         merge_fit_results.out
 }
