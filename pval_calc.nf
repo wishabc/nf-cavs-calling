@@ -90,7 +90,7 @@ process collect_stats {
     input:
         tuple val(bad), path(bad_annotations)
     output:
-        tuple val(bad), path("BAD*")
+        tuple val(bad), path("BAD*/stats.tsv")
     script:
     out_path = './'
     """

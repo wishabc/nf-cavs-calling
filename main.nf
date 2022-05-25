@@ -24,7 +24,7 @@ workflow {
     bad_merge_file.view()
 
     weights_files = fitNegBinom(bad_merge_file)
-    //calcPvalNegbin(new_intersect_map, weights_files, 'nocavs_')
-    calcPvalBinom(new_intersect_map, 'nocavs_')
+    calcPvalNegbin(bad_intersections, weights_files, 'nocavs_')
+    calcPvalBinom(bad_intersections, 'nocavs_')
     
 }
