@@ -8,34 +8,6 @@ def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
 }
 
-process fit_negbin_dist {
-    publishDir stats_dir
-    conda "/home/sabramov/miniconda3/envs/negbinfit"
-
-    input:
-        tuple val(bad) path(negbin_fit_statstics_path)
-    output:
-        tuple val(bad) path("BAD*/NBweights_*.tsv")
-    script:
-    """
-    negbin_fit -O ${negbin_fit_statstics_path} -m NB_AS
-    """
-}
-
-process merge_fit_results {
-    publishDir stats_dir
-    
-    input:
-        path files
-    output:
-        path name
-    script:
-    name = 'negbin_params.tsv'
-    """
-    python3 $baseDir/bin/stats_to_df.py ${files} ${params.states} ${name}
-    """
-}
-
 process calculate_pvalue {
 
     tag "P-value calculation ${indiv_id}"
@@ -97,6 +69,34 @@ process collect_stats {
     out_path = './'
     """
     python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
+    """
+}
+
+process fit_negbin_dist {
+    publishDir stats_dir
+    conda "/home/sabramov/miniconda3/envs/negbinfit"
+
+    input:
+        tuple val(bad), path(negbin_fit_statstics_path)
+    output:
+        tuple val(bad), path("BAD*/NBweights_*.tsv")
+    script:
+    """
+    negbin_fit -O ${negbin_fit_statstics_path} -m NB_AS
+    """
+}
+
+process merge_fit_results {
+    publishDir stats_dir
+    
+    input:
+        path files
+    output:
+        path name
+    script:
+    name = 'negbin_params.tsv'
+    """
+    python3 $baseDir/bin/stats_to_df.py ${files} ${params.states} ${name}
     """
 }
 
