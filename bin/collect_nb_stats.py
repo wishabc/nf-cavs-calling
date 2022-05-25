@@ -21,4 +21,4 @@ if __name__ == '__main__':
     parser.add_argument('-b', help='Badmaps files')
     parser.add_argument('--bad', help='BAD value')
     args = parser.parse_args()
-    main(args.b, args.O)
+    main(args.b, args.O, args.bad)
