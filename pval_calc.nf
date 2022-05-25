@@ -86,10 +86,11 @@ process exclude_cavs {
 
 process collect_stats {
     publishDir stats_dir + '_total'
+
     input:
-        tuple val(bad) path(bad_annotations)
+        tuple val(bad), path(bad_annotations)
     output:
-        tuple val(bad) path("BAD*")
+        tuple val(bad), path("BAD*")
     script:
     out_path = './'
     """
