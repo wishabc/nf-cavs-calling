@@ -58,7 +58,7 @@ process exclude_cavs {
     """
 }
 
-process collect_stats {
+process fit_nb {
     publishDir stats_dir
     conda "/home/sabramov/miniconda3/envs/negbinfit"
     input:
@@ -138,7 +138,7 @@ workflow fitNegBinom {
     take:
         bad_merge_file
     main:
-        fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
+        fit_dir = fit_nb(bad_merge_file)
         merge_fit_results(fit_dir.collect())
     emit:   
         merge_fit_results.out
