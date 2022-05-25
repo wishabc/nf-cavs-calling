@@ -152,7 +152,7 @@ workflow fitNegBinom {
             .collectFile(name: 'badmaps.tsv',
              keepHeader: true,
              storeDir: stats_dir)
-        bad_merge_file = bads.combine(merged_files)
+        bad_merge_file = bads.combine(merged_files).first()
         fit_dir = collect_stats(bad_merge_file) | fit_negbin_dist
         fit_dir.collect().view()
         merge_fit_results(fit_dir)
