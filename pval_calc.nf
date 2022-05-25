@@ -59,31 +59,17 @@ process exclude_cavs {
 }
 
 process collect_stats {
-    publishDir stats_dir + '_total'
-
+    publishDir stats_dir
+    conda "/home/sabramov/miniconda3/envs/negbinfit"
     input:
         tuple val(bad), path(bad_annotations)
     output:
-        tuple val(bad), path("BAD*/stats.tsv")
+        tuple val(bad), path("BAD*/NBweights_*.tsv")
     script:
     out_path = './'
     """
     python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
-    """
-}
-
-process fit_negbin_dist {
-    publishDir stats_dir
-    conda "/home/sabramov/miniconda3/envs/negbinfit"
-
-    input:
-        tuple val(bad), path(negbin_fit_statstics_path)
-    output:
-        tuple val(bad), path("BAD*/NBweights_*.tsv")
-    script:
-    """
-    python3 $baseDir/bin/collect_nb_stats.py -s ${negbin_fit_statstics_path} -b ${bad}
-    negbin_fit -O './' -m NB_AS
+    negbin_fit -O ${out_path} -m NB_AS
     """
 }
 
