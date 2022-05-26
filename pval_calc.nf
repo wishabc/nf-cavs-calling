@@ -24,6 +24,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
     """
+    echo $indiv_id
     python3 $baseDir/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
@@ -91,8 +92,6 @@ workflow calcPvalNegbin {
         stats_file
         output
     main:
-        data.view()
-        stats_file.view()
         pval_files = calculate_pvalue(data, stats_file, 'negbin', output)
         agg_files = aggregate_pvals(pval_files, 'negbinom', output)
     emit:
