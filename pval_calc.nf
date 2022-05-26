@@ -11,7 +11,7 @@ def get_snp_annotation_file_by_id(indiv_id) {
 process calculate_pvalue {
 
     tag "P-value calculation ${indiv_id}"
-    publishDir "${params.outdir}/${output}pval_files"
+    publishDir "${params.outdir}/${output}pval_files_${strategy}"
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
@@ -22,14 +22,14 @@ process calculate_pvalue {
         tuple val(indiv_id), path(name)
 
     script:
-    name = get_file_by_indiv_id(indiv_id, "pvalue-${strategy}")
+    name = get_file_by_indiv_id(indiv_id, "pvalue")
     """
     python3 $baseDir/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
 
 process aggregate_pvals {
-    publishDir "${params.outdir}/${output}ag_files"
+    publishDir "${params.outdir}/${output}ag_files_${strategy}"
 
     cpus 2
     input:
@@ -39,7 +39,7 @@ process aggregate_pvals {
     output:
         tuple val(indiv_id), path(name)
     script:
-    name = get_file_by_indiv_id(indiv_id, "aggregation-${strategy}")
+    name = get_file_by_indiv_id(indiv_id, "aggregation")
     """
     python3 $baseDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
     """

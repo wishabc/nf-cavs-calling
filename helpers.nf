@@ -11,14 +11,10 @@ def get_file_by_indiv_id(ind, file_type) {
             return "${ind}.bad.bed"
         case "intersect":
             return "${ind}.intersect.bed"
-        case "pvalue-binom":
-            return "${ind}.pvalue-binom.bed"
-        case "pvalue-negbin":
-            return "${ind}.pvalue-negbin.bed"
-        case "aggregation-binom":
-            return "${ind}.aggregation-binom.bed"
-        case "aggregation-negbin":
-            return "${ind}.aggregation-negbin.bed"
+        case "pvalue":
+            return "${ind}.pvalue.bed"
+        case "aggregation":
+            return "${ind}.aggregation.bed"
         case "nocavs":
             return "${ind}.nocavs.bed"
         case "*":
