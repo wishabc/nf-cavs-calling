@@ -65,7 +65,7 @@ process fit_nb {
     input:
         tuple val(bad), path(bad_annotations)
     output:
-        path "BAD*/NBweights_*.tsv"
+        path "BAD*/weights_*.tsv"
     script:
     out_path = './'
     """
@@ -140,7 +140,11 @@ workflow fitNegBinom {
         bad_merge_file
     main:
         fit_dir = fit_nb(bad_merge_file)
-        merge_fit_results(fit_dir.collect())
+        fit = fit_dir.collectFile(
+            name: 'negbin_fit_params.tsv',
+            keepHeader: true,
+            storeDir: stats_dir)
+        merge_fit_results(fit)
     emit:   
         merge_fit_results.out
 }
