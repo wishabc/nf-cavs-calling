@@ -91,9 +91,8 @@ workflow calcPvalNegbin {
         stats_file
         output
     main:
-        stats_list = data.combine(stats_file).map(it -> it[1])
-        pval_files = calculate_pvalue(data, stats_list, 'negbin', output)
-        agg_files = aggregate_pvals(pval_files, 'negbinom', output)
+        pval_files = calculate_pvalue(data, stats_file, 'negbin', output)
+        agg_files = aggregate_pvals(pval_files, 'negbin', output)
     emit:
         agg_files
 }
