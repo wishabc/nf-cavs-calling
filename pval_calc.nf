@@ -83,6 +83,7 @@ process merge_fit_results {
     script:
     name = 'negbin_params.tsv'
     """
+    echo $files
     python3 $baseDir/bin/stats_to_df.py ${params.states} ${name} ${files}
     """
 }
