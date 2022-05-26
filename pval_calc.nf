@@ -139,6 +139,7 @@ workflow fitNegBinom {
         bad_merge_file
     main:
         fit_dir = fit_nb(bad_merge_file)
+        fit_dir.map(it -> it[1])collect().view()
         merge_fit_results(fit_dir.collect())
     emit:   
         merge_fit_results.out
