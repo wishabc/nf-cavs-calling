@@ -61,7 +61,6 @@ process exclude_cavs {
 process fit_nb {
     publishDir stats_dir
     conda "/home/sabramov/miniconda3/envs/negbinfit"
-    cache false
     input:
         tuple val(bad), path(bad_annotations)
     output:
@@ -71,20 +70,6 @@ process fit_nb {
     """
     python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
     negbin_fit -O ${out_path} -m NB_AS
-    """
-}
-
-process merge_fit_results {
-    publishDir stats_dir
-    
-    input:
-        path files
-    output:
-        path name
-    script:
-    name = 'negbin_params.tsv'
-    """
-    python3 $baseDir/bin/stats_to_df.py ${name} ${files}
     """
 }
 
@@ -144,9 +129,8 @@ workflow fitNegBinom {
             name: 'negbin_fit_params.tsv',
             keepHeader: true,
             storeDir: stats_dir)
-        merge_fit_results(fit)
     emit:   
-        merge_fit_results.out
+        fit
 }
 
 
