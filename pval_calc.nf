@@ -77,7 +77,7 @@ process merge_fit_results {
     publishDir stats_dir
     
     input:
-        tuple val(bad) path(files)
+        tuple val(bad), path(files)
     output:
         path name
     script:
