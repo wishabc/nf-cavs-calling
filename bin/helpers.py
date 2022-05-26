@@ -2,7 +2,7 @@ import re
 import os
 
 
-alleles = ['ref', 'alt']
+alleles = {'ref': 'alt', 'alt': 'ref'}
 
 
 def make_bad_dir(fit_dir, bad):
