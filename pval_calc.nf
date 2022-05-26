@@ -83,7 +83,7 @@ process merge_fit_results {
     script:
     name = 'negbin_params.tsv'
     """
-    python3 $baseDir/bin/stats_to_df.py ${files} ${params.states} ${name}
+    python3 $baseDir/bin/stats_to_df.py ${params.states} ${name} ${files}
     """
 }
 
@@ -139,8 +139,8 @@ workflow fitNegBinom {
         bad_merge_file
     main:
         fit_dir = fit_nb(bad_merge_file)
-        fit_dir.map(it -> it[1])collect().view()
-        merge_fit_results(fit_dir.collect())
+        fit_dir.map(it -> it[1]).collect().view()
+        merge_fit_results(fit_dir.map(it -> it[1]).collect())
     emit:   
         merge_fit_results.out
 }
