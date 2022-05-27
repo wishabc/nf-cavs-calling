@@ -2,7 +2,7 @@ import pandas as pd
 import argparse
 
 def add_key(df):
-    df['key'] = df['#chr'] + '@' + df['start']
+    df['key'] = df.apply(lambda row: f"{row['#chr']}@{df['start']}")
     return df
 
 def main(new_badmap, old_badmap, output):
