@@ -40,7 +40,7 @@ process intersect_with_snps {
         tuple val(indiv_id), path(name)
 
 	script:
-    name = get_file_by_indiv_id(indiv_id, "intersect")
+    name = get_file_by_indiv_id(indiv_id, "${outpath}intersect")
 	"""
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\t%" > ${name}
     if [[ \$(wc -l <${snps_file}) -ge 2 ]]; then

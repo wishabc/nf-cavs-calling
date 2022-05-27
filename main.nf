@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad; intersectWithBadmap } from "./bad_estimation"
-include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom } from "./pval_calc"
+include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom; addImputedCavs } from "./pval_calc"
 include { get_stats_dir } from "./helpers"
 
 stats_dir = get_stats_dir()
@@ -14,16 +14,17 @@ workflow {
     new_badmap = estimateBad(no_cavs_snps, 'nocavs_')
     new_badmap_join = filtered_vcfs.join(new_badmap)
     bad_intersections = intersectWithBadmap(new_badmap_join, 'nocavs_') 
+    imputed_cavs = addImputedCavs(bad_intersections.join(intersect_files))
 
-    merged_files = bad_intersections
+    merged_files = imputed_cavs
         .map(item -> item[1])
         .collectFile(name: 'badmaps.tsv',
             keepHeader: true,
             storeDir: stats_dir)   
     bad_merge_file = bads.combine(merged_files)
-
     weights_files = fitNegBinom(bad_merge_file)
-    calcPvalNegbin(bad_intersections, weights_files, 'nocavs_')
-    calcPvalBinom(bad_intersections, 'nocavs_')
+
+    calcPvalNegbin(imputed_cavs, weights_files, 'nocavs_')
+    calcPvalBinom(imputed_cavs, 'nocavs_')
     
 }

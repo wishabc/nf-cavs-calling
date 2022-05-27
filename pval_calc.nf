@@ -73,6 +73,27 @@ process fit_nb {
     """
 }
 
+process add_cavs {
+    publishDir "${params.outdir}/added_cavs"
+    input:
+        tuple val(indiv_id), path(new_badmap), path(old_badmap)
+    output:
+        tuple val(indiv_id), path(name)
+    script:
+    name = get_file_by_indiv_id(indiv_id, "add_cavs")
+    """
+    python3 $baseDir/bin/add_cavs.py -n ${new_badmap} -o ${old_badmap} --output ${name}
+    """
+}
+
+workflow addImputedCavs {
+    take:
+        data
+    main:
+        add_cavs(data)
+    emit:
+        add_cavs.out
+}
 
 workflow calcPvalBinom {
     take:
