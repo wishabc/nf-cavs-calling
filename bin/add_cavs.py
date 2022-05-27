@@ -5,7 +5,7 @@ def main(new_badmap, old_badmap, output):
     new_df = pd.read_table(new_badmap)
     old_df = pd.read_table(old_badmap)
     rs_ids = new_df['ID'].unique()
-    assert all([x.startswith('rs') for x in rs_ids])
+    print([x for x in rs_ids if not x.startswith('rs')])
     imputed_cavs = old_df[~old_df['ID'].isin(rs_ids)]
     df = pd.concat([new_df, imputed_cavs])
     if len(df.index) != len(old_df.index):
