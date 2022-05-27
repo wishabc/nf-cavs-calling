@@ -6,7 +6,7 @@ def main(new_badmap, old_badmap, output):
     old_df = pd.read_table(old_badmap)
     rs_ids = new_df['ID'].unique()
     imputed_cavs = old_df[~old_df['ID'].isin(rs_ids)]
-    df = pd.concat(new_df, imputed_cavs)
+    df = pd.concat([new_df, imputed_cavs])
     assert len(df.index) == len(old_df.index)
     df.to_csv(output, sep='\t', index=False)
 
