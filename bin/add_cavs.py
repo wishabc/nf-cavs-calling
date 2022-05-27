@@ -14,7 +14,7 @@ def main(new_badmap, old_badmap, output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Add CAVs')
     parser.add_argument('-n', help='New BAD map file')
-    parser.add_argument('-O', help='Old BAD map file')
+    parser.add_argument('-o', help='Old BAD map file')
     parser.add_argument('--output', help='Output file name')
     args = parser.parse_args()
     main(new_badmap=args.n, old_badmap=args.o, output=args.output)
