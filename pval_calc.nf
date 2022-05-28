@@ -160,7 +160,7 @@ workflow aggregateAllPvalsNegbin {
     take:
         vcf_tuples
     main:
-        all_pvals = tuple('ALL', vcf_tuples.map(it -> it[1]).collectFile(
+        all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
             name: "ALL.pvals.negbin.bed",
             keepHeader: true,
             storeDir: stats_dir).first())
