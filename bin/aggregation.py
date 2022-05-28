@@ -8,6 +8,9 @@ import numpy as np
 import multiprocessing as mp
 
 
+drop_columns = ['ref_counts', 'alt_counts', 'BAD', 'pval_ref', 'pval_alt']
+added_columns = ['mean_BAD', 'logit_pval_ref', 'logit_pval_alt', '# of SNPs', 'max_cover']
+
 def aggregate_snp(snp_df):
     pvals = {}
     for allele in alleles:
@@ -36,7 +39,7 @@ def aggregate_apply(df):
     new_df['# of SNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('ref_counts + alt_counts').max()
     new_df = new_df.drop_duplicates(subset=['#chr', 'start', 'alt'])
-    new_df = new_df.drop(columns=['ref_counts', 'alt_counts', 'BAD', 'pval_ref', 'pval_alt'])
+    new_df = new_df.drop(columns=drop_columns)
     return new_df
 
 
@@ -46,6 +49,9 @@ def aggregate_subgroup(subgroup):
 def aggregate_pvalues_df(pval_df_path, jobs):
     pval_df = pd.read_table(pval_df_path)
     if pval_df.empty:
+        pval_df.drop(columns=drop_columns)
+        for column in added_columns:
+            pval_df[column] = None
         return pval_df
     groups = df_to_group(pval_df)
     groups_list = list(groups.groups)
@@ -64,6 +70,8 @@ def aggregate_pvalues_df(pval_df_path, jobs):
     
 def calc_fdr(aggr_df, max_cover_tr):
     if aggr_df.empty:
+        for allele in alleles:
+            aggr_df[f"fdrp_bh_{allele}"] = None
         return aggr_df
     mc_filter_array = np.array(aggr_df['max_cover'] >= max_cover_tr)
     for allele in alleles:
@@ -73,6 +81,7 @@ def calc_fdr(aggr_df, max_cover_tr):
         else:
             pval_arr = []
         fdr_arr = np.empty(len(aggr_df.index), dtype=np.float128)
+        fdr_arr[:] = np.nan
         fdr_arr[mc_filter_array] = pval_arr
         aggr_df[f"fdrp_bh_{allele}"] = fdr_arr
     return aggr_df
