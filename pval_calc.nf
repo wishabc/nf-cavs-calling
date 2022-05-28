@@ -175,7 +175,7 @@ workflow aggregateAllPvalsBinom {
             name: "ALL.pvals.binom.bed",
             keepHeader: true,
             storeDir: stats_dir).first())
-        aggregate_pvals(all, 'binom', 'all_')
+        aggregate_pvals(all_pvals, 'binom', 'all_')
 }
 
 workflow {
