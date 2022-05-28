@@ -158,27 +158,6 @@ workflow fitNegBinom {
 }
 
 
-workflow aggregateAllPvalsNegbin {
-    take:
-        vcf_tuples
-    main:
-        all_pvals = tuple('ALL', vcf_tuples.map(it -> it[1]).collectFile(
-            name: "ALL.pvals.negbin.bed",
-            keepHeader: true,
-            storeDir: stats_dir).first())
-        aggregate_pvals(all, 'negbin', 'all_')
-}
-
-workflow aggregateAllPvalsBinom {
-    take:
-        vcf_tuples
-    main:
-        all_pvals = tuple('ALL', vcf_tuples.map(it -> it[1]).collectFile(
-            name: "ALL.pvals.binom.bed",
-            keepHeader: true,
-            storeDir: stats_dir).first())
-        aggregate_pvals(all, 'binom', 'all_')
-}
 
 workflow {
     callCavs()
