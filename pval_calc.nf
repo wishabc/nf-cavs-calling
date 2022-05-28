@@ -31,7 +31,7 @@ process calculate_pvalue {
 process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files_${strategy}"
 
-    cpus 2
+    cpus 3
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
