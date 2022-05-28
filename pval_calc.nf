@@ -30,7 +30,7 @@ process calculate_pvalue {
 
 process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files_${strategy}"
-    cache false
+
     cpus 2
     input:
         tuple val(indiv_id), path(pval_vcf)
