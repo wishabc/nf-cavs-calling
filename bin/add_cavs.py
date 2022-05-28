@@ -2,11 +2,15 @@ import pandas as pd
 import argparse
 
 def add_key(df):
-    df['key'] = df.apply(lambda row: f"{row['#chr']}@{row['start']}", axis=1)
+    if not df.empty:
+        df['key'] = df.apply(lambda row: f"{row['#chr']}@{row['start']}", axis=1)
     return df
 
 def main(new_badmap, old_badmap, output):
     new_df = add_key(pd.read_table(new_badmap))
+    if new_df.empty:
+        new_df.to_csv(output, sep='\t', index=False)
+        return
     old_df = add_key(pd.read_table(old_badmap))
     keys = new_df['key'].unique()
     
