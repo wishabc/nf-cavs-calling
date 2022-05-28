@@ -24,9 +24,9 @@ workflow {
     bad_merge_file = bads.combine(merged_files)
     weights_files = fitNegBinom(bad_merge_file)
 
-    negbin_pvals = calcPvalNegbin(imputed_cavs, weights_files, 'nocavs_').map(it -> it[0])
+    negbin_pvals = calcPvalNegbin(imputed_cavs, weights_files, 'nocavs_')[0]
     aggregateAllPvalsNegbin(negbin_pvals)
-    binom_pvals = calcPvalBinom(imputed_cavs, 'nocavs_').map(it -> it[0])
+    binom_pvals = calcPvalBinom(imputed_cavs, 'nocavs_')[0]
     aggregateAllPvalsBinom(binom_pvals)
     
 }

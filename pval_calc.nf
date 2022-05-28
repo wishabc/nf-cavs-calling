@@ -127,7 +127,7 @@ workflow callCavsFromVcfsBinom {
         bad_annotations
     main:
         pval_agg_files = calcPvalBinom(bad_annotations, '')
-        agg_files = pval_agg_files.map(it -> it[1])
+        agg_files = pval_agg_files[1]
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
     emit:
