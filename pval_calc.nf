@@ -105,6 +105,7 @@ workflow calcPvalBinom {
         agg_files = aggregate_pvals(pval_files, 'binom', output)
     emit:
         pval_files
+        agg_files
 }
 
 workflow calcPvalNegbin {
@@ -125,7 +126,7 @@ workflow callCavsFromVcfsBinom {
     take:
         bad_annotations
     main:
-        agg_files = calcPvalBinom(bad_annotations, '')
+        agg_files = calcPvalBinom(bad_annotations, '').map(it -> it[1])
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
     emit:
