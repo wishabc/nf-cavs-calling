@@ -164,7 +164,7 @@ workflow aggregateAllPvalsNegbin {
             name: "ALL.pvals.negbin.bed",
             keepHeader: true,
             storeDir: stats_dir).first())
-        aggregate_pvals(all, 'negbin', 'all_')
+        aggregate_pvals(all_pvals, 'negbin', 'all_')
 }
 
 workflow aggregateAllPvalsBinom {
