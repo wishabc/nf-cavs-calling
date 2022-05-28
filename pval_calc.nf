@@ -104,7 +104,7 @@ workflow calcPvalBinom {
         pval_files = calculate_pvalue(data, params.outdir, 'binom', output)
         agg_files = aggregate_pvals(pval_files, 'binom', output)
     emit:
-        agg_files
+        pval_files
 }
 
 workflow calcPvalNegbin {
@@ -116,7 +116,7 @@ workflow calcPvalNegbin {
         pval_files = calculate_pvalue(data, stats_file.first(), 'negbin', output)
         agg_files = aggregate_pvals(pval_files, 'negbin', output)
     emit:
-        agg_files
+        pval_files
 }
 
 
@@ -156,6 +156,27 @@ workflow fitNegBinom {
 }
 
 
+workflow aggregateAllPvalsNegbin {
+    take:
+        vcf_tuples
+    main:
+        all_pvals = tuple('ALL', vcf_tuples.map(it -> it[1]).collectFile(
+            name: "ALL.pvals.negbin.bed",
+            keepHeader: true,
+            storeDir: stats_dir).first())
+        aggregate_pvals(all, 'negbin', 'all_')
+}
+
+workflow aggregateAllPvalsBinom {
+    take:
+        vcf_tuples
+    main:
+        all_pvals = tuple('ALL', vcf_tuples.map(it -> it[1]).collectFile(
+            name: "ALL.pvals.binom.bed",
+            keepHeader: true,
+            storeDir: stats_dir).first())
+        aggregate_pvals(all, 'binom', 'all_')
+}
 
 workflow {
     callCavs()
