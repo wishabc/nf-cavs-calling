@@ -77,6 +77,7 @@ def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
             #     merged['w'] = 1
             #     merged['r'] = merged['fix_c']
             # else:
+            merged.loc[merged.eval('gof > 0.05'), 'r'] = 0
             merged.loc[merged.eval('r == 0'), 'w'] = 1
             merged.loc[merged.eval('r == 0'), 'r'] = merged.loc[merged.eval('r == 0'), 'fix_c']
             rs = merged['r'].to_numpy()

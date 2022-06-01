@@ -46,6 +46,7 @@ process aggregate_pvals {
 }
 
 process exclude_cavs {
+    scratch true
     publishDir "${params.outdir}/excluded_cavs"
     input:
         tuple val(indiv_id), path(bad_annotations), path(agg_vcf)
