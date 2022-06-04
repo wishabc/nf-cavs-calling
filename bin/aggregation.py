@@ -49,10 +49,9 @@ def aggregate_apply(df):
     new_df = df.copy()
     mean_BAD, pvals, effect_sizes = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
-    for allele, pval, es in zip(alleles, pvals, effect_sizes):
-        print(list(zip(alleles, pvals, effect_sizes)))
-        new_df[get_field_by_ftype(allele, 'pval-ag')] = pval
-        new_df[get_field_by_ftype(allele, 'es-ag')] = es
+    for allele in alleles:
+        new_df[get_field_by_ftype(allele, 'pval-ag')] = pvals[allele]
+        new_df[get_field_by_ftype(allele, 'es-ag')] = effect_sizes[allele]
     new_df['# of SNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('ref_counts + alt_counts').max()
     new_df = new_df.drop_duplicates(subset=['#chr', 'start', 'alt'])
