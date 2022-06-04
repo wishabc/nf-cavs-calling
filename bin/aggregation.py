@@ -27,16 +27,10 @@ def aggregate_es(es_array, p_array):
     es, p = zip(*[(x, y) for x, y in zip(es_array, p_array) if y != 1 and not pd.isna(y)])
     if len(es) > 0:
         weights = [-1 * np.log10(x) for x in p]
-        try:
-            es_mean = np.round(np.average(es_array, weights=weights), 3)
-        except TypeError:
-            print(es_array, p_array)
-            raise
-        es_mostsig = es_array[int(np.argmax(weights))]
+        es_mean = np.round(np.average(es, weights=weights), 3)
     else:
         es_mean = np.nan
-        es_mostsig = np.nan
-    return es_mean, es_mostsig
+    return es_mean
 
 
 def logit_aggregate_pvalues(pval_list):
