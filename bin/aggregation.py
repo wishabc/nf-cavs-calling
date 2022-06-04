@@ -24,9 +24,9 @@ def aggregate_snp(snp_df):
 
 
 def aggregate_es(es_array, p_array):
-    res = zip(*[(x, y) for x, y in zip(es_array, p_array) if y != 1 and not pd.isna(y)])
+    res = [(x, y) for x, y in zip(es_array, p_array) if y != 1 and not pd.isna(y)]
     if len(res) > 0:
-        es, p = res
+        es, p = zip(*res)
         weights = [-1 * np.log10(x) for x in p]
         es_mean = np.round(np.average(es, weights=weights), 3)
     else:
