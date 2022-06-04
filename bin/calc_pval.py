@@ -160,8 +160,7 @@ if __name__ == '__main__':
         help='Method to calculate effect size. One of "exp", "odds", "cons"',
         default='exp')
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
-        action=argparse.BooleanOptionalAction,
-        default=False)
+        default=False, action="store_true")
     args = parser.parse_args()
     calc_pval_for_indiv(
         input_filename=args.I,
