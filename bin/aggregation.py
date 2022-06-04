@@ -96,7 +96,7 @@ def calc_fdr(aggr_df, max_cover_tr):
                 _, pval_arr, _, _ = multipletests(aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')],
                                                                                  alpha=0.05, method='fdr_bh')
             except TypeError:
-                print(aggrd_df, aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')])
+                print(aggr_df, aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')])
                 raise
         else:
             pval_arr = []
