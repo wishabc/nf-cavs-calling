@@ -4,7 +4,8 @@ from helpers import alleles, get_field_by_ftype
 import argparse
 import numpy as np
 
-result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_field_by_ftype(allele, ftype) for allele in alleles for ftype in ('es', 'pval')]
+result_ftypes = ('es', 'pval')
+result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_field_by_ftype(allele, ftype) for allele in alleles for ftype in result_ftypes]
 
 
 # nbinom_dist
@@ -101,7 +102,8 @@ def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='
 def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
     if df.empty:
         for allele in alleles:
-            df[get_field_by_ftype(allele)] = None
+            for ftype in result_ftypes:
+                df[get_field_by_ftype(allele, ftype=ftype)] = None
         return df
     p = df.eval('1 / (BAD + 1)').to_numpy()
     n = df.eval('alt_counts + ref_counts').to_numpy()
