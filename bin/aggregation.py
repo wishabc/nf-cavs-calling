@@ -92,8 +92,12 @@ def calc_fdr(aggr_df, max_cover_tr):
     mc_filter_array = np.array(aggr_df['max_cover'] >= max_cover_tr)
     for allele in alleles:
         if sum(mc_filter_array) != 0:
-            _, pval_arr, _, _ = multipletests(aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')],
+            try:
+                _, pval_arr, _, _ = multipletests(aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')],
                                                                                  alpha=0.05, method='fdr_bh')
+            except TypeError:
+                print(mc_filter_array, aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')].tolist())
+                raise
         else:
             pval_arr = []
         fdr_arr = np.empty(len(aggr_df.index), dtype=np.float128)
