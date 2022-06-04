@@ -50,6 +50,7 @@ def aggregate_apply(df):
     mean_BAD, pvals, effect_sizes = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
     for allele, pval, es in zip(alleles, pvals, effect_sizes):
+        print(allele, pval, es)
         new_df[get_field_by_ftype(allele, 'pval-ag')] = pval
         new_df[get_field_by_ftype(allele, 'es-ag')] = es
     new_df['# of SNPs'] = len(df.index)
