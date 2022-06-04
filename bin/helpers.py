@@ -3,7 +3,7 @@ import os
 
 
 alleles = {'ref': 'alt', 'alt': 'ref'}
-
+starting_columns = ['#chr', 'start', 'end']
 
 def make_bad_dir(fit_dir, bad):
     BAD = convert_frac_to_float(bad)
@@ -48,5 +48,14 @@ def check_states(string):
     else:
         return ret_val
 
-def get_pval_field(allele):
-    return f'pval_{allele}'
+def get_field_by_ftype(allele, ftype='pval'):
+    if ftype == 'pval':
+        return f'pval_{allele}'
+    elif ftype == 'es':
+        return f'es_{allele}'
+    elif ftype == 'pval-ag':
+        return f'logit_pval_{allele}'
+    elif ftype == 'es-ag':
+        return f'aggregated_es_{allele}'
+    else:
+        raise ValueError

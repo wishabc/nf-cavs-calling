@@ -1,22 +1,41 @@
 import argparse
 import pandas as pd
-from helpers import get_pval_field
-from helpers import alleles
+from helpers import get_field_by_ftype
+from helpers import alleles, starting_columns
 from scipy.stats import combine_pvalues
 from statsmodels.stats.multitest import multipletests
 import numpy as np
 import multiprocessing as mp
 
 
-drop_columns = ['ref_counts', 'alt_counts', 'BAD', 'pval_ref', 'pval_alt']
-added_columns = ['mean_BAD', 'logit_pval_ref', 'logit_pval_alt', '# of SNPs', 'max_cover']
+result_columns = starting_columns + ['mean_BAD', 
+    '# of SNPs', 'max_cover'] + [get_field_by_ftype(allele, ftype) 
+    for allele in alleles for ftype in ('es-ag', 'pval-ag')]
 
 def aggregate_snp(snp_df):
     pvals = {}
+    effect_sizes = {}
     for allele in alleles:
-        pvals[allele] = logit_aggregate_pvalues(snp_df[get_pval_field(allele)])
+        pvals[allele] = logit_aggregate_pvalues(snp_df[get_field_by_ftype(allele)])
+        effect_sizes[allele] = aggregate_es(snp_df[get_field_by_ftype(allele, 'es')], 
+                                            snp_df[get_field_by_ftype(allele)])
     mean_BAD = snp_df['BAD'].mean()
-    return [mean_BAD] + [pvals[field] for field in alleles]
+    return mean_BAD, pvals, effect_sizes
+
+
+def aggregate_es(es_array, p_array):
+    if len([x for x in es_array if not pd.isna(x)]) > 0:
+        weights = [-1 * np.log10(x) for x in p_array if x != 1 and not pd.isna(x)]
+        try:
+            es_mean = np.round(np.average(es_array, weights=weights), 3)
+        except TypeError:
+            print(es_array, p_array)
+            raise
+        es_mostsig = es_array[int(np.argmax(weights))]
+    else:
+        es_mean = np.nan
+        es_mostsig = np.nan
+    return es_mean, es_mostsig
 
 
 def logit_aggregate_pvalues(pval_list):
@@ -32,15 +51,15 @@ def df_to_group(df):
 
 def aggregate_apply(df):
     new_df = df.copy()
-    mean_BAD, pval_ref, pval_alt = aggregate_snp(df)
+    mean_BAD, pvals, effect_sizes = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
-    new_df['logit_pval_ref'] = pval_ref
-    new_df['logit_pval_alt'] = pval_alt
+    for allele, pval, es in zip(alleles, pvals, effect_sizes):
+        new_df[get_field_by_ftype(allele, 'pval-ag')] = pval
+        new_df[get_field_by_ftype(allele, 'es-ag')] = es
     new_df['# of SNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('ref_counts + alt_counts').max()
     new_df = new_df.drop_duplicates(subset=['#chr', 'start', 'alt'])
-    new_df = new_df.drop(columns=drop_columns)
-    return new_df
+    return new_df[result_columns]
 
 
 def aggregate_subgroup(subgroup):
@@ -49,10 +68,11 @@ def aggregate_subgroup(subgroup):
 def aggregate_pvalues_df(pval_df_path, jobs):
     pval_df = pd.read_table(pval_df_path)
     if pval_df.empty:
-        pval_df.drop(columns=drop_columns)
-        for column in added_columns:
-            pval_df[column] = None
-        return pval_df
+        for column in result_columns:
+            if column not in pval_df.columns:
+                pval_df[column] = None
+        return pval_df[result_columns]
+
     groups = df_to_group(pval_df)
     groups_list = list(groups.groups)
     j = min(jobs,
@@ -76,7 +96,7 @@ def calc_fdr(aggr_df, max_cover_tr):
     mc_filter_array = np.array(aggr_df['max_cover'] >= max_cover_tr)
     for allele in alleles:
         if sum(mc_filter_array) != 0:
-            _, pval_arr, _, _ = multipletests(aggr_df[mc_filter_array][f"logit_pval_{allele}"],
+            _, pval_arr, _, _ = multipletests(aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')],
                                                                                  alpha=0.05, method='fdr_bh')
         else:
             pval_arr = []

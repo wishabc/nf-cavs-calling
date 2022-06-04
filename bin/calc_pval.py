@@ -1,15 +1,25 @@
 import pandas as pd
 from scipy.stats import binom, nbinom
-from helpers import alleles, get_pval_field
+from helpers import alleles, get_field_by_ftype
 import argparse
+import numpy as np
+
+result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_field_by_ftype(allele) for allele in alleles]
 
 
-result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_pval_field(allele) for allele in alleles]
-
-
+# nbinom_dist
 def nbinom_sf(x, r, p, w):
     return w * nbinom.sf(x, r, p) + (1 - w) * nbinom.sf(x, r, 1 - p)
 
+
+def nbinom_pmf(x, r, p, w):
+    return w * nbinom.pmf(x, r, p) + (1 - w) * nbinom.pmf(x, r, 1 - p)
+
+def censored_nbinom_expectation(x, r, p, w, allele_tr):
+    return (r * ((1 - p) / p * w + (1 - w) * p / (1 - p)) - (np.tile(np.arange(5), (x.shape[0], 1)) * nbinom_pmf(x, r, p, w)).sum(axis=1)) / nbinom_sf(allele_tr - 1, r, p, w)
+    
+def censored_nbinom_es(x, r, p, w, allele_tr):
+    return np.log2(x / censored_nbinom_expectation(x, r, p, w, allele_tr))
 
 def censored_nbinom_pvalue(x, r, p, w, allele_tr):
     norm_coef = 0
@@ -17,13 +27,23 @@ def censored_nbinom_pvalue(x, r, p, w, allele_tr):
         norm_coef = nbinom_sf(allele_tr - 1, r, p, w)
     else:
         norm_coef = 1
+
     return nbinom_sf(x - 1, r, p, w) / norm_coef
 
-def binom_sf(x, n, p):
-    return 0.5 * (binom.sf(x, n, p) + binom.sf(x, n, 1 - p))
+def modify_w_nbinom(rs, p, ws, counts):
+    p1 = ws * nbinom.pmf(counts, rs, p)
+    p2 = (1 - ws) * nbinom.pmf(counts, rs, 1 - p)
+    return recalc_ws(ws, p1, p2)
 
-def binom_cdf(x, n, p):
-    return 0.5 * (binom.cdf(x, n, p) + binom.cdf(x, n, 1 - p))
+# binom dist
+def binom_sf(x, n, p, w):
+    return (1 - w) * binom.sf(x, n, p) + w * binom.sf(x, n, 1 - p)
+
+def binom_cdf(x, n, p, w):
+    return (1 - w) * binom.cdf(x, n, p) + w * binom.cdf(x, n, 1 - p)
+
+def binom_pmf(x, n, p, w):
+    return (1 - w) * binom.pmf(x, n, p) + w * binom.pmf(x, n, 1 - p)
 
 def censored_binom_pmf(n, p, allele_tr):
     dist1 = binom(n, p)
@@ -35,36 +55,71 @@ def censored_binom_pmf(n, p, allele_tr):
         for i in range(allele_tr, n - allele_tr + 1)
     ]
 
-
-def censored_binom_pvalue(x, n, p, allele_tr):
+def censored_binom_pvalue(x, n, p, w, allele_tr):
     norm_coef = 0
     if allele_tr > 0:
-        norm_coef = binom_cdf(n - (allele_tr - 1), n, p) - binom_cdf(allele_tr - 1, n, p)
+        norm_coef = binom_cdf(n - (allele_tr - 1), n, p, w) - binom_cdf(allele_tr - 1, n, p, w)
     else:
         norm_coef = 1
-    return (binom_sf(x - 1, n, p) - binom_sf(n - (allele_tr - 1), n, p)) / norm_coef
+    return (binom_sf(x - 1, n, p, w) - binom_sf(n - (allele_tr - 1), n, p, w)) / norm_coef
 
 
-def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='binom', allele_tr=5):
+def binom_es(x, n, p, w):
+    return np.log2(
+        x / (w * (n * (1 - p)) + (1 - w) * (n * p))
+    )
+
+def modify_w_binom(n, p, ws, counts):
+    p1 = ws * binom.pmf(counts, n, 1 - p)
+    p2 = (1 - ws) * binom.pmf(counts, n, p)
+    return recalc_ws(ws, p1, p2)
+
+
+# Both negbin and binom
+def odds_es(x, n, p, w):
+    return np.log2(
+        x / ((n - x) * ((1 - p) / p * w + (1 - w) * p / (1 - p)))
+    )
+
+def recalc_ws(ws, p1, p2):
+    idx = (ws != 1) & (ws != 0)
+    ws[idx] = p1[idx] / (p1[idx] + p2[idx])
+    return ws
+
+
+
+def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='binom', allele_tr=5, modify_w=False, es_method='exp'):
     df = pd.read_table(input_filename)
     if mode == 'negbin' and stats_file is not None:
         stats_df = pd.read_table(stats_file)
     else:
         stats_df = None
-    df = calc_pval_for_df(df, stats_df, mode, allele_tr)
-    df = df[result_columns]
-    df.to_csv(output_filename, sep='\t', index=None)
-        
-def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
+    df = calc_pval_for_df(df, stats_df, mode, allele_tr,modify_w=modify_w, es_method=es_method)
+    df[result_columns].to_csv(output_filename, sep='\t', index=None)
+
+
+def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
     if df.empty:
         for allele in alleles:
-            df[get_pval_field(allele)] = None
+            df[get_field_by_ftype(allele)] = None
         return df
     p = df.eval('1 / (BAD + 1)').to_numpy()
     n = df.eval('alt_counts + ref_counts').to_numpy()
     for allele in alleles:
+        counts = df[f'{allele}_counts'].to_numpy()
         if mode == 'binom':
-            df[get_pval_field(allele)] = censored_binom_pvalue(df[f'{allele}_counts'].to_numpy(), n, p, allele_tr)
+            ws = np.full(counts.shape, 0.5, dtype=np.float128)
+            if modify_w:
+                ws = modify_w_binom(n, p, ws, counts)
+            df[get_field_by_ftype(allele)] = censored_binom_pvalue(counts, n, p, ws, allele_tr)
+
+            if es_method == 'exp':
+                es_list = binom_es(counts, n, p, ws, allele_tr)
+            elif es_method == 'odds':
+                es_list = odds_es(counts, n, p, ws, allele_tr)
+            elif es_method == 'cons':
+                es_list = odds_es(counts, n, p, 1, allele_tr)
+            df[get_field_by_ftype(allele, 'es')] = es_list
         elif mode == 'negbin':
             if nb_params is None:
                 raise ValueError('NB params are required for p-value calculations')
@@ -73,18 +128,22 @@ def calc_pval_for_df(df, nb_params, mode='binom', allele_tr=5):
              left_on=[f'{alleles[allele]}_counts', 'BAD'],
              right_on=['fix_c', 'BAD'], sort=False, how='left')\
             .sort_values('index')
-            # if conservative:
-            #     merged['w'] = 1
-            #     merged['r'] = merged['fix_c']
-            # else:
             merged.loc[merged.eval('gof > 0.05'), 'r'] = 0
             merged.loc[merged.eval('r == 0'), 'w'] = 1
             merged.loc[merged.eval('r == 0'), 'r'] = merged.loc[merged.eval('r == 0'), 'fix_c']
             rs = merged['r'].to_numpy()
             ws = merged['w'].to_numpy()
-            df[get_pval_field(allele)] = censored_nbinom_pvalue(df[f'{allele}_counts'].to_numpy(), rs, p, ws, allele_tr)
-        else:
-            raise AssertionError
+            if modify_w:
+                ws = modify_w_nbinom(rs, p, ws, counts)
+            df[get_field_by_ftype(allele)] = censored_nbinom_pvalue(counts, rs, p, ws, allele_tr)
+            
+            if es_method == 'exp':
+                es_list = censored_nbinom_es(counts, rs, p, ws, allele_tr)
+            elif es_method == 'odds':
+                es_list = odds_es(counts, n, p, ws, allele_tr)
+            elif es_method == 'cons':
+                es_list = odds_es(counts, n, p, 1, allele_tr)
+            df[get_field_by_ftype(allele, 'es')] = es_list
     return df
 
 
@@ -94,13 +153,22 @@ if __name__ == '__main__':
     parser.add_argument('-O', help='File to save calculated p-value into')
     parser.add_argument('-s', help='Strategy for p-value calculation. One of "negbin", "binom"')
     parser.add_argument('--stats-file',
-        help='Path to file with fitted negative binomial distribution. Not required for "binom" strategy')
+        help='Path to file with fitted negative binomial distribution. Not required for "binom" strategy',
+        default='./')
     parser.add_argument('-a', type=int, help='Allelic reads threshold', default=5)
+    parser.add_argument('--es-method',
+        help='Method to calculate effect size. One of "exp", "odds", "cons"',
+        default='exp')
+    parser.add_argument('--recalc-w', help='Specify to recalculate w',
+        action=argparse.BooleanOptionalAction,
+        default=False)
     args = parser.parse_args()
     calc_pval_for_indiv(
         input_filename=args.I,
         output_filename=args.O,
         mode=args.s,
         stats_file=args.stats_file,
-        allele_tr=args.a
+        allele_tr=args.a,
+        es_method=args.es_method,
+        modify_w=args.recalc_w
     )
