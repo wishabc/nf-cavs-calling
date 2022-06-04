@@ -3,7 +3,7 @@ import os
 
 
 alleles = {'ref': 'alt', 'alt': 'ref'}
-starting_columns = ['#chr', 'start', 'end']
+starting_columns = ['#chr', 'start', 'end', 'ID']
 
 def make_bad_dir(fit_dir, bad):
     BAD = convert_frac_to_float(bad)
