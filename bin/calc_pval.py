@@ -114,11 +114,11 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             df[get_field_by_ftype(allele)] = censored_binom_pvalue(counts, n, p, ws, allele_tr)
 
             if es_method == 'exp':
-                es_list = binom_es(counts, n, p, ws, allele_tr)
+                es_list = binom_es(counts, n, p, ws)
             elif es_method == 'odds':
-                es_list = odds_es(counts, n, p, ws, allele_tr)
+                es_list = odds_es(counts, n, p, ws)
             elif es_method == 'cons':
-                es_list = odds_es(counts, n, p, 1, allele_tr)
+                es_list = odds_es(counts, n, p, 1)
             df[get_field_by_ftype(allele, 'es')] = es_list
         elif mode == 'negbin':
             if nb_params is None:
@@ -140,9 +140,9 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             if es_method == 'exp':
                 es_list = censored_nbinom_es(counts, rs, p, ws, allele_tr)
             elif es_method == 'odds':
-                es_list = odds_es(counts, n, p, ws, allele_tr)
+                es_list = odds_es(counts, n, p, ws)
             elif es_method == 'cons':
-                es_list = odds_es(counts, n, p, 1, allele_tr)
+                es_list = odds_es(counts, n, p, 1)
             df[get_field_by_ftype(allele, 'es')] = es_list
     return df
 
