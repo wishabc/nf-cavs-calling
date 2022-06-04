@@ -4,7 +4,7 @@ from helpers import alleles, get_field_by_ftype
 import argparse
 import numpy as np
 
-result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_field_by_ftype(allele) for allele in alleles]
+result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'BAD'] + [get_field_by_ftype(allele, ftype) for allele in alleles for ftype in ('es', 'pval')]
 
 
 # nbinom_dist
