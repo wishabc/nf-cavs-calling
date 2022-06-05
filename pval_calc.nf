@@ -62,6 +62,7 @@ process fit_nb {
     publishDir stats_dir
     tag "Fitting BAD: ${bad}"
     conda "/home/sabramov/miniconda3/envs/negbinfit"
+    cpus 2
     input:
         tuple val(bad), path(bad_annotations)
     output:
@@ -70,7 +71,7 @@ process fit_nb {
     out_path = './'
     """
     python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
-    negbin_fit -O ${out_path} -m NB_AS -R 500 -r 500
+    negbin_fit -O ${out_path} -m NB_AS -R 500 -r 500 --jobs ${task.cpus}
     """
 }
 
