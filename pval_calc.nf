@@ -60,7 +60,6 @@ process exclude_cavs {
 
 process fit_nb {
     publishDir stats_dir
-    cache false
     tag "Fitting BAD: ${bad}"
     conda "/home/sabramov/miniconda3/envs/negbinfit"
     input:
@@ -115,7 +114,7 @@ workflow calcPvalNegbin {
         stats_file
         output
     main:
-        pval_files = calculate_pvalue(data, stats_file.first(), 'negbin', output)
+        pval_files = calculate_pvalue(data, stats_file, 'negbin', output)
         agg_files = aggregate_pvals(pval_files, 'negbin', output)
     emit:
         pval_files
@@ -156,7 +155,7 @@ workflow fitNegBinom {
             keepHeader: true,
             storeDir: stats_dir)
     emit:   
-        fit
+        fit.first()
 }
 
 workflow aggregateAllPvalsBeforeCavs {
