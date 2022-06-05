@@ -16,9 +16,12 @@ def nbinom_sf(x, r, p, w):
 def nbinom_pmf(x, r, p, w):
     return w * nbinom.pmf(x, r, p) + (1 - w) * nbinom.pmf(x, r, 1 - p)
 
+def map_func_to_array(arr, func):
+    return arr * func(arr)
+
 def censored_nbinom_expectation(x, r, p, w, allele_tr):
-    print(nbinom_pmf(x, r, p, w))
-    return (r * ((1 - p) / p * w + (1 - w) * p / (1 - p)) - (np.tile(np.arange(5), (x.shape[0], 1)) * nbinom_pmf(x, r, p, w)).sum(axis=1)) / nbinom_sf(allele_tr - 1, r, p, w)
+    vector_map = np.vectorize(map_func_to_array)
+    return (r * ((1 - p) / p * w + (1 - w) * p / (1 - p)) - vector_map(np.dstack(np.tile(np.arange(5), (x.shape[0], 1))), lambda y: nbinom_pmf(y, r, p, w)).sum(axis=1)) / nbinom_sf(allele_tr - 1, r, p, w)
     
 def censored_nbinom_es(x, r, p, w, allele_tr):
     return np.log2(x / censored_nbinom_expectation(x, r, p, w, allele_tr))
