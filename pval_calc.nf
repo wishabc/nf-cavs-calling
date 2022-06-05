@@ -60,6 +60,7 @@ process exclude_cavs {
 
 process fit_nb {
     publishDir stats_dir
+    cache false
     tag "Fitting BAD: ${bad}"
     conda "/home/sabramov/miniconda3/envs/negbinfit"
     input:
