@@ -128,7 +128,7 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             merged = df.reset_index(drop=True).reset_index()\
             .merge(nb_params[nb_params.eval(f'allele == "{allele}"')],
              left_on=[f'{alleles[allele]}_counts', 'BAD'],
-             right_on=['fix_c', 'BAD'], sort=False, how='left')\
+             right_on=['fix_c', 'BAD'], sort=False, how='left', validate='m:1')\
             .sort_values('index')
             print(len(df.index), len(merged.index))
             merged.loc[merged.eval('gof > 0.05'), 'r'] = 0
