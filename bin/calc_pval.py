@@ -137,6 +137,7 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             ws = merged['w'].to_numpy()
             if modify_w:
                 ws = modify_w_nbinom(rs, p, ws, counts)
+            print(modify_w)
             df[get_field_by_ftype(allele)] = censored_nbinom_pvalue(counts, rs, p, ws, allele_tr)
             
             if es_method == 'exp':
