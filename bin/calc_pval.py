@@ -21,7 +21,7 @@ def map_func_to_array(arr, func):
 
 def censored_nbinom_expectation(x, r, p, w, allele_tr):
     #vector_map = np.vectorize(map_func_to_array)
-    return (r * ((1 - p) / p * w + (1 - w) * p / (1 - p)) - map_func_to_array(np.dstack(np.tile(np.arange(5), (x.shape[0], 1))), lambda y: nbinom_pmf(y, r, p, w)).sum(axis=1)) / nbinom_sf(allele_tr - 1, r, p, w)
+    return (r * ((1 - p) / p * w + (1 - w) * p / (1 - p)) - map_func_to_array(np.dstack(np.tile(np.arange(5), (x.shape[0], 1))), lambda y: nbinom_pmf(y, r, p, w)).sum(axis=0)) / nbinom_sf(allele_tr - 1, r, p, w)
     
 def censored_nbinom_es(x, r, p, w, allele_tr):
     return np.log2(x / censored_nbinom_expectation(x, r, p, w, allele_tr))
@@ -142,7 +142,6 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             if modify_w:
                 ws = modify_w_nbinom(rs, p, ws, counts)
             df[get_field_by_ftype(allele)] = censored_nbinom_pvalue(counts, rs, p, ws, allele_tr)
-            print('Calc es')
             if es_method == 'exp':
                 es_list = censored_nbinom_es(counts, rs, p, ws, allele_tr)
             elif es_method == 'odds':
