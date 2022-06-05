@@ -18,6 +18,7 @@ def nbinom_pmf(x, r, p, w):
 
 def map_func_to_array(arr, func):
     print(func(arr))
+    print(arr)
     return arr * func(arr)
 
 def censored_nbinom_expectation(x, r, p, w, allele_tr):
