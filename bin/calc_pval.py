@@ -144,7 +144,7 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
                 ws = modify_w_nbinom(rs, p, ws, counts)
             print(ws.shape, counts.shape, merged['fix_c'].to_numpy().shape, df[f'{allele}_counts'].to_numpy().shape)
             df[get_field_by_ftype(allele)] = censored_nbinom_pvalue(counts, rs, p, ws, allele_tr)
-            
+            print('Calc es')
             if es_method == 'exp':
                 es_list = censored_nbinom_es(counts, rs, p, ws, allele_tr)
             elif es_method == 'odds':
