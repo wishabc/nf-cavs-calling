@@ -125,12 +125,13 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
         elif mode == 'negbin':
             if nb_params is None:
                 raise ValueError('NB params are required for p-value calculations')
+            allele_params = nb_params[nb_params.eval(f'allele == "{allele}"')]
+            allele_params.loc[allele_params.eval('gof > 0.05'), 'r'] = 0
             merged = df.reset_index(drop=True).reset_index()\
-            .merge(nb_params[nb_params.eval(f'allele == "{allele}"')],
+            .merge(allele_params,
              left_on=[f'{alleles[allele]}_counts', 'BAD'],
              right_on=['fix_c', 'BAD'], sort=False, how='left')\
             .sort_values('index')
-            merged.loc[merged.eval('gof > 0.05'), 'r'] = 0
             merged.loc[merged.eval('r == 0'), 'w'] = 1
             merged.loc[merged.eval('r == 0'), 'r'] = merged.loc[merged.eval('r == 0'), 'fix_c']
             rs = merged['r'].to_numpy()
