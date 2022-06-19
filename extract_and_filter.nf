@@ -6,7 +6,6 @@ raw_vcfs_dir = params.outdir + '/raw_vcfs/'
 
 process extract_indiv_vcfs {
     tag "Extracting ${indiv_id}"
-    publishDir raw_vcfs_dir
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
@@ -23,13 +22,14 @@ process extract_indiv_vcfs {
 // BABACHI filter
 process filter_indiv_vcfs {
     tag "Filtering ${indiv_id}"
-    publishDir params.outdir + '/filtered_vcfs'
+    publishDir "${output_directory}"
 
     input:
 	    tuple val(indiv_id), path(indiv_vcf)
     output:
         tuple val(indiv_id), path(name)
     script:
+    output_directory = params.filteredVcfs ?: "${params.outdir}/filtered_vcfs"
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
     babachi filter ${indiv_vcf} -O ${name} -a ${param.alleleTr}
