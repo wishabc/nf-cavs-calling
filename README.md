@@ -6,7 +6,7 @@ Nextflow pipeline for BAD maps reconstruction from SNVs with BABACHI and calling
 - Nextflow (https://www.nextflow.io/)
 - bcftools (http://www.htslib.org/)
 - bedtools (https://bedtools.readthedocs.io/)
-- babachi (v2.0.14) (https://github.com/autosome-ru/BABACHI)
+- babachi (v2.0.14) (https://github.com/autosome-ru/BABACHI/tree/2.0-dev)
 
 
 
@@ -47,7 +47,7 @@ Following parameters should be present in ```babachi_params.config```. Each opti
     - ```indiv_id``` - unique individual ID; many samples can refer to one individual
     - ```ag_number``` - unique identifier of the sample in ```vcfFile```.<br><br>
 
-- ```states, prior, geometricPrior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI for more details,
+- ```states, prior, geometricPrior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/tree/2.0-dev for more details,
 - ```alleleTr``` - allelic reads threshold, SNVs with less than ```alleleTr``` reads on one of the alleles are filtered out
 - ```excludeFdrTr``` - FDR threshold below which SNVs are called CAVs and excluded from SNVs used for badmaps reestimation
 - ```esMethod``` - method of effect size calculation. Can be either ```exp``` (expectation), ```odds``` (calculated as odds ration) and ```cons``` (calculated with conservative model)
