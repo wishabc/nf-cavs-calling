@@ -6,7 +6,7 @@ Nextflow pipeline for BAD maps reconstruction from SNVs with BABACHI and calling
 - Nextflow (https://www.nextflow.io/)
 - bcftools (http://www.htslib.org/)
 - bedtools (https://bedtools.readthedocs.io/)
-- babachi (v2.0.14) (https://github.com/autosome-ru/BABACHI/tree/2.0-dev)
+- babachi (v2.0.17) (https://github.com/autosome-ru/BABACHI/tree/2.0-dev)
 
 
 
