@@ -14,7 +14,7 @@ Nextflow pipeline for BAD maps reconstruction from SNVs with BABACHI and calling
 Before using, fill in params paths in ```babachi_params.config```. Please find detailed explanation of the parameters in the [Config section](#config).
 
 The pipeline consists of several parts:
-- Extract and filter (time-consuming part, do only once and specify in ```params.filteredVCFs``` variable, see [Config section](#config))
+- Extract and filter (time-consuming part, do only once, output directory specify in ```params.filteredVCFs``` variable, see [Config section](#config))
 - BAD calling with BABACHI
 - P-value calculation, aggregation and FDR correction
 - CAVs filtering
