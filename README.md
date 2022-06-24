@@ -49,7 +49,7 @@ Following parameters should be present in ```babachi_params.config```. Each opti
 
 - ```states, prior, geometricPrior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/tree/2.0-dev for more details,
 - ```alleleTr``` - allelic reads threshold, SNVs with less than ```alleleTr``` reads on one of the alleles are filtered out
-- ```excludeFdrTr``` - FDR threshold below which SNVs are called CAVs and excluded from SNVs used for badmaps reestimation
-- ```esMethod``` - method of effect size calculation. Can be either ```exp``` (expectation), ```odds``` (calculated as odds ration) and ```cons``` (calculated with conservative model)
+- ```excludeFdrTr``` - FDR threshold below which SNVs are called CAVs and excluded from the set of SNVs used for badmaps reestimation
+- ```esMethod``` - method of effect size calculation. Can be either ```exp``` (calculated as expected value), ```odds``` (calculated as odds ration) and ```cons``` (calculated with conservative model)
 - ```recalcW``` - if true recalculates weights of the modes in the distributions mixture
 - ```fdrCovTr``` - coverage threshold. If <b>all</b> SNVs on the same position have <b>lower coverage</b> than specified, they are excluded from the analysis.
