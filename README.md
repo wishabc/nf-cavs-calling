@@ -14,12 +14,12 @@ Nextflow pipeline for BAD maps reconstruction from SNVs with BABACHI and calling
 Before using, fill in params paths in ```babachi_params.config```. Please find detailed explanation of the parameters in the [Config section](#config).
 
 The pipeline consists of several parts:
-- Extract and filter (time-consuming part, do only once and specify in ```params.filteredVCFs``` variable if additional runs are needed, see [Config section](#config))
+- Extract individual VCF files from ```all.vcf.gz``` and pre-filter SNVs for BABACHI
 - BAD calling with BABACHI
 - P-value calculation, aggregation and FDR correction
 - CAVs filtering
 - BAD calling on data with filtered out CAVs
-- P-value calculation with new BADmaps
+- P-value calculation with new BADmaps, aggregation and FDR correction
 
 To extract samples from ```all.vcf.gz``` file according to the ```indiv_id``` field of the metadata file (see ```samplesFile``` in the [Config section](#config)) and pre-filter calls for BABACHI:
 ```
@@ -47,9 +47,12 @@ Following parameters should be present in ```babachi_params.config```. Each opti
     - ```indiv_id``` - unique individual ID; many samples can refer to one individual
     - ```ag_number``` - unique identifier of the sample in ```vcfFile```.<br><br>
 
-- ```states, prior, geometricPrior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/tree/2.0-dev for more details,
 - ```alleleTr``` - allelic reads threshold, SNVs with less than ```alleleTr``` reads on one of the alleles are filtered out
+
+- ```fdrCovTr``` - coverage threshold. If <b>all</b> SNVs on the same position have <b>lower coverage</b> than specified, they are excluded from the analysis.
 - ```excludeFdrTr``` - FDR threshold below which SNVs are called CAVs and excluded from SNVs used for badmaps reestimation
+
+Advanced params, change only if you know what you are doing
+- ```states, prior, geometricPrior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/tree/2.0-dev for more details,
 - ```esMethod``` - method of effect size calculation. Can be either ```exp``` (expectation), ```odds``` (calculated as odds ration) and ```cons``` (calculated with conservative model)
 - ```recalcW``` - if true recalculates weights of the modes in the distributions mixture
-- ```fdrCovTr``` - coverage threshold. If <b>all</b> SNVs on the same position have <b>lower coverage</b> than specified, they are excluded from the analysis.
