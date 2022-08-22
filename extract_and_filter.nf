@@ -1,7 +1,6 @@
 #!/usr/bin/env nextflow
-include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
+include { get_file_by_indiv_id } from "./helpers"
 
-raw_vcfs_dir = "$params.outdir/raw_vcfs/"
 params.conda = "$moduleDir/environment.yml"
 
 process extract_indiv_vcfs {
@@ -22,7 +21,7 @@ process extract_indiv_vcfs {
 
 // BABACHI filter
 process filter_indiv_vcfs {
-    tag "Filtering ${indiv_id}"
+    tag "${indiv_id}"
     publishDir "${params.outdir}/filtered_vcfs"
     conda params.conda
 
@@ -86,34 +85,34 @@ workflow {
     extractAndFilter()
 }
 
-// Defunc
+// // Defunc
 // Extract each sample in separate file
-workflow extractAllSamples {
-    main:
-        ag_merge = Channel
-                .fromPath(params.samples_file)
-                .splitCsv(header:true, sep:'\t')
-                .map(row -> tuple(get_id_by_sample(row.indiv_id, row.ag_number), row.ag_number))
-        extractAggNumbers(ag_merge)
-    emit:
-        extractAggNumbers.out
-}
+// workflow extractAllSamples {
+//     main:
+//         ag_merge = Channel
+//                 .fromPath(params.samples_file)
+//                 .splitCsv(header:true, sep:'\t')
+//                 .map(row -> tuple(get_id_by_sample(row.indiv_id, row.ag_number), row.ag_number))
+//         extractAggNumbers(ag_merge)
+//     emit:
+//         extractAggNumbers.out
+// }
+// 
+// // Filter each sample with BABACHI
+// workflow filterAllSamples {
+//     main:
+//         ag_merge = Channel
+//                 .fromPath(params.samples_file)
+//                 .splitCsv(header:true, sep:'\t')
+//                 .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
+//                 .map(it -> tuple(it,
+//                  raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
+//         filter_indiv_vcfs(ag_merge)
+//     emit:
+//         filter_indiv_vcfs.out
 
-// Filter each sample with BABACHI
-workflow filterAllSamples {
-    main:
-        ag_merge = Channel
-                .fromPath(params.samples_file)
-                .splitCsv(header:true, sep:'\t')
-                .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
-                .map(it -> tuple(it,
-                 raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
-        filter_indiv_vcfs(ag_merge)
-    emit:
-        filter_indiv_vcfs.out
+// }
 
-}
-
-workflow extractAndFilterAllSamples {
-    extractAllSamples | filterAllSamples
-}
+// workflow extractAndFilterAllSamples {
+//     extractAllSamples | filterAllSamples
+// }

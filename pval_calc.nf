@@ -2,15 +2,16 @@
 include { get_file_by_indiv_id } from "./helpers"
 
 stats_dir = "${params.outdir}/stats"
+params.conda = "$moduleDir/environment.yml"
 
 def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
 }
 
 process calculate_pvalue {
-
-    tag "P-value calculation ${indiv_id}"
+    tag "${indiv_id}"
     publishDir "${params.outdir}/${output}pval_files_${strategy}"
+    conda params.conda
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
@@ -29,8 +30,9 @@ process calculate_pvalue {
 
 process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files_${strategy}"
-
+    conda params.conda
     cpus 3
+
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
@@ -46,6 +48,8 @@ process aggregate_pvals {
 
 process exclude_cavs {
     publishDir "${params.outdir}/excluded_cavs"
+    conda params.conda
+    
     input:
         tuple val(indiv_id), path(bad_annotations), path(agg_vcf)
     output:
@@ -59,8 +63,10 @@ process exclude_cavs {
 
 process fit_nb {
     publishDir "${params.outdir}/stats"
-    tag "Fitting BAD: ${bad}"
+    tag "${bad}"
     cpus 2
+    conda params.conda
+
     input:
         tuple val(bad), path(bad_annotations)
     output:
@@ -75,6 +81,8 @@ process fit_nb {
 
 process add_cavs {
     publishDir "${params.outdir}/added_cavs"
+    conda params.conda
+
     input:
         tuple val(indiv_id), path(new_badmap), path(old_badmap)
     output:
