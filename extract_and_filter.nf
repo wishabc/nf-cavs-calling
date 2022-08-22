@@ -1,11 +1,12 @@
 #!/usr/bin/env nextflow
 include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
-raw_vcfs_dir = params.outdir + '/raw_vcfs/'
-
+raw_vcfs_dir = "$params.outdir/raw_vcfs/"
+params.conda = "$moduleDir/environment.yml"
 
 process extract_indiv_vcfs {
-    tag "Extracting ${indiv_id}"
+    tag "${indiv_id}"
+    conda params.conda
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
@@ -22,18 +23,37 @@ process extract_indiv_vcfs {
 // BABACHI filter
 process filter_indiv_vcfs {
     tag "Filtering ${indiv_id}"
-    publishDir "${output_directory}"
+    publishDir "${params.outdir}/filtered_vcfs"
+    conda params.conda
 
     input:
 	    tuple val(indiv_id), path(indiv_vcf)
     output:
         tuple val(indiv_id), path(name)
     script:
-    output_directory = params.filteredVcfs ?: "${params.outdir}/filtered_vcfs"
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
     babachi filter ${indiv_vcf} -O ${name} -a ${param.alleleTr}
     """
+}
+
+process extend_metadata {
+    publishDir params.outdir
+    conda params.conda
+
+	input:
+		tuple val(indiv_id), path(bed_files)
+
+	output:
+		path name
+
+	script:
+	name = 'metadata+filtered_vcfs.txt'
+	column = ['filtered_vcf', *bed_files].join('\n')
+	"""
+	echo "${column}" > columns.txt
+	paste ${params.samples_file} columns.txt > ${name}
+	"""
 }
 
 // Extract samples by map file
@@ -51,12 +71,12 @@ workflow extractAggNumbers {
 workflow extractAndFilter {
     main:
         sample_ag_merge = Channel
-                .fromPath(params.samplesFile)
+                .fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
                 .map{ row -> tuple(row.indiv_id, row.ag_number) }
                 .groupTuple(by:0)
                 .map{ it -> tuple(it[0], it[1].join(",")) }
-        extractAggNumbers(sample_ag_merge) | filter_indiv_vcfs 
+        extractAggNumbers(sample_ag_merge) | filter_indiv_vcfs | extend_metadata
     emit:
         filter_indiv_vcfs.out
 }
@@ -66,12 +86,12 @@ workflow {
     extractAndFilter()
 }
 
-
+// Defunc
 // Extract each sample in separate file
 workflow extractAllSamples {
     main:
         ag_merge = Channel
-                .fromPath(params.samplesFile)
+                .fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
                 .map(row -> tuple(get_id_by_sample(row.indiv_id, row.ag_number), row.ag_number))
         extractAggNumbers(ag_merge)
@@ -83,7 +103,7 @@ workflow extractAllSamples {
 workflow filterAllSamples {
     main:
         ag_merge = Channel
-                .fromPath(params.samplesFile)
+                .fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
                 .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
                 .map(it -> tuple(it,

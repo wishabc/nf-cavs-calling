@@ -1,5 +1,5 @@
 def get_stats_dir() {
-    stats_dir = params.outdir + '/stats'
+    stats_dir = "${params.outdir}/stats"
 }
 def get_file_by_indiv_id(ind, file_type) {
     switch (file_type) {

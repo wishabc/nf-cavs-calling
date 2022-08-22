@@ -1,20 +1,13 @@
 #!/usr/bin/env nextflow
 include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
-
-def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
-    file = get_file_by_indiv_id(indiv_id, "filter")
-    if (filtered_vcf_path != '') {
-        return "${filtered_vcf_path}/${file}"
-    } else {
-        return file
-    }
-}
+params.conda = "$moduleDir/environment.yml"
 
 process apply_babachi {
 	cpus 2
     tag "BABACHI ${indiv_id}"
     publishDir "${params.outdir}/${outpath}badmaps"
+    conda params.conda
 
 	input:
 		tuple val(indiv_id), path(snps_file)
@@ -33,6 +26,8 @@ process apply_babachi {
 process intersect_with_snps {
     tag "Annotating SNPs ${indiv_id}"
     publishDir "${params.outdir}/${outpath}intersect"
+    conda params.conda
+
 	input:
 		tuple val(indiv_id), path(snps_file), path(badmap_file)
         val outpath
@@ -73,8 +68,11 @@ workflow estimateBadByIndiv {
     main:
         filtered_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
-        .map(row -> tuple(row.indiv_id,
-            get_filtered_vcf_path(params.filteredVcfs, row.indiv_id))
+        .map(
+            row -> tuple(
+                row.indiv_id,
+                row.filtered_sites_file
+                )
             )
         .distinct()
 
@@ -89,17 +87,23 @@ workflow estimateBadByIndiv {
 }
 
 workflow {
-    if (params.filteredVcfs == "") {
-        params.filteredVcfs = "${params.outdir}/filtered_vcfs"
-    }
     estimateBadByIndiv()
 }
 
-workflow estimateBadBySample {
-    filtered_vcfs = Channel.fromPath(params.samplesFile)
-    .splitCsv(header:true, sep:'\t')
-    .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
-    .map(it -> tuple(it,
-        get_filtered_vcf_path(params.filteredVcfs, it)))
-    estimateBadAndIntersect(filtered_vcfs)
-}
+// Defunc
+// def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
+//     file = get_file_by_indiv_id(indiv_id, "filter")
+//     if (filtered_vcf_path != '') {
+//         return "${filtered_vcf_path}/${file}"
+//     } else {
+//         return file
+//     }
+// }
+// workflow estimateBadBySample {
+//     filtered_vcfs = Channel.fromPath(params.samplesFile)
+//     .splitCsv(header:true, sep:'\t')
+//     .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
+//     .map(it -> tuple(it,
+//         get_filtered_vcf_path(params.filteredVcfs, it)))
+//     estimateBadAndIntersect(filtered_vcfs)
+// }

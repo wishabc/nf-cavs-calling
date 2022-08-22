@@ -1,8 +1,7 @@
 #!/usr/bin/env nextflow
-include { get_file_by_indiv_id; get_stats_dir } from "./helpers"
+include { get_file_by_indiv_id } from "./helpers"
 
-
-stats_dir = get_stats_dir()
+stats_dir = "${params.outdir}/stats"
 
 def get_snp_annotation_file_by_id(indiv_id) {
     return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
@@ -24,7 +23,7 @@ process calculate_pvalue {
     script:
     name = get_file_by_indiv_id(indiv_id, "pvalue")
     """
-    python3 $baseDir/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} --es-method ${params.esMethod} ${params.recalcW ? "--recalc-w" : ""}
+    python3 $moduleDir/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} --es-method ${params.esMethod} ${params.recalcW ? "--recalc-w" : ""}
     """
 }
 
@@ -41,7 +40,7 @@ process aggregate_pvals {
     script:
     name = get_file_by_indiv_id(indiv_id, "aggregation")
     """
-    python3 $baseDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
+    python3 $moduleDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
     """
 }
 
@@ -54,12 +53,12 @@ process exclude_cavs {
     script:
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
-    python3 $baseDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
+    python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
     """
 }
 
 process fit_nb {
-    publishDir stats_dir
+    publishDir "${params.outdir}/stats"
     tag "Fitting BAD: ${bad}"
     cpus 2
     input:
@@ -69,7 +68,7 @@ process fit_nb {
     script:
     out_path = './'
     """
-    python3 $baseDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
+    python3 $moduleDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
     negbin_fit -O ${out_path} -m NB_AS -R 500 -r 500 --jobs ${task.cpus}
     """
 }
@@ -83,7 +82,7 @@ process add_cavs {
     script:
     name = get_file_by_indiv_id(indiv_id, "add_cavs")
     """
-    python3 $baseDir/bin/add_cavs.py -n ${new_badmap} -o ${old_badmap} --output ${name}
+    python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} -o ${old_badmap} --output ${name}
     """
 }
 
@@ -135,16 +134,6 @@ workflow callCavsFromVcfsBinom {
         no_cavs_snps
 }
 
-workflow callCavs {
-    extracted_vcfs = Channel.fromPath(params.samplesFile)
-        .splitCsv(header:true, sep:'\t')
-        .map(row -> row.indiv_id)
-        .distinct()
-        .map( indiv_id -> tuple(indiv_id, get_snp_annotation_file_by_id(indiv_id)))
-        
-    callCavsFromVcfs(extracted_vcfs)
-}
-
 workflow fitNegBinom {
     take:
         bad_merge_file
@@ -189,6 +178,17 @@ workflow aggregateAllPvalsBinom {
             storeDir: stats_dir).first())
         aggregate_pvals(all_pvals, 'binom', 'all_')
 }
+
+workflow callCavs {
+    extracted_vcfs = Channel.fromPath(params.samplesFile)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> row.indiv_id)
+        .distinct()
+        .map(indiv_id -> tuple(indiv_id, get_snp_annotation_file_by_id(indiv_id)))
+        
+    callCavsFromVcfsBinom(extracted_vcfs)
+}
+
 
 workflow {
     callCavs()
