@@ -39,7 +39,7 @@ There are two config files in the repository.
 Following parameters should be present in ```babachi_params.config```. Each option can be specified either in ```babachi_params.config``` file or in command line using double dash (```--```) before the param name (e.g. ```--vcfFile```).
 - ```vcfFile``` - path to input ```all.vcf.gz``` file with SNVs called in all samples
 
-- ```outdir``` - directory to save results into. Should exist
+- ```outdir``` - directory to save results into.
 
 - ```filteredVcfs``` - directory for results of ```extract_and_filter.nf``` script. If ```filteredVcfs``` is null or empty string, saves results to ```outdir```
 
