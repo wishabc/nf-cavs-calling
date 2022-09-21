@@ -68,7 +68,7 @@ workflow estimateBadByIndiv {
     main:
         filtered_vcfs = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.indiv_id, row.snps_file)).filter { it[1].size() > 0 }
+            .map(row -> tuple(row.indiv_id, file(row.snps_file))).filter { it[1].countLines() > 0 }
 
         badmaps_map = estimateBad(filtered_vcfs, '') 
         badmaps_and_snps = filtered_vcfs.join(
