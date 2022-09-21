@@ -66,15 +66,9 @@ workflow intersectWithBadmap {
 
 workflow estimateBadByIndiv {
     main:
-        filtered_vcfs = Channel.fromPath(params.samplesFile)
-        .splitCsv(header:true, sep:'\t')
-        .map(
-            row -> tuple(
-                row.indiv_id,
-                row.filtered_sites_file
-                )
-            )
-        .distinct()
+        filtered_vcfs = Channel.fromPath(params.samples_file)
+            .splitCsv(header:true, sep:'\t')
+            .map(row -> tuple(row.indiv_id, row.snps_file))
 
         badmaps_map = estimateBad(filtered_vcfs, '') 
         badmaps_and_snps = filtered_vcfs.join(
