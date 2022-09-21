@@ -18,6 +18,7 @@ process calculate_pvalue {
         path stats_file
         val strategy
         val output
+
     output:
         tuple val(indiv_id), path(name)
 
@@ -191,7 +192,7 @@ workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map(row -> row.indiv_id)
-        .distinct()
+        .inuque()
         .map(indiv_id -> tuple(indiv_id, get_snp_annotation_file_by_id(indiv_id)))
         
     callCavsFromVcfsBinom(extracted_vcfs)

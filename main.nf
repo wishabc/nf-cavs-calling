@@ -8,7 +8,7 @@ workflow {
     filtered_vcfs_and_intersect = estimateBadByIndiv()
     filtered_vcfs = filtered_vcfs_and_intersect[0]
     intersect_files = filtered_vcfs_and_intersect[1]
-
+    filtered_vcfs.take(3).view()
     // Exclude 1-st round CAVs 
     no_cavs_snps = callCavsFromVcfsBinom(intersect_files)
 
