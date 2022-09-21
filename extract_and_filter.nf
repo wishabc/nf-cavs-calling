@@ -32,27 +32,8 @@ process filter_indiv_vcfs {
     script:
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
-    babachi filter ${indiv_vcf} -O ${name} -a ${param.alleleTr}
+    babachi filter ${indiv_vcf} -O ${name} -a ${params.alleleTr}
     """
-}
-
-process extend_metadata {
-    publishDir params.outdir
-    conda params.conda
-
-	input:
-		tuple val(indiv_id), path(bed_files)
-
-	output:
-		path name
-
-	script:
-	name = 'metadata+filtered_vcfs.txt'
-	column = ['filtered_vcf', *bed_files].join('\n')
-	"""
-	echo "${column}" > columns.txt
-	paste ${params.samples_file} columns.txt > ${name}
-	"""
 }
 
 // Extract samples by map file
@@ -75,7 +56,7 @@ workflow extractAndFilter {
                 .map{ row -> tuple(row.indiv_id, row.ag_number) }
                 .groupTuple(by:0)
                 .map{ it -> tuple(it[0], it[1].join(",")) }
-        extractAggNumbers(sample_ag_merge) | filter_indiv_vcfs | extend_metadata
+        extractAggNumbers(sample_ag_merge) | filter_indiv_vcfs
     emit:
         filter_indiv_vcfs.out
 }
@@ -84,35 +65,3 @@ workflow extractAndFilter {
 workflow {
     extractAndFilter()
 }
-
-// // Defunc
-// Extract each sample in separate file
-// workflow extractAllSamples {
-//     main:
-//         ag_merge = Channel
-//                 .fromPath(params.samples_file)
-//                 .splitCsv(header:true, sep:'\t')
-//                 .map(row -> tuple(get_id_by_sample(row.indiv_id, row.ag_number), row.ag_number))
-//         extractAggNumbers(ag_merge)
-//     emit:
-//         extractAggNumbers.out
-// }
-// 
-// // Filter each sample with BABACHI
-// workflow filterAllSamples {
-//     main:
-//         ag_merge = Channel
-//                 .fromPath(params.samples_file)
-//                 .splitCsv(header:true, sep:'\t')
-//                 .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
-//                 .map(it -> tuple(it,
-//                  raw_vcfs_dir + get_filtered_file_by_indiv_id(it, 'vcf')))
-//         filter_indiv_vcfs(ag_merge)
-//     emit:
-//         filter_indiv_vcfs.out
-
-// }
-
-// workflow extractAndFilterAllSamples {
-//     extractAllSamples | filterAllSamples
-// }
