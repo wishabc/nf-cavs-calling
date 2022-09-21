@@ -49,9 +49,9 @@ workflow estimateBad {
         extracted_vcfs
         outpath
     main:
-        apply_babachi(extracted_vcfs, outpath)
+        out = apply_babachi(extracted_vcfs.filter { it[1].countLines() > 1 }, outpath).filter { it[1].countLines() > 1 }
     emit:
-        apply_babachi.out
+        out
 }
 
 workflow intersectWithBadmap {
@@ -59,22 +59,22 @@ workflow intersectWithBadmap {
         badmaps_and_snps
         outpath
     main:
-        intersect_with_snps(badmaps_and_snps, outpath)
+        out = intersect_with_snps(badmaps_and_snps, outpath).filter { it[1].countLines() > 1 }
     emit:
-        intersect_with_snps.out
+        out
 }
 
 workflow estimateBadByIndiv {
     main:
         filtered_vcfs = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.indiv_id, file(row.snps_file))).filter { it[1].countLines() > 0 }
+            .map(row -> tuple(row.indiv_id, file(row.snps_file)))
 
         badmaps_map = estimateBad(filtered_vcfs, '') 
         badmaps_and_snps = filtered_vcfs.join(
             badmaps_map
         )
-        out = intersectWithBadmap(badmaps_and_snps, '').filter { it[1].countLines() > 0 }
+        out = intersectWithBadmap(badmaps_and_snps, '')
 
     emit:
         filtered_vcfs
