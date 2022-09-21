@@ -41,7 +41,7 @@ process aggregate_pvals {
     output:
         tuple val(indiv_id), path(name)
     script:
-    name = "${ind}.aggregation.bed"
+    name = "${indiv_id}.aggregation.bed"
     """
     python3 $moduleDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
     """

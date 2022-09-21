@@ -74,7 +74,8 @@ workflow estimateBadByIndiv {
         badmaps_and_snps = filtered_vcfs.join(
             badmaps_map
         )
-        out = intersectWithBadmap(badmaps_and_snps, '')
+        out = intersectWithBadmap(badmaps_and_snps, '').filter { it[1].countLines() > 0 }
+
     emit:
         filtered_vcfs
         out
