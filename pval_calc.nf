@@ -43,6 +43,9 @@ process aggregate_pvals {
     script:
     name = "${indiv_id}.aggregation.bed"
     """
+    export OPENBLAS_NUM_THREADS=${task.cpus}
+    export GOTO_NUM_THREADS=${task.cpus}
+    export OMP_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
     """
 }
