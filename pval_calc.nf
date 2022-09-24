@@ -56,11 +56,14 @@ process exclude_cavs {
     
     input:
         tuple val(indiv_id), path(bad_annotations), path(agg_vcf)
+
     output:
         tuple val(indiv_id), path(name)
+
     script:
     name = get_file_by_indiv_id(indiv_id, "filter")
     """
+    export OPENBLAS_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
     """
 }
