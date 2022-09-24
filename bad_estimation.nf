@@ -84,21 +84,3 @@ workflow estimateBadByIndiv {
 workflow {
     estimateBadByIndiv()
 }
-
-// Defunc
-// def get_filtered_vcf_path(filtered_vcf_path, indiv_id) {
-//     file = get_file_by_indiv_id(indiv_id, "filter")
-//     if (filtered_vcf_path != '') {
-//         return "${filtered_vcf_path}/${file}"
-//     } else {
-//         return file
-//     }
-// }
-// workflow estimateBadBySample {
-//     filtered_vcfs = Channel.fromPath(params.samplesFile)
-//     .splitCsv(header:true, sep:'\t')
-//     .map(row -> get_id_by_sample(row.indiv_id, row.ag_number))
-//     .map(it -> tuple(it,
-//         get_filtered_vcf_path(params.filteredVcfs, it)))
-//     estimateBadAndIntersect(filtered_vcfs)
-// }
