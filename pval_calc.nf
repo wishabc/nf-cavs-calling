@@ -1,12 +1,7 @@
 #!/usr/bin/env nextflow
-include { get_file_by_indiv_id } from "./helpers"
 
 stats_dir = "${params.outdir}/stats"
 params.conda = "$moduleDir/environment.yml"
-
-def get_snp_annotation_file_by_id(indiv_id) {
-    return "${params.outdir}/snp_annotation/" + get_file_by_indiv_id(indiv_id, "intersect")
-}
 
 process calculate_pvalue {
     tag "${indiv_id}"
@@ -32,14 +27,17 @@ process calculate_pvalue {
 process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files_${strategy}"
     conda params.conda
+    tag "${indiv_id}"
     cpus 3
 
     input:
         tuple val(indiv_id), path(pval_vcf)
         val strategy
         val output
+
     output:
         tuple val(indiv_id), path(name)
+
     script:
     name = "${indiv_id}.aggregation.bed"
     """
@@ -53,6 +51,7 @@ process aggregate_pvals {
 process exclude_cavs {
     publishDir "${params.outdir}/excluded_cavs"
     conda params.conda
+    tag "${indiv_id}"
     
     input:
         tuple val(indiv_id), path(bad_annotations), path(agg_vcf)
@@ -61,7 +60,7 @@ process exclude_cavs {
         tuple val(indiv_id), path(name)
 
     script:
-    name = get_file_by_indiv_id(indiv_id, "filter")
+    name = "${indiv_id}.snps.bed"
     """
     export OPENBLAS_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
@@ -76,8 +75,10 @@ process fit_nb {
 
     input:
         tuple val(bad), path(bad_annotations)
+
     output:
         path "BAD*/weights_*.tsv"
+
     script:
     out_path = './'
     """
@@ -89,13 +90,16 @@ process fit_nb {
 process add_cavs {
     publishDir "${params.outdir}/added_cavs"
     conda params.conda
+    tag "${indiv_id}"
 
     input:
         tuple val(indiv_id), path(new_badmap), path(old_badmap)
+
     output:
         tuple val(indiv_id), path(name)
+
     script:
-    name = get_file_by_indiv_id(indiv_id, "add_cavs")
+    name = "${indiv_id}.added_cavs.intersect.bed"
     """
     python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} -o ${old_badmap} --output ${name}
     """
@@ -198,8 +202,8 @@ workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)
         .splitCsv(header:true, sep:'\t')
         .map(row -> row.indiv_id)
-        .inuque()
-        .map(indiv_id -> tuple(indiv_id, get_snp_annotation_file_by_id(indiv_id)))
+        .unique()
+        .map(indiv_id -> tuple(indiv_id, "${params.outdir}/snp_annotation/${indiv_id}*"))
         
     callCavsFromVcfsBinom(extracted_vcfs)
 }

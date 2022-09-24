@@ -36,8 +36,8 @@ There are two config files in the repository.
 - ```nextflow.config``` - contains enviornment configuration. Detailed explanation can be found at https://www.nextflow.io/docs/latest/config.html. 
 - ```babachi_params.config``` - specifies thresholds and paths to input files.
 
-Following parameters should be present in ```babachi_params.config```. Each option can be specified either in ```babachi_params.config``` file or in command line using double dash (```--```) before the param name (e.g. ```--vcfFile```).
-- ```vcfFile``` - path to input ```all.vcf.gz``` file with SNVs called in all samples
+Following parameters should be present in ```babachi_params.config```. Each option can be specified either in ```babachi_params.config``` file or in command line using double dash (```--```) before the param name (e.g. ```--vcf_file```).
+- ```vcf_file``` - path to input ```all.vcf.gz``` file with SNVs called in all samples
 
 - ```outdir``` - directory to save results into.
 
@@ -45,16 +45,16 @@ Following parameters should be present in ```babachi_params.config```. Each opti
 
 - ```samplesFile``` - tab-delimited file with metadata for samples. The file must contain a header and the following columns (other columns are permitted and ignored)
     - ```indiv_id``` - unique individual ID; many samples can refer to one individual
-    - ```ag_number``` - unique identifier of the sample in ```vcfFile```.<br><br>
+    - ```ag_number``` - unique identifier of the sample in ```vcf_file```.<br><br>
 
-- ```alleleTr``` - allelic reads threshold, SNVs with less than ```alleleTr``` reads on one of the alleles are filtered out
+- ```allele_tr``` - allelic reads threshold, SNVs with less than ```allele_tr``` reads on one of the alleles are filtered out
 
 - ```fdrCovTr``` - coverage threshold. If <b>all</b> SNVs on the same position have <b>lower coverage</b> than specified, they are excluded from the analysis.
 
 - ```excludeFdrTr``` - FDR threshold below which SNVs are called CAVs and excluded from the set of SNVs used for badmaps reestimation
 
 Advanced params, change only if you know what you are doing
-- ```states, prior, geometricPrior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/tree/2.0-dev for more details,
+- ```states, prior, geometric_prior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/tree/2.0-dev for more details,
 
 - ```esMethod``` - method of effect size calculation. Can be either ```exp``` (calculated as expected value), ```odds``` (calculated as odds ration) and ```cons``` (calculated with conservative model)
 - ```recalcW``` - if true recalculates weights of the modes in the distributions mixture

@@ -1,11 +1,10 @@
 #!/usr/bin/env nextflow
-include { get_file_by_indiv_id; get_id_by_sample } from "./helpers"
 
 params.conda = "$moduleDir/environment.yml"
 
 process apply_babachi {
 	cpus 2
-    tag "BABACHI ${indiv_id}"
+    tag "${indiv_id}"
     publishDir "${params.outdir}/${outpath}badmaps"
     conda params.conda
 
@@ -16,15 +15,15 @@ process apply_babachi {
 		tuple val(indiv_id), path(name)
 
 	script:
-    name = get_file_by_indiv_id(indiv_id, "badmap")
+    name = "${indiv_id}.bad.bed"
 	"""
-    babachi ${snps_file} -O ${name} -j ${task.cpus} -p ${params.prior} -s ${params.states} -a ${params.alleleTr} --geometric-prior ${params.geometricPrior}
+    babachi ${snps_file} -O ${name} -j ${task.cpus} -p ${params.prior} -s ${params.states} -a ${params.allele_tr} --geometric-prior ${params.geometric_prior}
 	"""
 }
 
 
 process intersect_with_snps {
-    tag "Annotating SNPs ${indiv_id}"
+    tag "${indiv_id}"
     publishDir "${params.outdir}/${outpath}intersect"
     conda params.conda
 
@@ -35,7 +34,7 @@ process intersect_with_snps {
         tuple val(indiv_id), path(name)
 
 	script:
-    name = get_file_by_indiv_id(indiv_id, "${outpath}intersect")
+    name = "${indiv_id}.${outpath}intersect.bed"
 	"""
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\t%" > ${name}
     if [[ \$(wc -l <${snps_file}) -ge 2 ]]; then
@@ -71,9 +70,7 @@ workflow estimateBadByIndiv {
             .map(row -> tuple(row.indiv_id, file(row.snps_file)))
 
         badmaps_map = estimateBad(filtered_vcfs, '') 
-        badmaps_and_snps = filtered_vcfs.join(
-            badmaps_map
-        )
+        badmaps_and_snps = filtered_vcfs.join(badmaps_map)
         out = intersectWithBadmap(badmaps_and_snps, '')
 
     emit:
