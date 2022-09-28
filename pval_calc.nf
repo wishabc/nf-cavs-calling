@@ -119,7 +119,7 @@ workflow calcPvalBinom {
         data
         output
     main:
-        pval_files = calculate_pvalue(data, file("./"), 'binom', output)
+        pval_files = calculate_pvalue(data, "${projectDir}", 'binom', output)
         agg_files = aggregate_pvals(pval_files, 'binom', output)
     emit:
         pval_files
