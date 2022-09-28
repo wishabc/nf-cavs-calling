@@ -54,7 +54,7 @@ workflow estimateBadByIndiv {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.indiv_id, file(row.snps_file)))
 
-        badmaps_map = estimateBad(filtered_vcfs, prefix) 
+        out = estimateBad(filtered_vcfs, prefix) 
     emit:
         filtered_vcfs
         out
