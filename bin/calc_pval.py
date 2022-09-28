@@ -114,9 +114,11 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
     for allele in alleles:
         counts = df[f'{allele}_counts'].to_numpy()
         if mode == 'binom':
-            ws = np.full(counts.shape, 1, dtype=np.float128)
+            ws = np.full(counts.shape, 0.5, dtype=np.float128)
             if modify_w:
                 ws = modify_w_binom(n, p, ws, counts)
+            else:
+                ws = np.full(counts.shape, 1, dtype=np.float128)
             df[f'w_{allele}'] = ws
             df[get_field_by_ftype(allele)] = censored_binom_pvalue(counts, n, p, ws, allele_tr)
 
