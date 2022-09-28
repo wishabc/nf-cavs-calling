@@ -4,7 +4,7 @@ from helpers import alleles, get_field_by_ftype
 import argparse
 import numpy as np
 
-result_ftypes = ('es', 'pval')
+result_ftypes = ('es', 'pval', 'w')
 result_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt', 'ref_counts', 'alt_counts', 'sample_id', 'BAD'] + [get_field_by_ftype(allele, ftype) for allele in alleles for ftype in result_ftypes]
 
 
@@ -119,7 +119,7 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
                 ws = modify_w_binom(n, p, ws, counts)
             else:
                 ws = np.full(counts.shape, 1, dtype=np.float128)
-            df[f'w_{allele}'] = ws
+            df[get_field_by_ftype(allele, 'w')] = ws
             df[get_field_by_ftype(allele)] = censored_binom_pvalue(counts, n, p, ws, allele_tr)
 
             if es_method == 'exp':

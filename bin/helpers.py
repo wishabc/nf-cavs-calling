@@ -53,6 +53,8 @@ def get_field_by_ftype(allele, ftype='pval'):
         return f'pval_{allele}'
     elif ftype == 'es':
         return f'es_{allele}'
+    elif ftype == 'w':
+        return f'w_{allele}'
     elif ftype == 'pval-ag':
         return f'logit_pval_{allele}'
     elif ftype == 'es-ag':
