@@ -20,7 +20,6 @@ process calculate_pvalue {
     script:
     name = "${indiv_id}.pvalue.bed"
     """
-    echo "calc pval"
     python3 $moduleDir/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} --es-method ${params.esMethod} ${params.recalcW ? "--recalc-w" : ""}
     """
 }
@@ -50,7 +49,6 @@ process aggregate_pvals {
 }
 
 process exclude_cavs {
-    publishDir "${params.outdir}/excluded_cavs"
     conda params.conda
     tag "${indiv_id}"
     
@@ -118,7 +116,7 @@ workflow addImputedCavs {
 workflow calcPvalBinom {
     take:
         data
-        output
+        prefix
     main:
         pval_files = calculate_pvalue(data, "${projectDir}", 'binom', output)
         agg_files = aggregate_pvals(pval_files, 'binom', output)
@@ -127,77 +125,77 @@ workflow calcPvalBinom {
         agg_files
 }
 
-workflow calcPvalNegbin {
-    take:
-        data
-        stats_file
-        output
-    main:
-        pval_files = calculate_pvalue(data, stats_file, 'negbin', output)
-        agg_files = aggregate_pvals(pval_files, 'negbin', output)
-    emit:
-        pval_files
-}
+// workflow calcPvalNegbin {
+//     take:
+//         data
+//         stats_file
+//         output
+//     main:
+//         pval_files = calculate_pvalue(data, stats_file, 'negbin', output)
+//         agg_files = aggregate_pvals(pval_files, 'negbin', output)
+//     emit:
+//         pval_files
+// }
 
 
 
 workflow callCavsFromVcfsBinom {
     take:
         bad_annotations
+        prefix
     main:
-        pval_agg_files = calcPvalBinom(bad_annotations, '')
+        pval_agg_files = calcPvalBinom(bad_annotations, prefix)
         agg_files = pval_agg_files[1]
-        //aggregateAllPvalsBeforeCavs(pval_agg_files[0])
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
     emit:
         no_cavs_snps
 }
 
-workflow fitNegBinom {
-    take:
-        bad_merge_file
-    main:
-        fit_dir = fit_nb(bad_merge_file)
-        fit = fit_dir.collectFile(
-            name: 'negbin_fit_params.tsv',
-            keepHeader: true,
-            storeDir: stats_dir)
-    emit:   
-        fit.first()
-}
+// workflow fitNegBinom {
+//     take:
+//         bad_merge_file
+//     main:
+//         fit_dir = fit_nb(bad_merge_file)
+//         fit = fit_dir.collectFile(
+//             name: 'negbin_fit_params.tsv',
+//             keepHeader: true,
+//             storeDir: stats_dir)
+//     emit:   
+//         fit.first()
+// }
 
-workflow aggregateAllPvalsBeforeCavs {
-        take:
-        vcf_tuples
-    main:
-        all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
-            name: "ALL.pvals.binom.beforecavs.bed",
-            keepHeader: true,
-            storeDir: stats_dir).first())
-        aggregate_pvals(all_pvals, 'binom', 'beforecavs_')
-}
-workflow aggregateAllPvalsNegbin {
-    take:
-        vcf_tuples
-    main:
-        all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
-            name: "ALL.pvals.negbin.bed",
-            keepHeader: true,
-            storeDir: stats_dir).first())
-        aggregate_pvals(all_pvals, 'negbin', 'all_')
-}
+// workflow aggregateAllPvalsBeforeCavs {
+//         take:
+//         vcf_tuples
+//     main:
+//         all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
+//             name: "ALL.pvals.binom.beforecavs.bed",
+//             keepHeader: true,
+//             storeDir: stats_dir).first())
+//         aggregate_pvals(all_pvals, 'binom', 'beforecavs_')
+// }
+// workflow aggregateAllPvalsNegbin {
+//     take:
+//         vcf_tuples
+//     main:
+//         all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
+//             name: "ALL.pvals.negbin.bed",
+//             keepHeader: true,
+//             storeDir: stats_dir).first())
+//         aggregate_pvals(all_pvals, 'negbin', 'all_')
+// }
 
-workflow aggregateAllPvalsBinom {
-    take:
-        vcf_tuples
-    main:
-        all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
-            name: "ALL.pvals.binom.bed",
-            keepHeader: true,
-            storeDir: stats_dir).first())
-        aggregate_pvals(all_pvals, 'binom', 'all_')
-}
+// workflow aggregateAllPvalsBinom {
+//     take:
+//         vcf_tuples
+//     main:
+//         all_pvals = Channel.of('ALL').combine(vcf_tuples.map(it -> it[1]).collectFile(
+//             name: "ALL.pvals.binom.bed",
+//             keepHeader: true,
+//             storeDir: stats_dir).first())
+//         aggregate_pvals(all_pvals, 'binom', 'all_')
+// }
 
 workflow callCavs {
     extracted_vcfs = Channel.fromPath(params.samplesFile)

@@ -81,10 +81,8 @@ def modify_w_binom(n, p, ws, counts):
 
 
 # Both negbin and binom
-def odds_es(x, n, p, w):
-    return np.log2(
-        x / ((n - x) * ((1 - p) / p * w + (1 - w) * p / (1 - p)))
-    )
+def odds_es(x, n, BAD, w):
+    return np.log2(x) - np.log2(n - x) + (1 - 2 * w) * np.log2(BAD) # w * np.log2(OR / BAD) + (1 - w) * np.log2(OR * BAD)
 
 def recalc_ws(ws, p1, p2):
     idx = (ws != 1) & (ws != 0)
@@ -111,6 +109,7 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
         return df
     p = df.eval('1 / (BAD + 1)').to_numpy()
     n = df.eval('alt_counts + ref_counts').to_numpy()
+    BADS = df['BAD'].to_numpy()
     for allele in alleles:
         counts = df[f'{allele}_counts'].to_numpy()
         if mode == 'binom':
@@ -125,9 +124,9 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             if es_method == 'exp':
                 es_list = binom_es(counts, n, p, ws)
             elif es_method == 'odds':
-                es_list = odds_es(counts, n, p, ws)
+                es_list = odds_es(counts, n, BADS, ws)
             elif es_method == 'cons':
-                es_list = odds_es(counts, n, p, 1)
+                es_list = odds_es(counts, n, BADS, 1)
             df[get_field_by_ftype(allele, 'es')] = es_list
         elif mode == 'negbin':
             if nb_params is None:
@@ -148,9 +147,9 @@ def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
             if es_method == 'exp':
                 es_list = censored_nbinom_es(counts, rs, p, ws, allele_tr)
             elif es_method == 'odds':
-                es_list = odds_es(counts, n, p, ws)
+                es_list = odds_es(counts, n, BADS, ws)
             elif es_method == 'cons':
-                es_list = odds_es(counts, n, p, 1)
+                es_list = odds_es(counts, n, BADS, 1)
             df[get_field_by_ftype(allele, 'es')] = es_list
     return df
 
@@ -166,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', type=int, help='Allelic reads threshold', default=5)
     parser.add_argument('--es-method',
         help='Method to calculate effect size. One of "exp", "odds", "cons"',
-        default='exp')
+        default='odds')
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
     args = parser.parse_args()
