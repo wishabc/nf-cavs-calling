@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
-include { estimateBadByIndiv; estimateBad; intersectWithBadmap } from "./bad_estimation"
-include { callCavsFromVcfsBinom; calcPvalBinom; calcPvalNegbin; fitNegBinom; addImputedCavs; aggregateAllPvalsNegbin; aggregateAllPvalsBinom } from "./pval_calc"
+include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
+include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs } from "./pval_calc"
 
 workflow {
     // Estimate BAD and call 1-st round CAVs
