@@ -1,6 +1,9 @@
 import pandas as pd
 import argparse
 
+## TODO Use index instead of key column
+
+
 def add_key(df):
     if not df.empty:
         df['key'] = df.apply(lambda row: f"{row['#chr']}@{row['start']}", axis=1)

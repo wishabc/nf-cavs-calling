@@ -18,9 +18,16 @@ process apply_babachi {
 	script:
     badmap_file = "${indiv_id}.bad.bed"
     name = "${indiv_id}.${outpath}intersect.bed"
+    prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
-    babachi ${snps_file} -O ${badmap_file} -j ${task.cpus} -p ${params.prior} -s ${params.states} -a ${params.allele_tr} --geometric-prior ${params.geometric_prior}
+    babachi ${snps_file} -O ${badmap_file} -j ${task.cpus} \
+     -p ${params.prior} ${prior_params} \
+     -s ${params.states} -a ${params.allele_tr}
+
+
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\t%" > ${name}
+    
+    # Avoid intersecting with empty file
     if [[ \$(wc -l <${snps_file}) -ge 2 ]]; then
 	    bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb >> ${name}
     fi

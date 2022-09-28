@@ -19,8 +19,12 @@ process calculate_pvalue {
 
     script:
     name = "${indiv_id}.pvalue.bed"
+    additional_param = params.recalcW ? "--recalc-w" : ""
     """
-    python3 $moduleDir/bin/calc_pval.py -I ${badmap_intersect_file} -O ${name} -s ${strategy} --stats-file ${stats_file} --es-method ${params.esMethod} ${params.recalcW ? "--recalc-w" : ""}
+    python3 $moduleDir/bin/calc_pval.py -I ${badmap_intersect_file} \
+         -O ${name} -s ${strategy} --stats-file ${stats_file} \
+          --es-method ${params.es_method} \
+           ${additional_param}
     """
 }
 
@@ -44,7 +48,9 @@ process aggregate_pvals {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/aggregation.py -I ${pval_vcf} -O ${name} --jobs ${task.cpus} --mc ${params.fdrCovTr}
+    python3 $moduleDir/bin/aggregation.py -I ${pval_vcf} \
+     -O ${name} --jobs ${task.cpus} \
+     --mc ${params.fdr_cov_tr}
     """
 }
 
@@ -62,7 +68,9 @@ process exclude_cavs {
     name = "${indiv_id}.snps.bed"
     """
     export OPENBLAS_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} -b ${bad_annotations} -O ${name} --fdr ${params.excludeFdrTr}
+    python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} \
+     -b ${bad_annotations} -O ${name} \
+     --fdr ${params.exclude_fdr_tr}
     """
 }
 
@@ -81,8 +89,12 @@ process fit_nb {
     script:
     out_path = './'
     """
-    python3 $moduleDir/bin/collect_nb_stats.py -b ${bad_annotations} -O ${out_path} --bad ${bad}
-    negbin_fit -O ${out_path} -m NB_AS -R 500 -r 500 --jobs ${task.cpus}
+    python3 $moduleDir/bin/collect_nb_stats.py -b ${bad_annotations} \
+     -O ${out_path} --bad ${bad}
+
+    negbin_fit -O ${out_path} \
+     -m NB_AS -R 500 \
+     -r 500 --jobs ${task.cpus}
     """
 }
 
@@ -100,7 +112,8 @@ process add_cavs {
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
     """
-    python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} -o ${old_badmap} --output ${name}
+    python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} \
+     -o ${old_badmap} --output ${name}
     """
 }
 
