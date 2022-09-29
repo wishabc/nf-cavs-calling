@@ -6,7 +6,7 @@ import argparse
 
 def add_key(df):
     if not df.empty:
-        df['key'] = df.apply(lambda row: f"{row['#chr']}@{row['start']}", axis=1)
+        df['key'] = df.apply(lambda row: f"{row['#chr']}@{row['start']}@{row['alt']}", axis=1)
     return df
 
 def main(new_badmap, old_badmap, output):
