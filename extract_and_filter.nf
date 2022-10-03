@@ -27,7 +27,7 @@ process extract_ag_id_vcf {
     input:
 	    val ag_id
     output:
-        tuple val(ag_id), path(name), path("${name}.csi")
+        tuple val(ag_id), path(name)
     script:
     name = "${ag_id}.bed"
     """
