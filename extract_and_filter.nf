@@ -33,7 +33,7 @@ process extract_ag_id_vcf {
     """
     bcftools query -s ${ag_id} -i'GT="alt"' \
       -f'%CHROM\\t%POS0\\t%POS\\t%ID\\t%REF\\t%ALT\\t%INFO/TOPMED\\t[AD{0}\\t%AD{1}\\t%GT]\n' \
-        ${params.vcf_file} | bcftools view -O z > ${name}
+        ${params.vcf_file} > ${name}
     """
 }
 
