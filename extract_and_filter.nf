@@ -29,7 +29,7 @@ process extract_ag_id_vcf {
     output:
         tuple val(ag_id), path(name), path("${name}.csi")
     script:
-    name = "${ag_id}.vcf.gz"
+    name = "${ag_id}.bed"
     """
     bcftools query -s ${ag_id} -i'GT="alt"' \
       -f'%CHROM\\t%POS0\\t%POS\\t%ID\\t%REF\\t%ALT\\t%INFO/TOPMED\\t[AD{0}\\t%AD{1}\\t%GT]\n' \
