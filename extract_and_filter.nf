@@ -5,6 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 process extract_indiv_vcfs {
     tag "${indiv_id}"
     conda params.conda
+    publishDir "${params.outdir}/filtered_vcfs"
 
     input:
 	    tuple val(indiv_id), val(agg_numbers)
@@ -18,10 +19,28 @@ process extract_indiv_vcfs {
     """
 }
 
+process extract_ag_id_vcf {
+    tag "${ag_id}"
+    conda params.conda
+    publishDir "${params.outdir}/filtered_vcfs"
+
+    input:
+	    val ag_id
+    output:
+        tuple val(ag_id), path(name), path("${name}.csi")
+    script:
+    name = "${ag_id}.vcf.gz"
+    """
+    bcftools query -s ${ag_id} -i'GT="alt"' \
+      -f'%CHROM\\t%POS0\\t%POS\\t%ID\\t%REF\\t%ALT\\t%INFO/TOPMED\\t[AD{0}\\t%AD{1}\\t%GT]\n' \
+        ${params.vcf_file} | bcftools view -O z > ${name}
+    """
+}
+
 // BABACHI filter
 process filter_indiv_vcfs {
     tag "${indiv_id}"
-    publishDir "${params.outdir}/filtered_vcfs"
+    publishDir "${params.outdir}/filtered_bed"
     conda params.conda
 
     input:
@@ -44,6 +63,11 @@ workflow extractAggNumbers {
         extract_indiv_vcfs.out.map(
             it -> tuple(it[0], it[1])
         )
+}
+
+workflow test {
+    ag_ids = Channel.of('AG3864', 'AG3831', 'AG3813', 'AG3958', 'AG32073')
+    extract_ag_id_vcf(ag_ids)
 }
 
 // Extract samples grouped by INDIV_ID
