@@ -15,7 +15,8 @@ process apply_babachi {
 		tuple val(indiv_id), path(snps_file)
         val outpath
 	output:
-		tuple val(indiv_id), path(name)
+		tuple val(indiv_id), path(name), emit: intersect
+        tuple val(indiv_id), path(badmap_file), emit: babachi
 
 	script:
     badmap_file = "${indiv_id}.bad.bed"
@@ -49,7 +50,7 @@ workflow estimateBad {
     main:
         out = apply_babachi(extracted_vcfs
             .filter { it[1].countLines() > 1 }, outpath)
-            .filter { it[1].countLines() > 1 }
+            .filter { it[1].countLines() > 1 }.intersect
     emit:
         out
 }

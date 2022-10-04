@@ -56,6 +56,7 @@ process aggregate_pvals {
 
 process exclude_cavs {
     conda params.conda
+    publishDir "${params.outdir}/excluded_cavs"
     tag "${indiv_id}"
     
     input:
