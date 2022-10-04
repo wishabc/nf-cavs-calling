@@ -49,8 +49,8 @@ workflow estimateBad {
         outpath
     main:
         out = apply_babachi(extracted_vcfs
-            .filter { it[1].countLines() > 1 }, outpath)
-            .filter { it[1].countLines() > 1 }.intersect
+            .filter { it[1].countLines() > 1 }, outpath).intersect
+            .filter { it[1].countLines() > 1 }
     emit:
         out
 }
