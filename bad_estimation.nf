@@ -23,7 +23,7 @@ process apply_babachi {
     name = "${indiv_id}.${outpath}intersect.bed"
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
-    bedops -e 1 ${snps_file} ${topmed_file} > snps.common.bed
+    bedops -e 1 --header ${snps_file} ${topmed_file} > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le 100 ]]; then
 	    touch ${name}
         touch ${badmap_file}
