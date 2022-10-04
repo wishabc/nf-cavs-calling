@@ -2,8 +2,10 @@
 
 params.conda = "$moduleDir/environment.yml"
 
+topmed_file = "/net/seq/data2/projects/sabramov/ENCODE4/topmed_annotations.common.bed"
 process apply_babachi {
 	cpus 2
+    scratch true
     tag "${indiv_id}"
     publishDir "${params.outdir}/${outpath}badmaps", pattern: "${badmap_file}"
     publishDir "${params.outdir}/${outpath}intersect", pattern: "${name}"
@@ -20,9 +22,10 @@ process apply_babachi {
     name = "${indiv_id}.${outpath}intersect.bed"
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
-    babachi ${snps_file} -O ${badmap_file} -j ${task.cpus} \
-     -p ${params.prior} ${prior_params} \
-     -s ${params.states} -a ${params.allele_tr}
+    bedops -e 1 ${snps_file} ${topmed_file} > snps.common.bed
+    babachi snps.common.bed -O ${badmap_file} -j ${task.cpus} \
+        -p ${params.prior} ${prior_params} \
+        -s ${params.states} -a ${params.allele_tr}
 
 
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\t%" > ${name}
