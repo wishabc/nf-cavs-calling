@@ -23,6 +23,11 @@ process apply_babachi {
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
     bedops -e 1 ${snps_file} ${topmed_file} > snps.common.bed
+    if [[ `wc -l < snps.common.bed` -le 100 ]]; then
+	    touch ${name}
+        touch ${badmap_file}
+        exit 0
+    fi
     babachi snps.common.bed -O ${badmap_file} -j ${task.cpus} \
         -p ${params.prior} ${prior_params} \
         -s ${params.states} -a ${params.allele_tr}
@@ -31,7 +36,7 @@ process apply_babachi {
     head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\t%" > ${name}
     
     # Avoid intersecting with empty file
-    if [[ \$(wc -l <${snps_file}) -ge 2 ]]; then
+    if [[ `wc -l <${snps_file}` -ge 2 ]]; then
 	    bedtools intersect -a ${snps_file} -b ${badmap_file} -wa -wb >> ${name}
     fi
 	"""
