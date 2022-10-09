@@ -2,7 +2,6 @@
 
 params.conda = "$moduleDir/environment.yml"
 
-topmed_file = "/net/seq/data2/projects/sabramov/ENCODE4/topmed_annotations.common.bed"
 process apply_babachi {
 	cpus 2
     scratch true
@@ -23,7 +22,7 @@ process apply_babachi {
     name = "${indiv_id}.${outpath}intersect.bed"
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
-    sort-bed ${snps_file} | bedops -e 1 --header - ${topmed_file} > snps.common.bed
+    cat ${snps_file} | \$10 >= 0.05 {print;} > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le 100 ]]; then
 	    touch ${name}
         touch ${badmap_file}
@@ -34,7 +33,7 @@ process apply_babachi {
         -s ${params.states} -a ${params.allele_tr}
 
 
-    head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\t%" > ${name}
+    head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\tMAF\tFMR\t%" > ${name}
     
     # Avoid intersecting with empty file
     if [[ `wc -l <${snps_file}` -ge 2 ]]; then
@@ -45,11 +44,11 @@ process apply_babachi {
 
 workflow estimateBad {
     take:
-        extracted_vcfs
+        extracted_snps
         outpath
     main:
-        out = apply_babachi(extracted_vcfs
-            .filter { it[1].countLines() > 1 }, outpath).intersect
+        non_empty_snps = extracted_snps.filter { it[1].countLines() >= 100 }
+        out = apply_babachi(non_empty_snps, outpath).intersect
             .filter { it[1].countLines() > 1 }
     emit:
         out

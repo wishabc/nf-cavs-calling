@@ -1,16 +1,15 @@
 import argparse
 import pandas as pd
-from helpers import alleles
+from helpers import alleles, starting_columns
 
 def main(agg_file, snps_file, output_file, fdr_tr):
     df = pd.read_table(agg_file)
-    join_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
     if not df.empty:
         df['min_fdr'] = df[[f'fdrp_bh_{allele}' for allele in alleles]].min(axis=1)
         df = df[(df['min_fdr'] >= fdr_tr) | pd.isna(df['min_fdr'])]
     snps_df = pd.read_table(snps_file)
     if not snps_df.empty:
-        snps_df = snps_df.merge(df, on=join_columns, how='inner')[join_columns + ['ref_counts', 'alt_counts', 'sample_id']]
+        snps_df = snps_df.merge(df, on=starting_columns, how='inner')[starting_columns + ['ref_counts', 'alt_counts', 'sample_id', 'MAF', 'FMR']]
 
     snps_df.to_csv(output_file, sep='\t', index=False)
 

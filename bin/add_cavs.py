@@ -1,34 +1,32 @@
 import pandas as pd
 import argparse
+from helpers import starting_columns
 
-## TODO Use index instead of key column
 
-
-def add_key(df):
+def set_index(df):
     if not df.empty:
-        df['key'] = df.apply(lambda row: f"{row['#chr']}@{row['start']}@{row['alt']}", axis=1)
+        df.index = df.apply(lambda row: "@".join(map(str, [row[x] for x in starting_columns])), axis=1)
     return df
 
 def main(new_badmap, old_badmap, output):
-    new_df = add_key(pd.read_table(new_badmap))
+    new_df = set_index(pd.read_table(new_badmap))
     if new_df.empty:
         new_df.to_csv(output, sep='\t', index=False)
         return
-    old_df = add_key(pd.read_table(old_badmap))
-    keys = new_df['key'].unique()
+    old_df = set_index(pd.read_table(old_badmap))
     
-    imputed_cavs = old_df[~old_df['key'].isin(keys)]
+    imputed_cavs = old_df[~new_df.index]
     df = pd.concat([new_df, imputed_cavs])
     if len(df.index) != len(old_df.index):
-        print(len(df.index), len(old_df.index), len(keys), len(imputed_cavs.index))
+        print(len(df.index), len(old_df.index), len(new_df.index), len(imputed_cavs.index))
         raise AssertionError
-    df[[x for x in df.columns if x != 'key']].to_csv(output, sep='\t', index=False)
+    df.to_csv(output, sep='\t', index=False)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Add CAVs')
-    parser.add_argument('-n', help='New BAD map file')
-    parser.add_argument('-o', help='Old BAD map file')
+    parser = argparse.ArgumentParser(description='Merge results of two BADmaps calling iterations')
+    parser.add_argument('-n', help='New BAD intersection file')
+    parser.add_argument('-o', help='Old BAD intersection file')
     parser.add_argument('--output', help='Output file name')
     args = parser.parse_args()
     main(new_badmap=args.n, old_badmap=args.o, output=args.output)

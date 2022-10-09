@@ -103,6 +103,7 @@ process add_cavs {
     publishDir "${params.outdir}/added_cavs"
     conda params.conda
     tag "${indiv_id}"
+    scratch true
 
     input:
         tuple val(indiv_id), path(new_badmap), path(old_badmap)
@@ -114,7 +115,9 @@ process add_cavs {
     name = "${indiv_id}.added_cavs.intersect.bed"
     """
     python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} \
-     -o ${old_badmap} --output ${name}
+     -o ${old_badmap} --output not_sorted_cavs.bed
+    
+    sort-bed not_sorted_cavs.bed > ${name}
     """
 }
 
