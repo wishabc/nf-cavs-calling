@@ -2,6 +2,24 @@
 include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
 include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs } from "./pval_calc"
 
+
+process sort_and_gzip {
+    conda params.conda
+    publishDir "${params.oudir}"
+
+    input:
+        path(all_variants)
+    output:
+        tuple path(name), path("${name}.tbi")
+    script:
+    name = "${all_variants.simpleName}.sorted.bed"
+    """
+    sort-bed ${all_variants} | bgzip -c > ${name}
+    tabix ${name}
+    """
+
+
+}
 workflow {
     // Estimate BAD and call 1-st round CAVs
     iter1_prefix = 'iter1.'
@@ -19,6 +37,8 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_pvals = calcPvalBinom(imputed_cavs, iter2_prefix)
+    sort_and_gzip(binom_pvals.collectFile(name: "all_variants.bed"))
+    
     // Collect statistics to fit negative binomial distriution
     // merged_files = imputed_cavs
     //     .map(item -> item[1])
