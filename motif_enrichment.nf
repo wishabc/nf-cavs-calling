@@ -23,7 +23,7 @@ process scan_with_moods {
     echo ${pwm_path}
     moods-dna.py --sep ";" -s ${params.alt_fasta_file} \
         --p-value ${params.pval_tr} --lo-bg `cat background_probs.py` \
-        -m ${pwm_path} \
+        -m "${pwm_path}" \
         -o moods.log
     
     cat moods.log | awk '{print \$1}' > chroms.txt
