@@ -76,7 +76,7 @@ for line in sys.stdin:
         chrom=str(elem_info[0])
         start=int(elem_info[1])
         end=int(elem_info[2])
-        name=elem_info[3]
+        name=os.path.splitext(elem_info[3])[0]
         score=float(elem_info[4])
         strand=str(elem_info[5])
         seq=str(elem_info[6])
