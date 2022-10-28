@@ -49,8 +49,10 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
-    enrichment = sort_and_gzip(binom_p.collectFile(
-        name: "all_variants.bed", skip:1
-        )) | map(it -> it[0]) | aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
+    enrichment = binom_p.collectFile(
+           name: "all_variants.bed",
+           skip:1
+        ) | aggregate_pvals(pval_file, 'final.', 'all')
+         | motifEnrichment
     
 }
