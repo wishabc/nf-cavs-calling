@@ -25,7 +25,7 @@ process sort_and_gzip {
 
 
 workflow test {
-    binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed')
+    binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed').map(it -> file(it))
     sort_and_gzip(binom_files.collectFile(name: "all_variants.bed")) | motifEnrichment
 }
 
