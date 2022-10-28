@@ -43,7 +43,7 @@ process scan_with_moods {
 process motif_enrichment {
     publishDir "${params.outdir}/motif_clean_figures", pattern: "${prefix}.pdf"
     publishDir "${params.outdir}/motif_enrichment", pattern: "${prefix}.txt"
-
+    scratch true
     conda params.conda
 
     input:

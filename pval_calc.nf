@@ -75,29 +75,6 @@ process exclude_cavs {
     """
 }
 
-process fit_nb {
-    publishDir "${params.outdir}/stats"
-    tag "${bad}"
-    cpus 2
-    conda params.conda
-
-    input:
-        tuple val(bad), path(bad_annotations)
-
-    output:
-        path "BAD*/weights_*.tsv"
-
-    script:
-    out_path = './'
-    """
-    python3 $moduleDir/bin/collect_nb_stats.py -b ${bad_annotations} \
-     -O ${out_path} --bad ${bad}
-
-    negbin_fit -O ${out_path} \
-     -m NB_AS -R 500 \
-     -r 500 --jobs ${task.cpus}
-    """
-}
 
 process add_cavs {
     publishDir "${params.outdir}/added_cavs"

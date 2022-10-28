@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
-include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs } from "./pval_calc"
+include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs; aggregate_pvals } from "./pval_calc"
 include { motifEnrichment } from "./motif_enrichment"
 
 
@@ -27,11 +27,8 @@ process sort_and_gzip {
 
 
 workflow test {
-    binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed')
-        .map(it -> file(it))
-    binom_files.take(3).view()
-    a = binom_files.collectFile(name: "all_variants.bed")
-    sort_and_gzip(a) | map(it -> it[0])  | motifEnrichment
+    pval_file = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/all_variants.sorted.bed.gz').map(it -> tuple('all', it))
+    aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
 }
 
 
