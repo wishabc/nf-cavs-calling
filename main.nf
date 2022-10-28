@@ -30,7 +30,7 @@ workflow test {
     pval_file = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed').collectFile(
            name: "all_variants.bed",
            keepHeader: true
-        )
+        ) | map(it -> tuple('all', it))
     aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
 }
 
@@ -55,7 +55,7 @@ workflow {
     pval_file = binom_p.collectFile(
            name: "all_variants.bed",
            keepHeader: true
-        ) 
+        ) | map(it -> tuple('all', it))
     aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
     
 }
