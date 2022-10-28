@@ -1,26 +1,38 @@
 #!/usr/bin/env nextflow
+
 params.conda = "$moduleDir/environment.yml"
 params.pval_file = ""
 
 
-process scan_with_sarus {
+process scan_with_moods {
     conda params.conda
     tag "${motif_id}"
+    scratch true
 
     input:
-        tuple val(motif_id), path(pwm_path), path(precalc_thresholds)
-        path seqs
+        tuple val(motif_id), val(cluster_id), path(pwm_path)
+
     output:
-        val(motif_id), path(sarus_log)
+        tuple val(motif_id), val(cluster_id), path(name)
     
     script:
-    sarus_log = "${motif_id}.sarus.log"
+    name = "${motif_id}.moods.log"
     """
-    java -cp $moduleDir/sarus.jar ru.autosome.SARUS ${seqs} \
-        ${pwm_path} -10000000 \
-        --pvalues-file ${precalc_thresholds} \
-        --threshold-mode score \
-        --output-scoring-mode logpvalue > ${sarus_log}
+    cat ${params.bg_file} | head -n5 | tail -n +2 | cut -d" " -f2 > background_probs.py
+    moods-dna.py --sep ";" -s ${params.alt_fasta_file} \
+        --p-value ${params.pval_tr} --lo-bg `cat background_probs.py` \
+        -m ${pwm_path} -o moods.log
+    cat moods.log | awk '{print \$1}' > chroms.txt
+
+    cat moods.log \
+    | cut -d";" -f2- \
+    | sed 's/;\$//g' \
+    | awk -v FS=";" -v OFS="\t" \
+        '{ print \$2, \$2+length(\$5), \$1, \$4, \$3, \$5; }' \
+    | sed 's/\.pfm//g' \
+    | paste chroms.txt - \
+    | sort-bed - \
+    > ${name}
     """
 }
 
@@ -32,20 +44,38 @@ process motif_enrichment {
     conda params.conda
 
     input:
-        tuple val(motif_id), val(motif)
+        tuple val(motif_id), val(cluster_id), path(moods_file)
         val pval_file
+        path all_pwms
 
     output:
-        tuple val(motif_id), path("${prefix}.pdf"), path("${prefix}.txt")
+        tuple val(motif_id), val(cluster_id), path(counts_file), path(enrichment_file)
 
     script:
-    prefix = "${motif_id}"
+    counts_file = "${motif_id}.counts.bed.gz"
+    enrichment_file = "${motif_id}.enrichment.bed.gz"
     """
-    python3 ${projectDir}/bin/motif.py  \
-	${pval_file}
-	by_pfm/${prefix}.txt \
-	${motif} \
-	${prefix}
+    bedmap \
+    --skip-unmapped \
+    --sweep-all \
+    --range 20 \
+    --delim "|" \
+    --multidelim ";" \
+    --echo \
+    --echo-map < (zcat ${pval_file}) \
+        ${moods_file} \
+    | python $projectDir/bin/parse_variants_motifs.py \
+        ${params.genome_fasta_file} \
+        ./ \
+    | sort-bed - \
+    | bgzip -c \
+    > ${counts_file}
+
+    python3 ${projectDir}/bin/motif_enrichment.py  \
+        ${pval_file} \
+        ${counts_file} \
+        ${motif_id} \
+        ${cluster_id} | bgzip -c > ${enrichment_file}
     """
 }
 
@@ -54,9 +84,10 @@ workflow motifEnrichment {
         pval_file
     main:
         motifs = Channel.fromPath(params.motifs_list)
-            .splitText()
-            .map(it -> tuple(file(it).simpleName, it))
-        enrichment = motif_enrichment(motifs, pval_file)
+            .splitCsv(sep: '\t',header=true)
+            .map(row -> tuple(row.motif, row.cluster, row.motif_file))
+        moods_scans = scan_with_moods(motifs)
+        enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect())
     emit:
         enrichment
 }

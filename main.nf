@@ -1,25 +1,35 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
 include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs } from "./pval_calc"
+include { motifEnrichment } from "./motif_enrichment"
+
+
+params.conda = "$moduleDir/environment.yml"
 
 
 process sort_and_gzip {
     conda params.conda
-    publishDir "${params.oudir}"
+    publishDir "${params.outdir}"
 
     input:
-        path(all_variants)
+        path(inp)
     output:
         tuple path(name), path("${name}.tbi")
     script:
-    name = "${all_variants.simpleName}.sorted.bed"
+    name = "${inp.simpleName}.sorted.bed"
     """
-    sort-bed ${all_variants} | bgzip -c > ${name}
+    sort-bed ${inp} | bgzip -c > ${name}
     tabix ${name}
     """
-
-
 }
+
+
+workflow test {
+    binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed')
+    sort_and_gzip(binom_files.collectFile(name: "all_variants.bed")) | motifEnrichment
+}
+
+
 workflow {
     // Estimate BAD and call 1-st round CAVs
     iter1_prefix = 'iter1.'
@@ -37,21 +47,8 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_pvals = calcPvalBinom(imputed_cavs, iter2_prefix)
-    sort_and_gzip(binom_pvals.collectFile(name: "all_variants.bed"))
-    
-    // Collect statistics to fit negative binomial distriution
-    // merged_files = imputed_cavs
-    //     .map(item -> item[1])
-    //     .collectFile(name: 'badmaps.tsv',
-    //         keepHeader: true,
-    //         storeDir: "${params.outdir}/stats")   
-    // bad_merge_file = bads.combine(merged_files)
-    // weights_files = fitNegBinom(bad_merge_file)
-
-    // Calculate binomial and negative binomial pvalues
-    // negbin_pvals = calcPvalNegbin(imputed_cavs, weights_files, 'nocavs_')[0]
-    // aggregateAllPvalsNegbin(negbin_pvals)
-    
-    //aggregateAllPvalsBinom(binom_pvals)
+    enrichment = sort_and_gzip(binom_pvals.collectFile(
+        name: "all_variants.bed",
+        )) | motifEnrichment
     
 }
