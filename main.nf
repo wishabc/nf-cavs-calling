@@ -13,8 +13,10 @@ process sort_and_gzip {
 
     input:
         path inp
+
     output:
         tuple path(name), path("${name}.tbi")
+
     script:
     name = "${inp.simpleName}.sorted.bed"
     """
