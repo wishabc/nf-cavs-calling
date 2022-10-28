@@ -18,7 +18,7 @@ process sort_and_gzip {
         tuple path(name), path("${name}.tbi")
 
     script:
-    name = "${inp.simpleName}.sorted.bed"
+    name = "${inp.simpleName}.sorted.bed.gz"
     """
     sort-bed ${inp} | bgzip -c > ${name}
     tabix ${name}
@@ -54,7 +54,7 @@ workflow {
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_pvals = calcPvalBinom(imputed_cavs, iter2_prefix)
     enrichment = sort_and_gzip(binom_pvals.collectFile(
-        name: "all_variants.bed",
+        name: "all_variants.bed", skip:1
         )) | motifEnrichment
     
 }
