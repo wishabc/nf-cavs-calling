@@ -65,7 +65,7 @@ process motif_enrichment {
     --delim "|" \
     --multidelim ";" \
     --echo \
-    --echo-map < (zcat ${pval_file}) \
+    --echo-map <(zcat ${pval_file}) \
         ${moods_file} \
     | python $projectDir/bin/parse_variants_motifs.py \
         ${params.genome_fasta_file} \
@@ -90,7 +90,7 @@ workflow motifEnrichment {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.motif, row.cluster, row.motif_file))
         moods_scans = scan_with_moods(motifs)
-        enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect())
+        enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect().first())
     emit:
         enrichment
 }

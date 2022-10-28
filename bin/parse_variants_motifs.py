@@ -9,7 +9,7 @@ from collections import namedtuple
 
 
 SNV = namedtuple('SNV', ['chr', 'start', 'end', 'ID', 'ref', 'alt',
-         'motif_name', 'score', 'strand', 'extra'])
+         'name', 'score', 'strand', 'extra'])
 
 fasta = pyfaidx.Fasta(sys.argv[1], sequence_always_upper=True)
 pfm_dir = sys.argv[2]
