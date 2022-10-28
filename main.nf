@@ -20,7 +20,7 @@ process sort_and_gzip {
     script:
     name = "${inp.simpleName}.sorted.bed.gz"
     """
-    sort-bed ${inp} | bgzip -c > ${name}
+    cat ${inp} | grep -v '^#' | sort-bed - | bgzip -c > ${name}
     tabix ${name}
     """
 }
