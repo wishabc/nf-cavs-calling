@@ -83,7 +83,7 @@ for line in sys.stdin:
 
         overlaps_variant = start <= snv_start and end >= snv_end
         variants_dict.setdefault(name, []).append(
-            SNV(chr=chrom, start=start, end=end, name=name,
+            SNV(chrom=chrom, start=start, end=end, name=name,
                 score=score, strand=strand, 
                 extra=overlaps_variant)
             )
