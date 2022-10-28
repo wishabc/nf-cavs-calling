@@ -12,7 +12,7 @@ process sort_and_gzip {
     publishDir "${params.outdir}"
 
     input:
-        path(inp)
+        path inp
     output:
         tuple path(name), path("${name}.tbi")
     script:
@@ -25,8 +25,11 @@ process sort_and_gzip {
 
 
 workflow test {
-    binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed').map(it -> file(it))
-    sort_and_gzip(binom_files.collectFile(name: "all_variants.bed")) | motifEnrichment
+    binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed')
+        .map(it -> file(it))
+    binom_files.take(3).view()
+    sort_and_gzip(binom_files.collectFile(name: "all_variants.bed"))
+    | motifEnrichment
 }
 
 
