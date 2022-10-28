@@ -62,11 +62,9 @@ for line in sys.stdin:
     snv_chrom = snv_info[0]
     snv_start = int(snv_info[1])
     snv_end = int(snv_info[2])
-    snv_variant_id = snv_info[3]
-    snv_dbsnp = snv_info[4] 
-    snv_ref = snv_info[5]
-    snv_alt = snv_info[6]
-    snv_aa = snv_info[7]
+    snv_dbsnp = snv_info[3] 
+    snv_ref = snv_info[4]
+    snv_alt = snv_info[5]
 
     elems=fields[1].split(";")
 
