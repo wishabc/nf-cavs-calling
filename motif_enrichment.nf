@@ -10,7 +10,7 @@ process scan_with_moods {
     scratch true
 
     input:
-        tuple val(motif_id), val(cluster_id), path(pwm_path)
+        tuple val(motif_id), val(cluster_id), val(pwm_path)
 
     output:
         tuple val(motif_id), val(cluster_id), path(name)
@@ -88,7 +88,7 @@ workflow motifEnrichment {
     main:
         motifs = Channel.fromPath(params.motifs_list)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.motif, row.cluster, file(row.motif_file)))
+            .map(row -> tuple(row.motif, row.cluster, row.motif_file))
         motifs.take(3).view()
         moods_scans = scan_with_moods(motifs)
         enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect())
