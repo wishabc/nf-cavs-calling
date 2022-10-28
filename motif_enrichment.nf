@@ -90,7 +90,7 @@ workflow motifEnrichment {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.motif, row.cluster, row.motif_file))
         moods_scans = scan_with_moods(motifs)
-        enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect().first())
+        enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect())
     emit:
         enrichment
 }
