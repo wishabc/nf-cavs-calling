@@ -18,7 +18,7 @@ process scan_with_moods {
     script:
     name = "${motif_id}.moods.log"
     """
-    cat ${params.bg_file} | head -n5 | tail -n +2 | cut -d" " -f2 > background_probs.py
+    { (cat ${params.bg_file} | head -n5 | tail -n +2 | cut -d" " -f2) || true; } > background_probs.py
 
     echo ${pwm_path}
     moods-dna.py --sep ";" -s ${params.alt_fasta_file} \
