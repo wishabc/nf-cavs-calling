@@ -30,7 +30,8 @@ workflow test {
     pval_file = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed').collectFile(
            name: "all_variants.bed",
            keepHeader: true
-        ) | aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
+        )
+    aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
 }
 
 
@@ -51,10 +52,10 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
-    enrichment = binom_p.collectFile(
+    pval_file = binom_p.collectFile(
            name: "all_variants.bed",
            keepHeader: true
-        ) | aggregate_pvals(pval_file, 'final.', 'all')
-         | motifEnrichment
+        ) 
+    aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
     
 }
