@@ -30,8 +30,9 @@ workflow test {
     binom_files = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.pvalue.bed')
         .map(it -> file(it))
     binom_files.take(3).view()
-    sort_and_gzip(binom_files.collectFile(name: "all_variants.bed"))
-    | motifEnrichment
+    a = binom_files.collectFile(name: "all_variants.bed")
+    a.view()
+    sort_and_gzip(a) | motifEnrichment
 }
 
 
