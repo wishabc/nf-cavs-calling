@@ -31,8 +31,7 @@ workflow test {
         .map(it -> file(it))
     binom_files.take(3).view()
     a = binom_files.collectFile(name: "all_variants.bed")
-    a.view()
-    sort_and_gzip(a) | motifEnrichment
+    sort_and_gzip(a) | map(it -> it[0])  | motifEnrichment
 }
 
 
