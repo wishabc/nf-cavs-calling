@@ -55,6 +55,6 @@ workflow {
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
     enrichment = sort_and_gzip(binom_p.collectFile(
         name: "all_variants.bed", skip:1
-        ).map(it -> it[0])) | motifEnrichment
+        )) | map(it -> it[0]) | motifEnrichment
     
 }
