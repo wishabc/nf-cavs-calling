@@ -84,7 +84,7 @@ workflow motifEnrichment {
         pval_file
     main:
         motifs = Channel.fromPath(params.motifs_list)
-            .splitCsv(sep: '\t',header=true)
+            .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.motif, row.cluster, row.motif_file))
         moods_scans = scan_with_moods(motifs)
         enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect())
