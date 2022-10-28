@@ -8,7 +8,7 @@ import pyfaidx
 from collections import namedtuple
 
 
-SNV = namedtuple('SNV', ['chr', 'start', 'end', 'ID', 'ref', 'alt',
+SNV = namedtuple('SNV', ['chr', 'start', 'end',
          'name', 'score', 'strand', 'extra'])
 
 fasta = pyfaidx.Fasta(sys.argv[1], sequence_always_upper=True)
