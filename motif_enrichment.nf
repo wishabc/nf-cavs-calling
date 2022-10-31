@@ -44,6 +44,7 @@ process motif_enrichment {
     publishDir "${params.outdir}/motif_clean_figures", pattern: "${prefix}.pdf"
     publishDir "${params.outdir}/motif_enrichment", pattern: "${prefix}.txt"
     scratch true
+    tag "${motif_id}"
     conda params.conda
 
     input:
