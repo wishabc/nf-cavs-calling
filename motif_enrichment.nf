@@ -47,9 +47,7 @@ process motif_enrichment {
     conda params.conda
 
     input:
-        tuple val(motif_id), val(cluster_id), path(moods_file)
-        val pval_file
-        path all_pwms
+        tuple val(motif_id), val(cluster_id), path(moods_file), val(pval_file), path(all_pwms)
 
     output:
         tuple val(motif_id), val(cluster_id), path(counts_file), path(enrichment_file)
@@ -90,7 +88,8 @@ workflow motifEnrichment {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.motif, row.cluster, row.motif_file))
         moods_scans = scan_with_moods(motifs)
-        enrichment = motif_enrichment(moods_scans, pval_file, motifs.map(it -> it[2]).collect())
+        args = moods_scans | combine(pval_file, motifs.map(it -> it[2]).collect())
+        enrichment = motif_enrichment(args)
     emit:
         enrichment
 }

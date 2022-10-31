@@ -54,7 +54,7 @@ workflow {
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
     pval_file = binom_p.collectFile(
            name: "all_variants.bed",
-           keepHeader: true
+           keepHeader: true, skip: 1
         ) | map(it -> tuple('all', it))
     aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
     
