@@ -63,7 +63,7 @@ process motif_enrichment {
     --delim "|" \
     --multidelim ";" \
     --echo \
-    --echo-map <(zcat ${pval_file}) \
+    --echo-map <(sort-bed ${pval_file}) \
         ${moods_file} \
     | python $projectDir/bin/parse_variants_motifs.py \
         ${params.genome_fasta_file} \

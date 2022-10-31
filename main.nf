@@ -54,6 +54,6 @@ workflow {
            name: "all_variants.bed",
            keepHeader: true, skip: 1
         ) | map(it -> tuple('all', it))
-    aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
+    aggregate_pvals(pval_file, 'final.', 'all')  | map(it -> it[1]) | motifEnrichment
     
 }
