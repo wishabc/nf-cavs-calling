@@ -73,6 +73,9 @@ process motif_enrichment {
     | sort-bed - \
     | bgzip -c \
     > ${counts_file}
+    if ! [ -f ${counts_file} ]; then
+        exit 1
+    fi
 
     python3 ${projectDir}/bin/motif_enrichment.py  \
         ${pval_file} \
