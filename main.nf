@@ -32,7 +32,7 @@ workflow test {
            name: "all_variants.bed",
            keepHeader: true,
            skip: 1
-        ) | map(it -> tuple('all', it))
+        ).map(it -> tuple('all', it))
     aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
 }
 
