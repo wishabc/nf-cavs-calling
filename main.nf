@@ -29,7 +29,7 @@ process sort_and_gzip {
 workflow test {
     pval_file = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/all_variants.bed')
         .map(it -> tuple('all', it))
-    aggregate_pvals(pval_file, 'final.', 'all') | motifEnrichment
+    aggregate_pvals(pval_file, 'final.', 'all') | map(it -> it[1]) | motifEnrichment
 }
 
 
