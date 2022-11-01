@@ -77,11 +77,11 @@ process motif_enrichment {
         exit 1
     fi
 
-    #python3 ${projectDir}/bin/motif_enrichment.py  \
-    #    ${pval_file} \
-    #    ${counts_file} \
-    #    ${motif_id} \
-    #    ${cluster_id} | bgzip -c > ${enrichment_file}
+    python3 ${projectDir}/bin/motif_enrichment.py  \
+        ${pval_file} \
+        ${counts_file} \
+        ${motif_id} \
+        ${cluster_id} | bgzip -c > ${enrichment_file}
     """
 }
 

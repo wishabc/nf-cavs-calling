@@ -32,7 +32,7 @@ def prefered_allele(x):
 def set_index(df):
     df['variant_id'] = df.apply(lambda x: 
         '@'.join(map(str, 
-        [x[field] for field in ['chr', 'start', 'end', 'ref', 'alt']])), axis=1)
+        [x[field] for field in ['#chr', 'start', 'end', 'ref', 'alt']])), axis=1)
     df.set_index('variant_id', inplace=True)
     return df
 
@@ -43,7 +43,7 @@ variants_df = set_index(pd.read_table(sys.argv[1], names=result_columns))
 #  variants_df = variants_df[~np.isnan(variants_df['adj_p'])]
 
 # Load motifs dataframe
-motifs_df = set_index(pd.read_table(sys.argv[2], header=None, names=['chr', 'start', 'end', 'rsid', 'ref', 'alt', 'motif', 'offset', 'within', 'strand', 'ref_score', 'alt_score', 'seq']))
+motifs_df = set_index(pd.read_table(sys.argv[2], header=None, names=['#chr', 'start', 'end', 'rsid', 'ref', 'alt', 'motif', 'offset', 'within', 'strand', 'ref_score', 'alt_score', 'seq']))
 # motifs_df.set_index('variant_id', inplace=True)
 
 # Flip data with motif is on '-' strand
