@@ -50,7 +50,7 @@ motifs_df = set_index(pd.read_table(sys.argv[2], header=None, names=['#chr', 'st
 motifs_df = motifs_df.apply(flip_by_strand, axis=1)
 
 # Add imbalance data
-motifs_df = motifs_df.join(variants_df[['aggregated_es_ref', 'aggregated_es_alt', 'min_fdr', 'fdrp_bh_ref', 'fdrp_bh_alt']])
+motifs_df = motifs_df.join(variants_df[['aggregated_es_ref', 'aggregated_es_alt', 'fdrp_bh_ref', 'fdrp_bh_alt']])
 
 # Compute preferred allele
 motifs_df = motifs_df.apply(prefered_allele, axis=1)
