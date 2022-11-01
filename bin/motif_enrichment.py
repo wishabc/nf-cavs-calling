@@ -38,7 +38,7 @@ def set_index(df):
 
 
 # Load variant imbalance file
-variants_df = set_index(pd.read_table(sys.argv[1], names=result_columns))
+variants_df = set_index(pd.read_table(sys.argv[1]))
 
 #  variants_df = variants_df[~np.isnan(variants_df['adj_p'])]
 
