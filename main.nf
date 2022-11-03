@@ -51,10 +51,15 @@ workflow test {
         keepHeader: true, skip: 1
     ) | map(it -> tuple('all', it))
 
+    sample_cl_correspondence = Channel.fromPath(params.samples_file)
+            .splitCsv(header:true, sep:'\t')
+            .map(row -> tuple(row.ag_id, row.cell_type))
+    
     pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-        .collectFile() { item -> [ "${item[1]}.bed", item[2].text + '\n' ]}
+        .join(sample_cl_correspondence)
+        .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .concat(all_pval_file)
     aggregate_pvals(pvals, 'binom', 'final.')  | map(it -> it[1]) | motifEnrichment
 }
