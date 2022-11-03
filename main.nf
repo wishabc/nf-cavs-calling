@@ -45,7 +45,8 @@ process split_into_samples {
 
 
 workflow test {
-    binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed') 
+    binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed')
+        .map(it -> tuple(it.simpleName, file(it)))
     all_pval_file = binom_p.collectFile(
         name: "all_variants.bed",
         keepHeader: true, skip: 1
