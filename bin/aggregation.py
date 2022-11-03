@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
 from helpers import get_field_by_ftype, alleles, starting_columns
+from calc_pval import result_columns as pval_columns
 from scipy.stats import combine_pvalues
 from statsmodels.stats.multitest import multipletests
 import numpy as np
@@ -61,7 +62,7 @@ def aggregate_subgroup(subgroup):
     return pd.concat([aggregate_apply(x.copy()) for x in subgroup])
 
 def aggregate_pvalues_df(pval_df_path, jobs):
-    pval_df = pd.read_table(pval_df_path)
+    pval_df = pd.read_table(pval_df_path, comment='#', names=pval_columns)
     if pval_df.empty:
         for column in result_columns:
             if column not in pval_df.columns:
