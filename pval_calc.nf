@@ -21,7 +21,7 @@ process calculate_pvalue {
     name = "${indiv_id}.pvalue.bed"
     additional_param = params.recalc_w ? "--recalc-w" : ""
     """
-    python3 $moduleDir/bin/calc_pval.py -I "${badmap_intersect_file}" \
+    python3 $moduleDir/bin/calc_pval.py -I '${badmap_intersect_file}' \
          -O ${name} -s ${strategy} --stats-file ${stats_file} \
           --es-method ${params.es_method} \
            ${additional_param}
@@ -49,8 +49,8 @@ process aggregate_pvals {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/aggregation.py -I "${pval_vcf}" \
-     -O "${name}" --jobs ${task.cpus} \
+    python3 $moduleDir/bin/aggregation.py -I '${pval_vcf}' \
+     -O '${name}' --jobs ${task.cpus} \
      --mc ${params.fdr_cov_tr}
     """
 }
