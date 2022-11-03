@@ -49,8 +49,8 @@ process aggregate_pvals {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/aggregation.py -I ${pval_vcf} \
-     -O ${name} --jobs ${task.cpus} \
+    python3 $moduleDir/bin/aggregation.py -I '${pval_vcf}' \
+     -O '${name}' --jobs ${task.cpus} \
      --mc ${params.fdr_cov_tr}
     """
 }
