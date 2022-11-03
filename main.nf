@@ -61,6 +61,7 @@ workflow test {
         .map(it -> tuple(it.simpleName, it))
         .join(sample_cl_correspondence)
         .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+        .map(it -> tuple(it.simpleName, it))
         .concat(all_pval_file)
     aggregate_pvals(pvals, 'binom', 'final.')  | map(it -> it[1]) | motifEnrichment
 }
@@ -97,6 +98,7 @@ workflow {
         .map(it -> tuple(it.simpleName, it))
         .join(sample_cl_correspondence)
         .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+        .map(it -> tuple(it.simpleName, it))
         .concat(all_pval_file)
     aggregate_pvals(pvals, 'binom', 'final.')  | map(it -> it[1]) | motifEnrichment
 }
