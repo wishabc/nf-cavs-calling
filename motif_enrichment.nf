@@ -10,10 +10,10 @@ process scan_with_moods {
     scratch true
 
     input:
-        tuple val(motif_id), val(cluster_id), val(pwm_path)
+        tuple val(motif_id), val(cluster_id), path(pwm_path)
 
     output:
-        tuple val(motif_id), val(cluster_id), path(name)
+        tuple val(motif_id), val(cluster_id), path(pwm_path), path(name)
     
     script:
     name = "${motif_id}.moods.log"
@@ -48,7 +48,7 @@ process motif_enrichment {
     conda params.conda
 
     input:
-        tuple val(motif_id), val(cluster_id), path(moods_file), path(pval_file)
+        tuple val(motif_id), val(cluster_id), path(pwm_path), path(moods_file), path(pval_file)
         // path all_pwms
 
     output:
@@ -91,7 +91,7 @@ workflow motifEnrichment {
     main:
         motifs = Channel.fromPath(params.motifs_list)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.motif, row.cluster, row.motif_file))
+            .map(row -> tuple(row.motif, row.cluster, file(row.motif_file)))
         moods_scans = scan_with_moods(motifs)
         args = moods_scans | combine(pval_file)
         enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
