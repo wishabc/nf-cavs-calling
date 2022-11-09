@@ -30,6 +30,8 @@ def prefered_allele(x):
     return x
 
 def set_index(df):
+    if df.empty:
+        exit(0)
     df['variant_id'] = df.apply(lambda x: 
         '@'.join(map(str, 
         [x[field] for field in ['#chr', 'start', 'end', 'ref', 'alt']])), axis=1)
