@@ -63,7 +63,7 @@ workflow test {
         .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .map(it -> tuple(it.simpleName, it))
         .concat(all_pval_file)
-    aggregate_pvals(pvals, 'binom', 'final.')  | map(it -> it[1]) | motifEnrichment
+    aggregate_pvals(pvals, 'binom', 'final.')  // | map(it -> it[1]) | motifEnrichment
 }
 
 
