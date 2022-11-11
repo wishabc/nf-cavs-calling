@@ -41,8 +41,8 @@ process scan_with_moods {
 
 
 process motif_enrichment {
-    publishDir "${params.outdir}/motif_clean_figures", pattern: "${prefix}.pdf"
-    publishDir "${params.outdir}/motif_enrichment", pattern: "${prefix}.txt"
+    publishDir "${params.outdir}/${pval_file.simpleName}/counts", pattern: "${counts_file}"
+    publishDir "${params.outdir}/${pval_file.simpleName}/enrichment", pattern: "${enrichment_file}"
     scratch true
     tag "${motif_id}"
     conda params.conda
