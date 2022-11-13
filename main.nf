@@ -5,7 +5,7 @@ include { motifEnrichment } from "./motif_enrichment"
 
 
 params.conda = "$moduleDir/environment.yml"
-
+params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
 
 process sort_and_gzip {
     conda params.conda
@@ -29,6 +29,7 @@ process sort_and_gzip {
 process split_into_samples {
     tag "${indiv_id}"
     conda params.conda
+    publishDir "${params.outdir}/sample_pvals"
 
     input:
         tuple val(indiv_id), path(pval_file)
@@ -44,29 +45,43 @@ process split_into_samples {
 }
 
 
+workflow aggregation {
+    take:
+        sample_split_pvals
+
+    main:
+        agg_key = params.aggregation_key ? params.aggregation_key : "all"
+        if (agg_key != 'all') {
+            sample_cl_correspondence = Channel.fromPath(params.samples_file)
+                    .splitCsv(header:true, sep:'\t')
+                    .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
+            pvals = sample_split_pvals
+            .join(sample_cl_correspondence)
+            .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+            .map(it -> tuple(it.simpleName, it))
+        } else {
+            pvals = sample_split_pvals.collectFile()
+            .map(it -> tuple('all', it))
+        }
+        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final. ')  // | map(it -> it[1]) | motifEnrichment
+    emit:
+        out
+}
+
 workflow test {
-    binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed')
+    binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/all_aggregations/output/*.bed')
         .map(it -> tuple(it.simpleName, file(it)))
     sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-    agg_key = params.aggregation_key ? params.aggregation_key : "all"
-    if (agg_key != 'all') {
-        sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                .splitCsv(header:true, sep:'\t')
-                .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-        pvals = sample_split_pvals
-        .join(sample_cl_correspondence)
-        .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
-        .map(it -> tuple(it.simpleName, it))
-    } else {
-        pvals = sample_split_pvals.collectFile()
-        .map(it -> tuple('all', it))
-    }
 
-    aggregate_pvals(pvals, "binom.${agg_key}", 'final. ')  // | map(it -> it[1]) | motifEnrichment
 }
 
+
+workflow aggregatePvals {
+    sample_pvals =  Channel.fromPath("${params.sample_pvals_dir}/*.bed")
+    aggregation(sample_pvals)
+}
 
 workflow {
     // Estimate BAD and call 1-st round CAVs
@@ -85,22 +100,8 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
-        sample_split_pvals = split_into_samples(binom_p)
+    sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-    agg_key = params.aggregation_key ? params.aggregation_key : "all"
-    if (agg_key != 'all') {
-        sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                .splitCsv(header:true, sep:'\t')
-                .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-        pvals = sample_split_pvals
-        .join(sample_cl_correspondence)
-        .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
-        .map(it -> tuple(it.simpleName, it))
-    } else {
-        pvals = sample_split_pvals.collectFile()
-        .map(it -> tuple('all', it))
+    aggregation(sample_split_pvals)
     }
-
-    aggregate_pvals(pvals, "binom.${agg_key}", 'final. ')  // | map(it -> it[1]) | motifEnrichment
-}
