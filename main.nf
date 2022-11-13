@@ -50,7 +50,7 @@ workflow test {
     sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-    agg_key = params.aggregation_key ?? "all"
+    agg_key = params.aggregation_key ? params.aggregation_key : "all"
     if (agg_key != 'all') {
         sample_cl_correspondence = Channel.fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
@@ -88,7 +88,7 @@ workflow {
         sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-    agg_key = params.aggregation_key ?? "all"
+    agg_key = arams.aggregation_key ? params.aggregation_key : "all"
     if (agg_key != 'all') {
         sample_cl_correspondence = Channel.fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
