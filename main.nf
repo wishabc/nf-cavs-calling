@@ -56,6 +56,7 @@ workflow aggregation {
                     .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
             pvals = sample_split_pvals
                 .join(sample_cl_correspondence)
+                .filter(it -> !it[2].isEmpty())
                 .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
                 .map(it -> tuple(it.simpleName, it))
         } else {
