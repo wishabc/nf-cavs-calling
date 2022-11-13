@@ -63,7 +63,7 @@ workflow aggregation {
             pvals = sample_split_pvals.collectFile()
             .map(it -> tuple('all', it))
         }
-        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final. ')  // | map(it -> it[1]) | motifEnrichment
+        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')  // | map(it -> it[1]) | motifEnrichment
     emit:
         out
 }
