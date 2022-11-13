@@ -75,6 +75,7 @@ workflow test {
     sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
+    sample_split_pvals.take(3).view()
 
 }
 
