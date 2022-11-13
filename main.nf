@@ -50,8 +50,8 @@ workflow test {
     sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-    
-    if (params.aggregation_key && params.aggregation_key != 'all') {
+    agg_key = params.aggregation_key ?? "all"
+    if (agg_key != 'all') {
         sample_cl_correspondence = Channel.fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
                 .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
@@ -64,7 +64,7 @@ workflow test {
         .map(it -> tuple('all', it))
     }
 
-    aggregate_pvals(pvals, 'binom', 'final.')  // | map(it -> it[1]) | motifEnrichment
+    aggregate_pvals(pvals, "binom.${agg_key}", 'final. ')  // | map(it -> it[1]) | motifEnrichment
 }
 
 
@@ -85,11 +85,11 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
-    sample_split_pvals = split_into_samples(binom_p)
+        sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
-    
-    if (params.aggregation_key && params.aggregation_key != 'all') {
+    agg_key = params.aggregation_key ?? "all"
+    if (agg_key != 'all') {
         sample_cl_correspondence = Channel.fromPath(params.samples_file)
                 .splitCsv(header:true, sep:'\t')
                 .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
@@ -98,12 +98,9 @@ workflow {
         .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .map(it -> tuple(it.simpleName, it))
     } else {
-        pvals = sample_split_pvals.collectFile(
-                name: "all_variants.bed"
-        )
+        pvals = sample_split_pvals.collectFile()
         .map(it -> tuple('all', it))
     }
 
-        // .concat(all_pval_file)
-    aggregate_pvals(pvals, 'binom', 'final.')
+    aggregate_pvals(pvals, "binom.${agg_key}", 'final. ')  // | map(it -> it[1]) | motifEnrichment
 }
