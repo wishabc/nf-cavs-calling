@@ -58,7 +58,6 @@ workflow aggregation {
                 .join(sample_cl_correspondence)
                 .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
                 .map(it -> tuple(it.simpleName, it))
-            sample_split_pvals.take(3).view()
         } else {
             pvals = sample_split_pvals.collectFile()
             .map(it -> tuple('all', it))
