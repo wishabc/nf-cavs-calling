@@ -61,7 +61,7 @@ workflow test {
                 .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
         pvals = sample_split_pvals
         .join(sample_cl_correspondence)
-        .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+        .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .map(it -> tuple(it.simpleName, it))
     } else {
         pvals = sample_split_pvals.collectFile()
