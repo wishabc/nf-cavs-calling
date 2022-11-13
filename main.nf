@@ -54,12 +54,11 @@ workflow aggregation {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
                     .splitCsv(header:true, sep:'\t')
                     .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-            sample_cl_correspondence.take(3).view()
             pvals = sample_split_pvals
                 .join(sample_cl_correspondence)
                 .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
                 .map(it -> tuple(it.simpleName, it))
-            pvals.take(3).view()
+            sample_split_pvals.take(3).view()
         } else {
             pvals = sample_split_pvals.collectFile()
             .map(it -> tuple('all', it))
