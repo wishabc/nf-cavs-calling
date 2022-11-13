@@ -47,22 +47,28 @@ process split_into_samples {
 workflow test {
     binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed')
         .map(it -> tuple(it.simpleName, file(it)))
-    all_pval_file = binom_p.collectFile(
-        name: "all_variants.bed",
-        keepHeader: true, skip: 1
-    ) | map(it -> tuple('all', it))
-
-    sample_cl_correspondence = Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-    
-    pvals = split_into_samples(binom_p)
+    // all_pval_file = binom_p.collectFile(
+    //     name: "all_variants.bed",
+    //     keepHeader: true, skip: 1
+    // ) | map(it -> tuple('all', it))
+    sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
+    
+    if (params.aggregation_key && params.aggregation_key != 'all') {
+        sample_cl_correspondence = Channel.fromPath(params.samples_file)
+                .splitCsv(header:true, sep:'\t')
+                .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
+        pvals = sample_split_pvals
         .join(sample_cl_correspondence)
         .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .map(it -> tuple(it.simpleName, it))
-        .concat(all_pval_file)
+    } else {
+        pvals = sample_split_pvals.collectFile()
+        .map(it -> tuple('all', it))
+    }
+
+        // .concat(all_pval_file)
     aggregate_pvals(pvals, 'binom', 'final.')  // | map(it -> it[1]) | motifEnrichment
 }
 
@@ -84,21 +90,24 @@ workflow {
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)
-    all_pval_file = binom_p.collectFile(
-           name: "all_variants.bed",
-           keepHeader: true, skip: 1
-        ) | map(it -> tuple('all', it))
-
-    sample_cl_correspondence = Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.ag_id, row.taxonomy_name.replaceAll(' ', '_')))
-    
-    pvals = split_into_samples(binom_p)
+    sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
+    
+    if (params.aggregation_key && params.aggregation_key != 'all') {
+        sample_cl_correspondence = Channel.fromPath(params.samples_file)
+                .splitCsv(header:true, sep:'\t')
+                .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
+        pvals = sample_split_pvals
         .join(sample_cl_correspondence)
         .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .map(it -> tuple(it.simpleName, it))
-        .concat(all_pval_file)
-    aggregate_pvals(pvals, 'binom', 'final.')  | map(it -> it[1]) | motifEnrichment
-}
+    } else {
+        pvals = sample_split_pvals.collectFile(
+                name: "all_variants.bed"
+        )
+        .map(it -> tuple('all', it))
+    }
+
+        // .concat(all_pval_file)
+    aggregate_pvals(pvals, 'binom', 'final.')  }
