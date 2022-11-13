@@ -54,7 +54,7 @@ workflow test {
 
     sample_cl_correspondence = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.ag_id, row.taxonomy_name_id))
+            .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
     
     pvals = split_into_samples(binom_p)
         .flatten()
