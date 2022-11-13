@@ -69,19 +69,11 @@ workflow aggregation {
         out
 }
 
-workflow test {
-    binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed')
-        .map(it -> tuple(it.simpleName, file(it)))
-    sample_split_pvals = split_into_samples(binom_p)
-        .flatten()
-        .map(it -> tuple(it.simpleName, it))
-    sample_split_pvals.take(3).view()
-
-}
-
 
 workflow aggregatePvals {
-    sample_pvals =  Channel.fromPath("${params.sample_pvals_dir}/*.bed")
+    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
+    println(params.sample_pvals_dir)
+    sample_pvals.view()
     aggregation(sample_pvals)
 }
 
