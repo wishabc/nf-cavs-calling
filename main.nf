@@ -47,10 +47,6 @@ process split_into_samples {
 workflow test {
     binom_p = Channel.fromPath('/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed')
         .map(it -> tuple(it.simpleName, file(it)))
-    // all_pval_file = binom_p.collectFile(
-    //     name: "all_variants.bed",
-    //     keepHeader: true, skip: 1
-    // ) | map(it -> tuple('all', it))
     sample_split_pvals = split_into_samples(binom_p)
         .flatten()
         .map(it -> tuple(it.simpleName, it))
@@ -68,7 +64,6 @@ workflow test {
         .map(it -> tuple('all', it))
     }
 
-        // .concat(all_pval_file)
     aggregate_pvals(pvals, 'binom', 'final.')  // | map(it -> it[1]) | motifEnrichment
 }
 
@@ -100,7 +95,7 @@ workflow {
                 .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
         pvals = sample_split_pvals
         .join(sample_cl_correspondence)
-        .collectFile() { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+        .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
         .map(it -> tuple(it.simpleName, it))
     } else {
         pvals = sample_split_pvals.collectFile(
@@ -110,4 +105,5 @@ workflow {
     }
 
         // .concat(all_pval_file)
-    aggregate_pvals(pvals, 'binom', 'final.')  }
+    aggregate_pvals(pvals, 'binom', 'final.')
+}
