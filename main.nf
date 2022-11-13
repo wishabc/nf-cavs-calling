@@ -48,7 +48,6 @@ process split_into_samples {
 workflow aggregation {
     take:
         sample_split_pvals
-
     main:
         agg_key = params.aggregation_key ? params.aggregation_key : "all"
         if (agg_key != 'all') {
@@ -56,10 +55,9 @@ workflow aggregation {
                     .splitCsv(header:true, sep:'\t')
                     .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
             pvals = sample_split_pvals
-            .join(sample_cl_correspondence)
-            .filter(item -> !item[2].isEmpty())
-            .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
-            .map(it -> tuple(it.simpleName, it))
+                .join(sample_cl_correspondence)
+                .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+                .map(it -> tuple(it.simpleName, it))
         } else {
             pvals = sample_split_pvals.collectFile()
             .map(it -> tuple('all', it))
@@ -72,8 +70,6 @@ workflow aggregation {
 
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
-    println(params.sample_pvals_dir)
-    sample_pvals.view()
     aggregation(sample_pvals)
 }
 
