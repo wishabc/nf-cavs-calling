@@ -62,7 +62,7 @@ def aggregate_subgroup(subgroup):
     return pd.concat([aggregate_apply(x.copy()) for x in subgroup])
 
 def aggregate_pvalues_df(pval_df_path, jobs):
-    pval_df = pd.read_table(pval_df_path, comment='#', names=pval_columns)
+    pval_df = pd.read_table(pval_df_path)
     if pval_df.empty:
         for column in result_columns:
             if column not in pval_df.columns:
