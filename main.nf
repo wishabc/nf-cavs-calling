@@ -71,7 +71,7 @@ workflow aggregation {
 
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
-        .map(it -> tuple(file(it).simpleName, file(it)))
+        .map(it -> tuple(file(it).simpleName, file(it))).take(3)
     aggregation(sample_pvals)
 }
 

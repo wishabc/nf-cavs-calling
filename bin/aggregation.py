@@ -1,7 +1,6 @@
 import argparse
 import pandas as pd
 from helpers import get_field_by_ftype, alleles, starting_columns
-from calc_pval import result_columns as pval_columns
 from scipy.stats import combine_pvalues
 from statsmodels.stats.multitest import multipletests
 import numpy as np
