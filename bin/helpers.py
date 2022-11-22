@@ -57,7 +57,9 @@ def get_field_by_ftype(allele, ftype='pval'):
         return f'w_{allele}'
     elif ftype == 'pval-ag':
         return f'logit_pval_{allele}'
-    elif ftype == 'es-ag':
+    elif ftype == 'es-weighted-mean':
+        return f'aggregated_es_weighted_{allele}'
+    elif ftype == 'es-mean':
         return f'aggregated_es_{allele}'
     else:
         raise ValueError

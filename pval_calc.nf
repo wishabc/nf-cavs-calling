@@ -33,7 +33,7 @@ process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files_${strategy}"
     conda params.conda
     tag "${indiv_id}"
-    cpus 3
+    cpus 5
 
     input:
         tuple val(indiv_id), path(pval_vcf)
@@ -50,8 +50,8 @@ process aggregate_pvals {
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/aggregation.py -I '${pval_vcf}' \
-     -O '${name}' --jobs ${task.cpus} \
-     --mc ${params.fdr_cov_tr}
+        -O '${name}' --jobs ${task.cpus} \
+        --ct ${params.fdr_cov_tr}
     """
 }
 

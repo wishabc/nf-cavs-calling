@@ -9,7 +9,7 @@ import multiprocessing as mp
 
 result_columns = starting_columns + ['mean_BAD', 
     '# of SNPs', 'max_cover'] + [get_field_by_ftype(allele, ftype) 
-    for allele in alleles for ftype in ('es-ag', 'pval-ag')]
+    for allele in alleles for ftype in ('es-weighted-mean', 'es-mean' 'pval-ag')]
 
 def aggregate_snp(snp_df):
     pvals = {}
@@ -23,14 +23,17 @@ def aggregate_snp(snp_df):
 
 
 def aggregate_es(es_array, p_array):
-    res = [(x, y) for x, y in zip(es_array, p_array) if y != 1 and not pd.isna(y) and y != 0]
+    res = [(x, y) for x, y in zip(es_array, p_array)
+             if y != 1 and not pd.isna(y) and y != 0]
     if len(res) > 0:
         es, p = zip(*res)
         weights = [-1 * np.log10(x) for x in p]
-        es_mean = np.round(np.average(es, weights=weights), 3)
+        es_weighted_mean = np.average(es, weights=weights)
+        es_mean = np.average(es)
     else:
         es_mean = np.nan
-    return es_mean
+        es_weighted_mean = np.nan
+    return es_mean, es_weighted_mean
 
 
 def logit_aggregate_pvalues(pval_list):
@@ -49,8 +52,10 @@ def aggregate_apply(df):
     mean_BAD, pvals, effect_sizes = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
     for allele in alleles:
+        es_mean, es_weighted_mean = effect_sizes[allele]
         new_df[get_field_by_ftype(allele, 'pval-ag')] = pvals[allele]
-        new_df[get_field_by_ftype(allele, 'es-ag')] = effect_sizes[allele]
+        new_df[get_field_by_ftype(allele, 'es-mean')] = es_mean
+        new_df[get_field_by_ftype(allele, 'es-weighted-mean')] = es_weighted_mean
     new_df['# of SNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('ref_counts + alt_counts').max()
     new_df = new_df.drop_duplicates(subset=['#chr', 'start', 'alt'])
@@ -60,8 +65,10 @@ def aggregate_apply(df):
 def aggregate_subgroup(subgroup):
     return pd.concat([aggregate_apply(x.copy()) for x in subgroup])
 
-def aggregate_pvalues_df(pval_df_path, jobs):
+def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
     pval_df = pd.read_table(pval_df_path)
+    if not pval_df.empty:
+        pval_df = pval_df[pval_df.eval(f'(ref_counts + alt_counts) >= {cover_tr}')]
     if pval_df.empty:
         for column in result_columns:
             if column not in pval_df.columns:
@@ -83,31 +90,21 @@ def aggregate_pvalues_df(pval_df_path, jobs):
             snps.append(r.get())
     return pd.concat(snps)
     
-def calc_fdr(aggr_df, max_cover_tr):
-    if aggr_df.empty:
-        for allele in alleles:
-            aggr_df[f"fdrp_bh_{allele}"] = None
-        return aggr_df
-    mc_filter_array = np.array(aggr_df['max_cover'] >= max_cover_tr)
+def calc_fdr(aggr_df):
     for allele in alleles:
-        if sum(mc_filter_array) != 0:
-            try:
-                _, pval_arr, _, _ = multipletests(aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')],
-                                                                                 alpha=0.05, method='fdr_bh')
-            except TypeError:
-                print(aggr_df, aggr_df[mc_filter_array][get_field_by_ftype(allele, 'pval-ag')])
-                raise
+        if aggr_df.empty:
+            fdr_arr = None
         else:
-            pval_arr = []
-        fdr_arr = np.empty(len(aggr_df.index), dtype=np.float128)
-        fdr_arr[:] = np.nan
-        fdr_arr[mc_filter_array] = pval_arr
+            _, fdr_arr, _, _ = multipletests(
+                aggr_df[get_field_by_ftype(allele, 'pval-ag')],
+                alpha=0.05,
+                    method='fdr_bh')
         aggr_df[f"fdrp_bh_{allele}"] = fdr_arr
     return aggr_df
 
-def main(input_path, out_path, max_covev_tr=10, jobs=1):
-    aggr_df = aggregate_pvalues_df(input_path, jobs)
-    fdr_df = calc_fdr(aggr_df, max_cover_tr=max_covev_tr)
+def main(input_path, out_path, cover_tr=10, jobs=1):
+    aggr_df = aggregate_pvalues_df(input_path, jobs, cover_tr)
+    fdr_df = calc_fdr(aggr_df)
     fdr_df.to_csv(out_path, sep='\t', index=False)
 
 
@@ -115,7 +112,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('--mc', type=int, help='Max cover threshold for fdr', default=10)
+    parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=10)
     parser.add_argument('--jobs', type=int, help='Number of jobs', default=1)
     args = parser.parse_args()
     main(args.I, args.O, args.mc, args.jobs)
