@@ -115,4 +115,4 @@ if __name__ == '__main__':
     parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=10)
     parser.add_argument('--jobs', type=int, help='Number of jobs', default=1)
     args = parser.parse_args()
-    main(args.I, args.O, args.mc, args.jobs)
+    main(args.I, args.O, args.ct, args.jobs)
