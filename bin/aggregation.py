@@ -9,7 +9,7 @@ import multiprocessing as mp
 
 result_columns = starting_columns + ['mean_BAD', 
     '# of SNPs', 'max_cover'] + [get_field_by_ftype(allele, ftype) 
-    for allele in alleles for ftype in ('es-weighted-mean', 'es-mean' 'pval-ag')]
+    for allele in alleles for ftype in ('es-weighted-mean', 'es-mean', 'pval-ag')]
 
 def aggregate_snp(snp_df):
     pvals = {}
