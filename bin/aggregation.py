@@ -16,8 +16,8 @@ def aggregate_snp(snp_df):
     effect_sizes = {}
     for allele in alleles:
         pvals[allele] = logit_aggregate_pvalues(snp_df[get_field_by_ftype(allele)])
-        effect_sizes[allele] = aggregate_es(snp_df[get_field_by_ftype(allele, 'es')], 
-                                            snp_df[get_field_by_ftype(allele)])
+        effect_sizes[allele] = aggregate_es(snp_df[get_field_by_ftype(allele, 'es')],
+                                            snp_df[[get_field_by_ftype(al) for al in alleles]].min(axis=1))
     mean_BAD = snp_df['BAD'].mean()
     return mean_BAD, pvals, effect_sizes
 
