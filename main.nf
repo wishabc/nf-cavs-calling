@@ -60,8 +60,8 @@ workflow aggregation {
                 .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
                 .map(it -> tuple(it.simpleName, it))
         } else {
-            pvals = sample_split_pvals.collectFile(name: 'all_pvals.bed', keepHeader: true, skip: 1)
-            .map(it -> tuple('all', it)).first()
+            pvals = sample_split_pvals.map(it -> it[1]).collectFile(name: 'all_pvals.bed', keepHeader: true, skip: 1)
+            .map(it -> tuple('all', it))
         }
         out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')  // | map(it -> it[1]) | motifEnrichment
     emit:
