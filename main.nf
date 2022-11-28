@@ -62,6 +62,7 @@ workflow aggregation {
         } else {
             pvals = sample_split_pvals.collectFile(name: 'all_pvals.bed', keepHeader: true, skip: 1)
             .map(it -> tuple('all', it))
+            pvals.take(3).view()
         }
         out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')  // | map(it -> it[1]) | motifEnrichment
     emit:
