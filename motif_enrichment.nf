@@ -7,7 +7,6 @@ params.pval_file = ""
 process scan_with_moods {
     conda params.conda
     tag "${motif_id}"
-    scratch true
 
     input:
         tuple val(motif_id), val(cluster_id), path(pwm_path)
