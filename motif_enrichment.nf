@@ -100,5 +100,5 @@ workflow motifEnrichment {
 }
 
 workflow {
-    motifEnrichment(params.pval_file)
+    motifEnrichment(Channel.of(params.pval_file))
 }
