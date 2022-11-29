@@ -85,6 +85,7 @@ workflow aggregation {
         sample_split_pvals
     main:
         agg_key = params.aggregation_key ? params.aggregation_key : "all"
+        store_dir = "${params.outdir}/pvals_nonaggregated.${agg_key}"
         if (agg_key != 'all') {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
                     .splitCsv(header:true, sep:'\t')
@@ -93,12 +94,12 @@ workflow aggregation {
                 .join(sample_cl_correspondence)
                 .filter(it -> !it[2].isEmpty())
                 .collectFile(keepHeader: true,
-                 skip: 1, storeDir: "${params.outdir}/pvals_nonaggregated") { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+                 skip: 1, storeDir: store_dir) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
                 .map(it -> tuple(it.simpleName, it))
         } else {
             pvals = sample_split_pvals.map(it -> it[1])
                 .collectFile(name: 'all_pvals.bed',
-                storeDir: "${params.outdir}/pvals_nonaggregated",
+                storeDir: store_dir,
                 keepHeader: true, skip: 1)
             .map(it -> tuple('all', it))
         }
