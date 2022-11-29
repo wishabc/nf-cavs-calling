@@ -63,7 +63,9 @@ process annotate_variants {
     name = "${sample_id}.fp_annotation.bed"
     footprint_f = footprint_file ? footprint_file : "empty.bed"
     """
-    touch ${footprint_f}
+    if [[ "${footprint_f}"" == "empty.bed" ]]; then
+        touch ${footprint_f}
+    fi
     sort-bed ${pval_file} > pval_f.bed
 
     bedmap --header \
