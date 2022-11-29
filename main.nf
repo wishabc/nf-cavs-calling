@@ -47,24 +47,35 @@ process split_into_samples {
 }
 
 
-process annotate_with_footprints {
+process annotate_variants {
     conda params.conda
     tag "${sample_id}"
-    publishDir "${params.outdir}/footprints_annotation"
+    publishDir "${params.outdir}/annotations"
+    scratch true
 
     input:
-        tuple val(sample_id), path(pval_file), path(footprint_file)
+        tuple val(sample_id), path(pval_file), path(hotspots_file), path(footprint_file)
 
     output:
         tuple val(sample_id), path(name)
 
     script:
     name = "${sample_id}.fp_annotation.bed"
+    footprint_f = footprint_file ? footprint_file : "empty.bed"
     """
-    sort-bed ${pval_file} | \ 
+    touch ${footprint_f}
+    sort-bed ${pval_file} > pval_f.bed
+
     bedmap --header \
-        --indicator - \
-        ${footprint_file} > ${name}
+        --indicator pval_f.bed \
+        ${footprint_f} >> footprints.txt
+    
+    bedmap --header \
+        --indicator pval_f.bed \
+        ${hotspots_file} >> hotspots.txt
+
+    echo -e "`head -1 cav_pvalues.1010.melt.sorted.bed`\tfootprints\thotspots\n" > ${name}
+    paste pval_f.bed footprints.txt hotspots.txt >> ${name}
     """
 }
 
@@ -97,8 +108,8 @@ workflow annotateWithFootprints {
         pval_files
         footprints
     main:
-        data = pval_files.join(footprints)
-        annotations = annotate_with_footprints(data)
+        data = pval_files.join(footprints, remainder: true)
+        annotations = annotate_variants(data)
     emit:
         annotations
 }
@@ -107,10 +118,16 @@ workflow annotateWithFootprints {
 workflow withExistingFootprints {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
+    
+    hotspots = Channel.fromPath(params.samples_file)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(row.ag_id, row.hotspots_file))
+    data = sample_pvals.join(hotspots)
+
     footprints = Channel.fromPath(params.footprints_master)
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.ag_id, file(row.footprint_path)))
-    annotateWithFootprints(sample_pvals, footprints)
+    annotateWithFootprints(data, footprints)
 }
 
 workflow aggregatePvals {
