@@ -133,12 +133,12 @@ workflow withExistingFootprints {
         .map(row -> tuple(row.ag_id, file(row.hotspots_file)))
     d = sample_pvals.join(hotspots)
 
-    d.take(3).view()
-
     footprints = Channel.fromPath(params.footprints_master)
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.ag_id, file(row.footprint_path)))
-    annotateWithFootprints(d, footprints)
+    
+    d.take(3).view()
+    //annotateWithFootprints(d, footprints)
 }
 
 workflow aggregatePvals {
