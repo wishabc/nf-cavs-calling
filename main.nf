@@ -54,7 +54,7 @@ process annotate_variants {
     scratch true
 
     input:
-        tuple val(sample_id), path(pval_file), path(hotspots_file), path(footprint_file)
+        tuple val(sample_id), path(pval_file), path(hotspots_file), val(footprint_file)
 
     output:
         tuple val(sample_id), path(name)
