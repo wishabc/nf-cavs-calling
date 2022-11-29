@@ -61,7 +61,10 @@ process annotate_with_footprints {
     script:
     name = "${sample_id}.fp_annotation.bed"
     """
-    bedmap --header --indicator ${pval_file} ${footprint_file} > ${name}
+    sort-bed ${pval_file} | \ 
+    bedmap --header \
+        --indicator - \
+        ${footprint_file} > ${name}
     """
 }
 
