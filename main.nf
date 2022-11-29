@@ -141,7 +141,13 @@ workflow aggregatePvals {
         .map(it -> tuple(file(it).simpleName, file(it)))
     aggregation(sample_pvals)
 }
-
+workflow test {
+    binom_p = Channel.fromPath("/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/output/final.pval_files_binom/*.bed").map(
+        it -> tuple(file(it).simpleName, file(it))
+    )
+    sample_split_pvals = split_into_samples(binom_p).flatten()
+        .map(it -> tuple(it.simpleName, it))
+}
 workflow {
     // Estimate BAD and call 1-st round CAVs
     iter1_prefix = 'iter1.'
