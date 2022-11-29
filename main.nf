@@ -125,7 +125,6 @@ workflow annotateWithFootprints {
 workflow withExistingFootprints {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
-    sample_pvals.view()
     hotspots = Channel.fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.ag_id, file(row.hotspots_file)))
