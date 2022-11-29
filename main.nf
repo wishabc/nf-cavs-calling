@@ -131,6 +131,8 @@ workflow withExistingFootprints {
         .map(row -> tuple(row.ag_id, file(row.hotspots_file)))
     data = sample_pvals.join(hotspots)
 
+    data.take(3).view()
+
     footprints = Channel.fromPath(params.footprints_master)
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.ag_id, file(row.footprint_path)))
