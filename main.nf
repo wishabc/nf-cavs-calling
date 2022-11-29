@@ -118,9 +118,9 @@ workflow annotateWithFootprints {
         pval_files.take(3).view()
         data = pval_files.join(footprints, remainder: true)
         data.take(3).view()
-        annotations = annotate_variants(data)
-    emit:
-        annotations
+        //annotations = annotate_variants(data)
+    // emit:
+    //     annotations
 }
 
 
@@ -138,7 +138,7 @@ workflow withExistingFootprints {
         .map(row -> tuple(row.ag_id, file(row.footprint_path)))
     
     d.take(3).view()
-    //annotateWithFootprints(d, footprints)
+    annotateWithFootprints(d, footprints)
 }
 
 workflow aggregatePvals {
