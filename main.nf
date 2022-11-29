@@ -115,12 +115,10 @@ workflow annotateWithFootprints {
         pval_files
         footprints
     main:
-        pval_files.take(3).view()
         data = pval_files.join(footprints, remainder: true)
-        data.take(3).view()
-        //annotations = annotate_variants(data)
-    // emit:
-    //     annotations
+        annotations = annotate_variants(data)
+    emit:
+        annotations
 }
 
 
@@ -136,8 +134,6 @@ workflow withExistingFootprints {
     footprints = Channel.fromPath(params.footprints_master)
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.ag_id, file(row.footprint_path)))
-    
-    d.take(3).view()
     annotateWithFootprints(d, footprints)
 }
 
