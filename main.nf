@@ -126,7 +126,7 @@ workflow withExistingFootprints {
     
     hotspots = Channel.fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
-        .map(row -> tuple(row.ag_id, row.hotspots_file))
+        .map(row -> tuple(row.ag_id, file(row.hotspots_file)))
     data = sample_pvals.join(hotspots)
     data.take(3).view()
 
