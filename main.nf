@@ -6,6 +6,8 @@ include { motifEnrichment } from "./motif_enrichment"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
+params.footprints_master = ""
+
 
 process sort_and_gzip {
     conda params.conda
@@ -45,6 +47,25 @@ process split_into_samples {
 }
 
 
+process annotate_with_footprints {
+    conda params.conda
+    tag "${sample_id}"
+    publishDir "${params.outdir}/footprints_annotation"
+
+    input:
+        tuple val(sample_id), path(pval_file), path(footprint_file)
+
+    output:
+        tuple val(sample_id), path(name)
+
+    script:
+    name = "${sample_id}.fp_annotation.bed"
+    """
+    bedmap --header --indicator ${pval_file} ${footprint_file} > ${name}
+    """
+}
+
+
 workflow aggregation {
     take:
         sample_split_pvals
@@ -68,6 +89,26 @@ workflow aggregation {
         out
 }
 
+workflow annotateWithFootprints {
+    take:
+        pval_files
+        footrpints
+    main:
+        data = pval_file.join(footprints)
+        annotations = annotate_with_footprints(data)
+    emit:
+        annotations
+}
+
+
+workflow withExistingFootprints {
+    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
+        .map(it -> tuple(file(it).simpleName, file(it)))
+    footprints = Channel.fromPath(params.footprints_master)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(row.ag_id, file(row.footprint_path)))
+    annotateWithFootprints(sample_pvals, footprints)
+}
 
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
