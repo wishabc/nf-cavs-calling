@@ -74,7 +74,7 @@ process annotate_variants {
         --indicator pval_f.bed \
         ${hotspots_file} >> hotspots.txt
 
-    echo -e "`head -1 cav_pvalues.1010.melt.sorted.bed`\tfootprints\thotspots\n" > ${name}
+    echo -e "`head -1 ${pval_file}`\tfootprints\thotspots\n" > ${name}
     paste pval_f.bed footprints.txt hotspots.txt >> ${name}
     """
 }
@@ -92,10 +92,14 @@ workflow aggregation {
             pvals = sample_split_pvals
                 .join(sample_cl_correspondence)
                 .filter(it -> !it[2].isEmpty())
-                .collectFile(keepHeader: true, skip: 1) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+                .collectFile(keepHeader: true,
+                 skip: 1, storeDir: "${params.outdir}/pvals_nonaggregated") { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
                 .map(it -> tuple(it.simpleName, it))
         } else {
-            pvals = sample_split_pvals.map(it -> it[1]).collectFile(name: 'all_pvals.bed', keepHeader: true, skip: 1)
+            pvals = sample_split_pvals.map(it -> it[1])
+                .collectFile(name: 'all_pvals.bed',
+                storeDir: "${params.outdir}/pvals_nonaggregated",
+                keepHeader: true, skip: 1)
             .map(it -> tuple('all', it))
         }
         out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')  // | map(it -> it[1]) | motifEnrichment
