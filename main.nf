@@ -116,6 +116,7 @@ workflow annotateWithFootprints {
         footprints
     main:
         data = pval_files.join(footprints, remainder: true)
+        data.view(3)
         annotations = annotate_variants(data)
     emit:
         annotations
