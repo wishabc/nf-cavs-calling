@@ -94,7 +94,7 @@ workflow annotateWithFootprints {
         pval_files
         footrpints
     main:
-        data = pval_file.join(footprints)
+        data = pval_files.join(footprints)
         annotations = annotate_with_footprints(data)
     emit:
         annotations
