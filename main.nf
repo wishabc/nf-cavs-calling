@@ -92,7 +92,7 @@ workflow aggregation {
 workflow annotateWithFootprints {
     take:
         pval_files
-        footrpints
+        footprints
     main:
         data = pval_files.join(footprints)
         annotations = annotate_with_footprints(data)
