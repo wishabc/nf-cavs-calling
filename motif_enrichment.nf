@@ -115,7 +115,9 @@ workflow motifEnrichment {
         moods_scans = scan_with_moods(motifs)
         args = moods_scans | combine(pval_file)
         enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
-        motif_ann = get_motif_stats(enrichment.map(it -> tuple(it[0], it[2])).combine(pval_file))
+        arg = enrichment.map(it -> tuple(it[0], it[2])).combine(pval_file)
+        arg.take(3).view()
+        motif_ann = get_motif_stats(arg)
             // .collectFile(name: "motif_stats.bed",
             //     storeDir: "${params.outdir}/${ag_key}",
             //     keepHeader: true, skip: 1)
