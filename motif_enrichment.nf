@@ -84,6 +84,27 @@ process motif_enrichment {
     """
 }
 
+process motif_stats {
+    publishDir "${params.outdir}/${pval_file.simpleName}/motif_stats"
+    tag "${motif_id}"
+    conda params.conda
+
+    input:
+        tuple val(motif_id), path(counts_file)
+        path pval_file
+
+    output:
+        tuple val(motif_id), path(name)
+    
+    script:
+    name = "${motif_id}.motif_stats.tsv"
+    """
+    python3 $moduleDir/bin/motif_stats.py ${motif_id} ${pval_file} ${counts_file} ${name}
+    """
+
+
+}
+
 workflow motifEnrichment {
     take:
         pval_file
@@ -94,6 +115,10 @@ workflow motifEnrichment {
         moods_scans = scan_with_moods(motifs)
         args = moods_scans | combine(pval_file)
         enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
+        motif_ann = motif_stats(enrichment.map(it -> tuple(it[0], it[2])), pval_file)
+            .collectFile(name: "${pval_file.simpleName}.motif_stats.bed",
+                storeDir: "${params.outdir}/${pval_file.simpleName}",
+                keepHeader: true, skip: 1))
     emit:
         enrichment
 }
