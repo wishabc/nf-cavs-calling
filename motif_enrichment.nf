@@ -90,8 +90,7 @@ process get_motif_stats {
     conda params.conda
 
     input:
-        tuple val(motif_id), path(counts_file)
-        path pval_file
+        tuple val(motif_id), path(counts_file), path(pval_file)
 
     output:
         tuple val(motif_id), path(name)
@@ -116,7 +115,7 @@ workflow motifEnrichment {
         moods_scans = scan_with_moods(motifs)
         args = moods_scans | combine(pval_file)
         enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
-        motif_ann = get_motif_stats(enrichment.map(it -> tuple(it[0], it[2])), pval_file)
+        motif_ann = get_motif_stats(enrichment.map(it -> tuple(it[0], it[2])).combine(pval_file))
             .collectFile(name: "motif_stats.bed",
                 storeDir: "${params.outdir}/${ag_key}",
                 keepHeader: true, skip: 1)
