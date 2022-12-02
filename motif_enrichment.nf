@@ -109,15 +109,16 @@ workflow motifEnrichment {
     take:
         pval_file
     main:
+        ag_key = file(pval_file).simpleName
         motifs = Channel.fromPath(params.motifs_list)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.motif, row.cluster, file(row.motif_file)))
         moods_scans = scan_with_moods(motifs)
         args = moods_scans | combine(pval_file)
         enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
-        motif_ann = motif_stats(enrichment.map(it -> tuple(it[0], it[2])), file(pval_file))
-            .collectFile(name: "${file(pval_file).simpleName}.motif_stats.bed",
-                storeDir: "${params.outdir}/${file(pval_file).simpleName}",
+        motif_ann = motif_stats(enrichment.map(it -> tuple(it[0], it[2])), pval_file)
+            .collectFile(name: "motif_stats.bed",
+                storeDir: "${params.outdir}/${ag_key}",
                 keepHeader: true, skip: 1)
     emit:
         enrichment
