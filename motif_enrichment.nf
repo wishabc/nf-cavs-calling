@@ -118,7 +118,7 @@ workflow motifEnrichment {
         motif_ann = motif_stats(enrichment.map(it -> tuple(it[0], it[2])), pval_file)
             .collectFile(name: "${pval_file.simpleName}.motif_stats.bed",
                 storeDir: "${params.outdir}/${pval_file.simpleName}",
-                keepHeader: true, skip: 1))
+                keepHeader: true, skip: 1)
     emit:
         enrichment
 }
