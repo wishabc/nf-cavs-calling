@@ -105,12 +105,7 @@ workflow aggregation {
                 keepHeader: true, skip: 1)
             .map(it -> tuple('all', it))
         }
-        footprints = Channel.fromPath(params.footprints_master)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.ag_id, file(row.footprint_path)))
-        ann_pvals = pvals.take(1)
-        //ann_pvals = annotateWithFootprints(pvals, footprints)
-        out = aggregate_pvals(ann_pvals, "binom.${agg_key}", 'final.') // | motifEnrichment
+        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.') // | motifEnrichment
     emit:
         out[0]
 }
@@ -144,7 +139,11 @@ workflow withExistingFootprints {
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
-    aggregation(sample_pvals)
+    footprints = Channel.fromPath(params.footprints_master)
+            .splitCsv(header:true, sep:'\t')
+            .map(row -> tuple(row.ag_id, file(row.footprint_path)))
+    ann_pvals = annotateWithFootprints(sample_pvals, footprints)
+    aggregation(ann_pvals)
 }
 
 
