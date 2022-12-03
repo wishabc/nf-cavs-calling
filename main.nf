@@ -96,7 +96,7 @@ workflow aggregation {
                 .join(sample_cl_correspondence)
                 .filter(it -> !it[2].isEmpty())
                 .collectFile(keepHeader: true,
-                 skip: 1, storeDir: store_dir) { item -> [ "${item[2]}.bed", item[1].text + '\n' ]}
+                 skip: 1, storeDir: store_dir, newLine: true) { item -> [ "${item[2]}.bed", item[1].text]}
                 .map(it -> tuple(it.simpleName, it))
         } else {
             pvals = sample_split_pvals.map(it -> it[1])
