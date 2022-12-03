@@ -132,6 +132,5 @@ workflow motifEnrichment {
 workflow {
     pvals = Channel.fromPath("${params.pval_file_dir}/*.bed")
         .map(it -> file(it))
-    pvals.take(3).view()
     motifEnrichment(pvals)
 }
