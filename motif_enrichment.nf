@@ -48,7 +48,6 @@ process motif_enrichment {
 
     input:
         tuple val(motif_id), val(cluster_id), path(pwm_path), path(moods_file), path(pval_file)
-        // path all_pwms
 
     output:
         tuple val(motif_id), val(cluster_id), path(counts_file), path(enrichment_file)
