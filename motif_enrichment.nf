@@ -123,9 +123,8 @@ workflow motifEnrichment {
         motifs = Channel.fromPath(params.motifs_list)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.motif, row.cluster, file(row.motif_file)))
-        moods_scans = scan_with_moods(motifs)
-        args = moods_scans | combine(pval_file)
-        enrichment = calcEnrichment(args)
+        moods_scans = scan_with_moods(motifs).combine(pval_file)
+        enrichment = calcEnrichment(moods_scans)
     emit:
         enrichment
 }
