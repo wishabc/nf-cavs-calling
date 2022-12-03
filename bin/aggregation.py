@@ -61,7 +61,7 @@ def df_to_group(df):
     return df.groupby(starting_columns, as_index=False)
 
 def aggregate_apply(df):
-    new_df = df.loc[:starting_columns].head(1)
+    new_df = df.loc[:, starting_columns].head(1)
     mean_BAD, pvals, effect_sizes, footprints_n = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
