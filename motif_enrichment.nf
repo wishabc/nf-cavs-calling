@@ -85,7 +85,6 @@ process motif_enrichment {
 }
 
 process get_motif_stats {
-    publishDir "${params.outdir}/${pval_file.simpleName}/motif_stats"
     tag "${motif_id}"
     conda params.conda
 
@@ -93,7 +92,7 @@ process get_motif_stats {
         tuple val(motif_id), path(counts_file), path(pval_file)
 
     output:
-        tuple val(motif_id), path(name)
+        tuple val(motif_id), path(name), path(pval_file)
     
     script:
     name = "${motif_id}.motif_stats.tsv"
@@ -116,14 +115,16 @@ workflow motifEnrichment {
         enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
         arg = enrichment.map(it -> tuple(it[0], it[2])).combine(pval_file)
         motif_ann = get_motif_stats(arg)
-            // .collectFile(name: "motif_stats.bed",
-            //     storeDir: "${params.outdir}/${ag_key}",
-            //     keepHeader: true, skip: 1)
+            .collectFile(
+                storeDir: "${params.outdir}/${params.aggregation_key}/motif_stats",
+                keepHeader: true, skip: 1) { it -> [[ "${item[2].simpleName}.bed", item[1].text + '\n' ]]}
     emit:
         enrichment
         motif_ann
 }
 
 workflow {
-    motifEnrichment(Channel.of(params.pval_file))
+    pvals = Channel.of("${params.pval_file_dir}/*.bed")
+        .map(it -> tuple(file(it).simpleName, file(it)))
+    motifEnrichment(pvals)
 }

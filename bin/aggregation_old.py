@@ -17,8 +17,7 @@ def aggregate_snp(snp_df):
     for allele in alleles:
         pvals[allele] = logit_aggregate_pvalues(snp_df[get_field_by_ftype(allele)])
         effect_sizes[allele] = aggregate_es(snp_df[get_field_by_ftype(allele, 'es')],
-                                            snp_df[[get_field_by_ftype(al) for al in alleles]].min(axis=1),
-                                            snp_df['coverage'])
+                                            snp_df[[get_field_by_ftype(al) for al in alleles]].min(axis=1))
     mean_BAD = snp_df['BAD'].mean()
 
     footprints_n = 0
@@ -27,22 +26,14 @@ def aggregate_snp(snp_df):
     return mean_BAD, pvals, effect_sizes, footprints_n
 
 
-def expit(x):                                        
-   return 1 / (1 + np.exp(-x))
-
-def logit(x):
-    return np.log(x) - np.log(1 - x)
-
-def aggregate_es(es_array, p_array, n_array):
-    res = [(x, y, n) for x, y, n in zip(es_array, p_array, n_array)
+def aggregate_es(es_array, p_array):
+    res = [(x, y) for x, y in zip(es_array, p_array)
              if y != 1 and not pd.isna(y) and y != 0]
     if len(res) > 0:
-        es, p, n = zip(*res)
+        es, p = zip(*res)
         weights = [-1 * np.log10(x) for x in p]
         es_weighted_mean = np.average(es, weights=weights)
-
-        sigmas = expit(np.array(es))
-        es_mean = logit(np.average(sigmas, weights=n))
+        es_mean = np.average(es)
     else:
         es_mean = np.nan
         es_weighted_mean = np.nan
@@ -61,7 +52,11 @@ def df_to_group(df):
     return df.groupby(starting_columns, as_index=False)
 
 def aggregate_apply(df):
-    new_df = df.loc[starting_columns].head(1)
+    new_df = df.copy()
+    new_df = new_df.drop_duplicates(subset=starting_columns)
+    new_df['# of SNPs'] = len(df.index)
+    new_df['max_cover'] = df.eval('ref_counts + alt_counts').max()
+
     mean_BAD, pvals, effect_sizes, footprints_n = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
@@ -70,19 +65,17 @@ def aggregate_apply(df):
         new_df[get_field_by_ftype(allele, 'pval-ag')] = pvals[allele]
         new_df[get_field_by_ftype(allele, 'es-mean')] = es_mean
         new_df[get_field_by_ftype(allele, 'es-weighted-mean')] = es_weighted_mean
-    new_df['# of SNPs'] = len(df.index)
-    new_df['max_cover'] = df.eval('coverage').max()
-    return new_df
+
+    return new_df[result_columns]
 
 
 def aggregate_subgroup(subgroup):
-    return pd.concat([aggregate_apply(x) for x in subgroup])
+    return pd.concat([aggregate_apply(x.copy()) for x in subgroup])
 
 def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
     pval_df = pd.read_table(pval_df_path)
-    pval_df['coverage'] = pval_df.eval('ref_counts + alt_counts')
     if not pval_df.empty:
-        pval_df = pval_df[pval_df.eval(f'coverage >= {cover_tr}')]
+        pval_df = pval_df[pval_df.eval(f'(ref_counts + alt_counts) >= {cover_tr}')]
     if pval_df.empty:
         for column in result_columns:
             if column not in pval_df.columns:

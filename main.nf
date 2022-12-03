@@ -105,9 +105,14 @@ workflow aggregation {
                 keepHeader: true, skip: 1)
             .map(it -> tuple('all', it))
         }
-        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')  // | map(it -> it[1]) | motifEnrichment
+        footprints = Channel.fromPath(params.footprints_master)
+            .splitCsv(header:true, sep:'\t')
+            .map(row -> tuple(row.ag_id, file(row.footprint_path)))
+        
+        ann_pvals = annotateWithFootprints(pvals, footprints).take(1)
+        out = aggregate_pvals(ann_pvals, "binom.${agg_key}", 'final.') // | motifEnrichment
     emit:
-        out
+        out[0]
 }
 
 workflow annotateWithFootprints {
