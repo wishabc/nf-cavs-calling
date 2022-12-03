@@ -139,11 +139,7 @@ workflow withExistingFootprints {
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
-    footprints = Channel.fromPath(params.footprints_master)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.ag_id, file(row.footprint_path)))
-    ann_pvals = annotateWithFootprints(sample_pvals, footprints)
-    aggregation(ann_pvals)
+    aggregation(sample_pvals)
 }
 
 
@@ -166,5 +162,10 @@ workflow {
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)[0]
     sample_split_pvals = split_into_samples(binom_p).flatten()
         .map(it -> tuple(it.simpleName, it))
-    aggregation(sample_split_pvals)
-    }
+
+    footprints = Channel.fromPath(params.footprints_master)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(row.ag_id, file(row.footprint_path)))
+    ann_pvals = annotateWithFootprints(sample_split_pvals, footprints)
+    aggregation(ann_pvals)
+}
