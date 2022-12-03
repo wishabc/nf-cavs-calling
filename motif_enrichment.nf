@@ -7,6 +7,7 @@ params.pval_file = ""
 process scan_with_moods {
     conda params.conda
     tag "${motif_id}"
+    publishDir "${params.outdir}/moods_scans"
 
     input:
         tuple val(motif_id), val(cluster_id), path(pwm_path)
@@ -50,7 +51,7 @@ process motif_enrichment {
         tuple val(motif_id), val(cluster_id), path(pwm_path), path(moods_file), path(pval_file)
 
     output:
-        tuple val(motif_id), val(cluster_id), path(counts_file), path(enrichment_file)
+        tuple val(motif_id), path(counts_file), path(enrichment_file), path(pval_file)
 
     script:
     counts_file = "${motif_id}.counts.bed.gz"
@@ -102,6 +103,19 @@ process get_motif_stats {
 
 }
 
+workflow calcEnrichment {
+    take:
+        args
+    main:
+        enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
+        motif_ann = get_motif_stats(enrichment)
+        .collectFile(
+            storeDir: "${params.outdir}/${params.aggregation_key}/motif_stats",
+            keepHeader: true, newLine: true, skip: 1) { it -> [[ "${item[2].simpleName}.bed", item[1].text]]}
+    emit:
+        enrichment
+}
+
 workflow motifEnrichment {
     take:
         pval_file
@@ -111,15 +125,9 @@ workflow motifEnrichment {
             .map(row -> tuple(row.motif, row.cluster, file(row.motif_file)))
         moods_scans = scan_with_moods(motifs)
         args = moods_scans | combine(pval_file)
-        enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
-        arg = enrichment.map(it -> tuple(it[0], it[2])).combine(pval_file)
-        motif_ann = get_motif_stats(arg)
-            .collectFile(
-                storeDir: "${params.outdir}/${params.aggregation_key}/motif_stats",
-                keepHeader: true, skip: 1) { it -> [[ "${item[2].simpleName}.bed", item[1].text + '\n' ]]}
+        enrichment = calcEnrichment(args)
     emit:
         enrichment
-        motif_ann
 }
 
 workflow {

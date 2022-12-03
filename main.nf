@@ -107,7 +107,7 @@ workflow aggregation {
         }
         out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.') // | motifEnrichment
     emit:
-        out[0]
+        out
 }
 
 workflow annotateWithFootprints {
