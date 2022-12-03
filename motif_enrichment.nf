@@ -51,7 +51,8 @@ process motif_enrichment {
         tuple val(motif_id), val(cluster_id), path(pwm_path), path(moods_file), path(pval_file)
 
     output:
-        tuple val(motif_id), path(counts_file), path(enrichment_file), path(pval_file)
+        tuple val(motif_id), path(counts_file), path(pval_file), emit: counts
+        tuple val(motif_id), path(enrichment_file), path(pval_file), emit: enrichment
 
     script:
     counts_file = "${motif_id}.counts.bed.gz"
@@ -107,7 +108,7 @@ workflow calcEnrichment {
     take:
         args
     main:
-        enrichment = motif_enrichment(args) //, motifs.map(it -> it[2]).collect())
+        enrichment = motif_enrichment(args).counts //, motifs.map(it -> it[2]).collect())
         motif_ann = get_motif_stats(enrichment)
         .collectFile(
             storeDir: "${params.outdir}/${params.aggregation_key}/motif_stats",
