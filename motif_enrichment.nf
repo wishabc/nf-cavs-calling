@@ -139,7 +139,7 @@ workflow {
     pvals = Channel.fromPath("${params.pval_file_dir}/*.bed")
         .map(it -> file(it))
     moods_scans = Channel.fromPath("${params.moods_scans_dir}/*.bed.gz")
-        .map(it -> tuple(file(it).baseName.replace('.moods.log.bed.gz', ''), file(it)))
+        .map(it -> tuple(file(it).name.replace('.moods.log.bed.gz', ''), file(it)))
     //motifEnrichment(pvals)
     calcEnrichment(moods_scans.combine(pvals))
 }
