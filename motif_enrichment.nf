@@ -138,4 +138,5 @@ workflow {
     pvals = Channel.fromPath("${params.pval_file_dir}/*.bed")
         .map(it -> file(it))
     motifEnrichment(pvals)
+    //calcEnrichment(moods_scans.combine(pvals))
 }
