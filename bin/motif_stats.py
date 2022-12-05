@@ -65,7 +65,10 @@ def variant_enrichment(variant_by_motif, n_shuffles=1000):
         n_exp_not_imbalanced = n_all - n_exp_imbalanced +1 
 
         perm[i] = np.log2( (n_exp_imbalanced[flank_width:-flank_width].sum() / n_exp_imbalanced.sum()) / (n_exp_not_imbalanced[flank_width:-flank_width].sum() / n_exp_not_imbalanced.sum()) )
-        perm_per_nt[i,:] = np.log2( (n_exp_imbalanced / np.sum(n_exp_imbalanced)) / (n_exp_not_imbalanced / np.sum(n_exp_not_imbalanced)))
+        if np.sum(n_exp_imbalanced) == 0 or np.sum(n_exp_not_imbalanced) == 0:
+            perm_per_nt[i,:] = np.nan
+        else:
+            perm_per_nt[i,:] = np.log2( (n_exp_imbalanced / np.sum(n_exp_imbalanced)) / (n_exp_not_imbalanced / np.sum(n_exp_not_imbalanced)))
   
     pval = -sp.stats.norm.logsf(log_odds, loc=np.nanmean(perm, axis=0), scale=np.nanstd(perm, axis=0))/np.log(10)
     pvals_per_nt = -sp.stats.norm.logsf(log_odds_per_nt, loc=np.nanmean(perm_per_nt, axis=0), scale=np.nanstd(perm_per_nt, axis=0))/np.log(10)
