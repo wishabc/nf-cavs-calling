@@ -5,9 +5,9 @@
 
 
 function extract_symlink () {
-	if ! [ -d "$file" ]; then
-        symlink_target=$( readlink "$file" )
-        if [[ "$symlink_target" != "$file" ]]; then
+	if ! [ -d "$1" ]; then
+        symlink_target=$( readlink "$1" )
+        if [[ "$symlink_target" != "$1" ]]; then
             echo Moving $symlink_target $1
             mv $symlink_target $1
         fi
