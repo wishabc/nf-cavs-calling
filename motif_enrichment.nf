@@ -115,8 +115,8 @@ workflow calcEnrichment {
         counts = motif_enrichment(args).counts //, motifs.map(it -> it[2]).collect())
         motif_ann = get_motif_stats(counts)
         .collectFile(
-            storeDir: "${params.outdir}/${params.aggregation_key}/motif_stats",
-            keepHeader: true, newLine: true, skip: 1) { it -> [[ "${item[2].simpleName}.bed", item[1].text]]}
+            storeDir: "${params.outdir}/${params.aggregation_key}",
+            keepHeader: true, newLine: true, skip: 1) { it -> [[ "${item[2].simpleName}/motif_stats/${item[2].simpleName}.bed", item[1].text]]}
     emit:
         counts
 }
