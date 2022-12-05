@@ -8,6 +8,7 @@ function extract_symlink () {
 	if ! [ -d "$file" ]; then
         symlink_target=$( readlink "$file" )
         if [[ "$symlink_target" != "$file" ]]; then
+            echo Moving $symlink_target $1
             mv $symlink_target $1
         fi
 	fi
@@ -18,7 +19,6 @@ case $2 in
         find $1 -exec echo "moving {}" \;
         ;;
     "-f")
-        echo Moving $1
         find $1 -exec bash -c 'extract_symlink "$0"' {} \;
         ;;
     "*") 
