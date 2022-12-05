@@ -5,7 +5,6 @@
 
 
 function extract_symlink () {
-    echo $1
 	if ! [ -d "$1" ]; then
         if [ -h "$1" ]; then
             mv $( readlink "$1" ) $1
@@ -18,7 +17,7 @@ case $2 in
         find $1 -exec echo "moving {}" \;
         ;;
     "-f")
-        find $1 -exec bash -c 'extract_symlink "$@"' bash {} \;
+        find $1 -exec bash -c 'extract_symlink "$@"' bash {} \; | pv
         ;;
     "*") 
         echo "Neither -f nor -n are provided"
