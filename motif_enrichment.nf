@@ -138,8 +138,11 @@ params.moods_scans_dir = "/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/b
 workflow {
     pvals = Channel.fromPath("${params.pval_file_dir}/*.bed")
         .map(it -> file(it))
+    motifs = Channel.fromPath(params.motifs_list)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(row.motif, row.cluster, file(row.motif_file)))
     moods_scans = Channel.fromPath("${params.moods_scans_dir}/*.bed.gz")
-        .map(it -> tuple(file(it).name.replace('.moods.log.bed.gz', ''), file(it).name.replace('.moods.log.bed.gz', ''), file(it)))
+        .map(it -> tuple(file(it).name.replace('.moods.log.bed.gz', ''), file(it)))
     //motifEnrichment(pvals)
-    calcEnrichment(moods_scans.combine(pvals))
+    calcEnrichment(motifs.join(moods_scans).combine(pvals))
 }
