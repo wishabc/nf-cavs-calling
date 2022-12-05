@@ -7,7 +7,8 @@ params.pval_file = ""
 process scan_with_moods {
     conda params.conda
     tag "${motif_id}"
-    publishDir "${params.outdir}/moods_scans"
+    scratch true
+    publishDir "${params.outdir}/moods_scans", pattern: "${name}"
 
     input:
         tuple val(motif_id), val(cluster_id), path(pwm_path)
@@ -16,7 +17,7 @@ process scan_with_moods {
         tuple val(motif_id), val(cluster_id), path(pwm_path), path(name)
     
     script:
-    name = "${motif_id}.moods.log"
+    name = "${motif_id}.moods.log.bed.gz"
     """
     { (cat ${params.bg_file} | head -n5 | tail -n +2 | cut -d" " -f2) || true; } > background_probs.py
 
@@ -35,14 +36,15 @@ process scan_with_moods {
     | sed 's/".pfm"/""/g' \
     | paste chroms.txt - \
     | sort-bed - \
+    | bgzip -c \
     > ${name}
     """
 }
 
 
 process motif_enrichment {
-    publishDir "${params.outdir}/${pval_file.simpleName}/counts", pattern: "${counts_file}"
-    publishDir "${params.outdir}/${pval_file.simpleName}/enrichment", pattern: "${enrichment_file}"
+    publishDir "${params.outdir}/${params.aggregation_key}/${pval_file.simpleName}/counts", pattern: "${counts_file}"
+    publishDir "${params.outdir}/${params.aggregation_key}/${pval_file.simpleName}/enrichment", pattern: "${enrichment_file}"
     scratch true
     tag "${motif_id}"
     conda params.conda
@@ -58,7 +60,7 @@ process motif_enrichment {
     counts_file = "${motif_id}.counts.bed.gz"
     enrichment_file = "${motif_id}.enrichment.bed.gz"
     """
-    bedmap \
+    zcat ${moods_file} | bedmap \
     --skip-unmapped \
     --sweep-all \
     --range 20 \
@@ -66,13 +68,14 @@ process motif_enrichment {
     --multidelim ";" \
     --echo \
     --echo-map <(sort-bed ${pval_file}) \
-        ${moods_file} \
+     -    \
     | python $projectDir/bin/parse_variants_motifs.py \
         ${params.genome_fasta_file} \
         ./ \
     | sort-bed - \
     | bgzip -c \
     > ${counts_file}
+
     if ! [ -f ${counts_file} ]; then
         exit 1
     fi
@@ -88,6 +91,7 @@ process motif_enrichment {
 process get_motif_stats {
     tag "${motif_id}"
     conda params.conda
+    scratch true
 
     input:
         tuple val(motif_id), path(counts_file), path(pval_file)
@@ -108,13 +112,13 @@ workflow calcEnrichment {
     take:
         args
     main:
-        enrichment = motif_enrichment(args).counts //, motifs.map(it -> it[2]).collect())
-        motif_ann = get_motif_stats(enrichment)
+        counts = motif_enrichment(args).counts //, motifs.map(it -> it[2]).collect())
+        motif_ann = get_motif_stats(counts)
         .collectFile(
             storeDir: "${params.outdir}/${params.aggregation_key}/motif_stats",
             keepHeader: true, newLine: true, skip: 1) { it -> [[ "${item[2].simpleName}.bed", item[1].text]]}
     emit:
-        enrichment
+        counts
 }
 
 workflow motifEnrichment {
