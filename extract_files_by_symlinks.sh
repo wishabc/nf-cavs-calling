@@ -12,7 +12,7 @@ function extract_symlink () {
         fi
 	fi
 }
-
+export -f extract_symlink
 case $2 in
     "-n")
         find $1 -exec echo "moving {}" \;
