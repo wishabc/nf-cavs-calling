@@ -18,7 +18,7 @@ case $2 in
         find $1 -exec echo "moving {}" \;
         ;;
     "-f")
-        echo Removing $1
+        echo Moving $1
         find $1 -exec bash -c 'extract_symlink "$0"' {} \;
         ;;
     "*") 
