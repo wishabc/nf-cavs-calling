@@ -18,7 +18,7 @@ case $2 in
         find $1 -exec echo "moving {}" \;
         ;;
     "-f")
-        find $1 -exec extract_symlink {} \;
+        find $1 -exec bash -c 'extract_symlink "$@"' {} \;
         ;;
     "*") 
         echo "Neither -f nor -n are provided"
