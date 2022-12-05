@@ -7,9 +7,8 @@
 function extract_symlink () {
     echo $1
 	if ! [ -d "$1" ]; then
-        symlink_target=$( readlink "$1" )
-        if [[ "$symlink_target" != "$1" ]]; then
-            mv $symlink_target $1
+        if [ -h "$1" ]; then
+            mv $( readlink "$1" ) $1
         fi
 	fi
 }
