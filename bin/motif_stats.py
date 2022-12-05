@@ -129,26 +129,30 @@ def get_annotations(motif_id, variants, motif_counts):
     
     
     X = predictor_array
-    Y = snvs_in['ddg']
+    if n_imb > 0:
+            
+        Y = snvs_in['ddg']
 
-    X = sm.add_constant(X)
+        X = sm.add_constant(X)
 
 
-    model = sm.OLS(Y, X).fit()
+        model = sm.OLS(Y, X).fit()
 
-    outliers = model.get_influence().cooks_distance[0] > (4/X.shape[0])
+        outliers = model.get_influence().cooks_distance[0] > (4/X.shape[0])
 
-    model = sm.OLS(Y[~outliers], X[~outliers]).fit()
+        model = sm.OLS(Y[~outliers], X[~outliers]).fit()
 
-    xx = np.array(fit_lim)
-    yy = xx*model.params.iloc[1] + model.params.iloc[0]
-    
-    r2 = model.rsquared
-    conc = get_concordant(predictor_array, snvs_in["ddg"], x0=x_0)
-    log_conc = np.log2(conc) - np.log2(1 - conc)
-    
-    log_ref_bias = np.log2((predictor_array > 0).sum()) - np.log2((predictor_array <0).sum())
-    
+        xx = np.array(fit_lim)
+        yy = xx*model.params.iloc[1] + model.params.iloc[0]
+        
+        r2 = model.rsquared
+        conc = get_concordant(predictor_array, snvs_in["ddg"], x0=x_0)
+        log_conc = np.log2(conc) - np.log2(1 - conc)
+        
+        log_ref_bias = np.log2((predictor_array > 0).sum()) - np.log2((predictor_array <0).sum())
+    else:
+         r2, log_conc, log_ref_bias = np.nan, np.nan, np.nan
+
     return pd.DataFrame.from_records(
         [[motif_id, log_odds, pval, n_imb, n_all, r2, log_conc, log_ref_bias]],
         columns=['motif_id', 'log_odds', 'pval','n_imb', 'n_all', 
