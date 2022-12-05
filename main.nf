@@ -31,7 +31,6 @@ process sort_and_gzip {
 process split_into_samples {
     tag "${indiv_id}"
     conda params.conda
-    publishDir "${params.outdir}/sample_pvals"
 
     input:
         tuple val(indiv_id), path(pval_file)
