@@ -134,9 +134,11 @@ workflow motifEnrichment {
         enrichment
 }
 
+params.moods_scans_dir = "/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/all_aggregations/output/output/moods_scans"
 workflow {
     pvals = Channel.fromPath("${params.pval_file_dir}/*.bed")
         .map(it -> file(it))
-    motifEnrichment(pvals)
-    //calcEnrichment(moods_scans.combine(pvals))
+    moods_scans = Channel.fromPath("${params.moods_scans_dir}/*.bed.gz")
+    //motifEnrichment(pvals)
+    calcEnrichment(moods_scans.combine(pvals))
 }
