@@ -17,7 +17,7 @@ params.footprints_master = ""
 
 process merge_and_gzip {
     conda params.conda
-    publishDir "${params.outdir}/pvals_nonaggregated.${group_key}", pattern: "${name}"
+    publishDir "${params.outdir}/pvals_nonaggregated.${params.aggregation_key}", pattern: "${name}"
     scratch true
     tag "${group_key}"
 
@@ -28,10 +28,11 @@ process merge_and_gzip {
         tuple val(group_key), path(name)
 
     script:
-    name = "${group_key}.sorted.bed.gz"
+    name = "${group_key}.sorted.bed"
     """
     python3 $moduleDir/bin/merge_files.py f.txt ${files}
-    sort-bed f.txt | bgzip -c > ${name}
+    head -n1 f.txt > ${name}
+    sort-bed f.txt >> ${name}
     """
 }
 
@@ -83,7 +84,7 @@ process annotate_variants {
         --indicator pval_f.bed \
         ${hotspots_file} >> hotspots.txt
 
-    echo -e "`head -1 ${pval_file}`\tfootprints\thotspots\n" > ${name}
+    echo -e "`head -1 ${pval_file}`\tfootprints\thotspots" > ${name}
     paste pval_f.bed footprints.txt hotspots.txt >> ${name}
     """
 }
