@@ -19,6 +19,7 @@ process merge_and_gzip {
     conda params.conda
     publishDir "${params.outdir}/pvals_nonaggregated.${group_key}", pattern: "${name}"
     scratch true
+    tag "${group_key}"
 
     input:
         tuple val(group_key), path(files)
