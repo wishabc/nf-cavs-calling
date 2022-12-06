@@ -3,6 +3,12 @@ include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
 include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs; aggregate_pvals } from "./pval_calc"
 include { motifEnrichment } from "./motif_enrichment"
 
+def set_key_for_group_tuple(ch) {
+  ch.groupTuple()
+  .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
+  .transpose()
+}
+
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
@@ -91,12 +97,12 @@ workflow aggregation {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
                     .splitCsv(header:true, sep:'\t')
                     .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-            pvals = sample_split_pvals
+            pvals = set_key_for_group_tuple(sample_split_pvals
                 .join(sample_cl_correspondence)
                 .filter(it -> !it[2].isEmpty())
-                .groupTuple(
-                    by:it[2]
-                ) | merge_and_gzip
+                .map(
+                    it -> tuple(it[2], it[1])
+                )).groupTuple() | merge_and_gzip
         } else {
             pvals = sample_split_pvals.map(it -> it[1])
                 .collect()
