@@ -9,21 +9,22 @@ params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
 params.footprints_master = ""
 
 
-process sort_and_gzip {
+process merge_and_gzip {
     conda params.conda
-    publishDir "${params.outdir}"
+    publishDir "${params.outdir}/pvals_nonaggregated.${group_key}", pattern: "${name}"
+    scratch true
 
     input:
-        path inp
+        tuple val(group_key), path(files)
 
     output:
-        tuple path(name), path("${name}.tbi")
+        tuple val(group_key), path(name)
 
     script:
-    name = "${inp.simpleName}.sorted.bed.gz"
+    name = "${group_key}.sorted.bed.gz"
     """
-    cat ${inp} | grep -v '^#' | sort-bed - | bgzip -c > ${name}
-    tabix ${name}
+    python3 $moduleDir/bin/merge_files.py f.txt ${files}
+    sort-bed f.txt | bgzip -c > ${name}
     """
 }
 
@@ -86,7 +87,6 @@ workflow aggregation {
         sample_split_pvals
     main:
         agg_key = params.aggregation_key ? params.aggregation_key : "all"
-        store_dir = "${params.outdir}/pvals_nonaggregated.${agg_key}"
         if (agg_key != 'all') {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
                     .splitCsv(header:true, sep:'\t')
@@ -94,15 +94,14 @@ workflow aggregation {
             pvals = sample_split_pvals
                 .join(sample_cl_correspondence)
                 .filter(it -> !it[2].isEmpty())
-                .collectFile(keepHeader: true,
-                 skip: 1, storeDir: store_dir) { item -> [ "${item[2]}.bed", item[1].text]}
-                .map(it -> tuple(it.simpleName, it))
+                .groupTuple(
+                    by:it[2]
+                ) | merge_and_gzip
         } else {
             pvals = sample_split_pvals.map(it -> it[1])
-                .collectFile(name: 'all_pvals.bed',
-                storeDir: store_dir,
-                keepHeader: true, skip: 1)
-            .map(it -> tuple('all', it))
+                .collect()
+                .map(it -> tuple('all', it)) | merge_and_gzip
+
         }
         out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.') // | motifEnrichment
     emit:
