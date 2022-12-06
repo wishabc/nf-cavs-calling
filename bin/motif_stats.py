@@ -95,42 +95,40 @@ def get_annotations(motif_id, variants, motif_counts):
     imb = snvs['min_fdr']<=0.01
     
     snvs_in = snvs[inside & imb]
+    if len(snvs_in) > 0:
+        pred = 'log_es'
+        es_fld = 'aggregated_es_weighted_ref'
 
-    pred = 'log_es'
-    es_fld = 'aggregated_es_weighted_ref'
+        if pred == 'log_es':
+            lim = (-3, 3)
+            nbins = lim[1] * 8 + 1
+            fit_lim = (-2, 2)
+            predictor_array = snvs_in[es_fld]
+            x_0 = 0
+        elif pred == 'raw_es':
+            lim = (0, 1)
+            nbins = 25
+            predictor_array = logtr(snvs_in[es_fld])
+            fit_lim = (0.2, 0.8)
+            x_0 = 0.5
+        elif pred == 'signed_fdr':
+            lim = (-25, 25)
+            nbins = 25
+            predictor_array = -np.log10(snvs_in['min_fdr']) * np.sign(snvs_in['aggregated_es_weighted_ref'])
+            fit_lim = (-15, 15)
+            x_0 = 0
 
-    if pred == 'log_es':
-        lim = (-3, 3)
-        nbins = lim[1] * 8 + 1
-        fit_lim = (-2, 2)
-        predictor_array = snvs_in[es_fld]
-        x_0 = 0
-    elif pred == 'raw_es':
-        lim = (0, 1)
-        nbins = 25
-        predictor_array = logtr(snvs_in[es_fld])
-        fit_lim = (0.2, 0.8)
-        x_0 = 0.5
-    elif pred == 'signed_fdr':
-        lim = (-25, 25)
-        nbins = 25
-        predictor_array = -np.log10(snvs_in['min_fdr']) * np.sign(snvs_in['aggregated_es_weighted_ref'])
-        fit_lim = (-15, 15)
-        x_0 = 0
+        snvs_in['ddg'] = snvs_in['ref_score'] - snvs_in['alt_score']
 
-    snvs_in['ddg'] = snvs_in['ref_score'] - snvs_in['alt_score']
+        bins=np.linspace(*lim, nbins)
 
-    bins=np.linspace(*lim, nbins)
+        xdiff = (bins[1]-bins[0])/2.0
+        x = bins[:-1]+xdiff
 
-    xdiff = (bins[1]-bins[0])/2.0
-    x = bins[:-1]+xdiff
-
-    snvs_in["bin"] = pd.cut(predictor_array, bins)
-    
-    
-    X = predictor_array
-    if n_imb > 0:
-            
+        snvs_in["bin"] = pd.cut(predictor_array, bins)
+        
+        
+        X = predictor_array
         Y = snvs_in['ddg']
 
         X = sm.add_constant(X)
