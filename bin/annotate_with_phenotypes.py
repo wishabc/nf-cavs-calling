@@ -15,7 +15,7 @@ def pack(arr):
 
 def parse_grasp(filepath, snps):
     phenotypes = {}
-    print(filepath)
+    print('Parsing Grasp')
     with open(filepath) as file:
         for line in file:
             a = line.strip('\n').split('\t')
@@ -30,6 +30,7 @@ def parse_grasp(filepath, snps):
 
 def parse_finemapping(filepath, snps):
     phenotypes = {}
+    print('Parsing Finemapping')
     with open(filepath) as file:
         for k, line in enumerate(file):
             if k == 0:
@@ -46,6 +47,7 @@ def parse_finemapping(filepath, snps):
 
 def parse_ebi(filepath, snps):
     phenotypes = {}
+    print('Parsing EBI')
     with open(filepath, 'r') as file:
         for k, line in enumerate(file):
             if k == 0:
@@ -113,6 +115,7 @@ def parse_gtex(qtlfiles, transqtl, snps):
 
 def parse_phewas(filepath, snps):
     phenotypes = {}
+    print('Parsing phewas')
     with open(filepath, 'r') as file:
         for k, line in enumerate(file):
             if k == 0:
@@ -131,6 +134,7 @@ def parse_phewas(filepath, snps):
 
 def parse_clinvar(filepath, snps):
     phenotypes = {}
+    print('Parsing ClinVar')
     with open(filepath, 'r') as file:
         for k, line in enumerate(file):
             if k == 0:
