@@ -173,7 +173,7 @@ def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
     return [arr_to_str([ids_phenotypes_dict[y]
                                 for y in all_phenotypes.get(snp_id, {}).get(x, [])
                                 if y is not None])
-                                for x in phenotype_db_names] + [arr_to_str(snps_dict.get(snp_posid, [None, None])[1]) for snps_dict in gtex.values()]
+                                for x in phenotype_db_names] + [arr_to_str(snps_dict.get(snp_posid, [None, []])[1]) for snps_dict in gtex.values()]
 
 
 def remove_phen_name_punctuation(phenotype_name):
