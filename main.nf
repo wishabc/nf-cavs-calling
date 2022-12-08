@@ -92,7 +92,7 @@ process annotate_variants {
 params.phenotypes_data = "/home/sabramov/phenotypes_data"
 
 
-process annotate_with_pheno {
+process annotate_with_phenotypes {
     conda params.conda
     tag "${sample_id}"
     publishDir "${params.outdir}/phenotypes"
