@@ -3,8 +3,9 @@ import pandas as pd
 from helpers import starting_columns
 import glob
 import sys
+from tqdm import tqdm
 
-
+tqdm.pandas()
 phenotype_db_names = ['grasp', 'ebi', 'clinvar', 'phewas', 'finemapping']
 
 
@@ -184,6 +185,7 @@ def main(phenotypes_dir, snps_path, out_path):
                               parse_finemapping(fm, snp_ids),
                               ]
     gtex = parse_gtex(qtlfiles, transqtl, snps_positions.posID)
+    print('Parsing finished')
     phenotypes_ids_dict = {}
     ids_phenotypes_dict = {}
     phenotype_id = 1
@@ -208,7 +210,7 @@ def main(phenotypes_dir, snps_path, out_path):
 
     print('pheno sizes:', len(phenotypes_ids_dict), len(all_phenotypes))
 
-    snps_positions[[*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']] = snps_positions.apply(
+    snps_positions[[*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']] = snps_positions.progress_apply(
         lambda x: get_phens_by_id(x, all_phenotypes, ids_phenotypes_dict, gtex), axis=1)
     
     snps_positions.to_csv(out_path, sep='\t', index=False)
