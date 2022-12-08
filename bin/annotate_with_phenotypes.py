@@ -220,9 +220,10 @@ def main(phenotypes_dir, snps_path, out_path):
                 print(rs)
                 if rs not in all_phenotypes:
                     all_phenotypes[rs] = {x: set() for x in phenotype_db_names}
+                print(db, all_phenotypes)
                 all_phenotypes[rs][db].add(
                     phenotypes_ids_dict[remove_phen_name_punctuation(phenotype)])
-
+    
     print('pheno sizes:', len(phenotypes_ids_dict), len(all_phenotypes))
 
     snps_positions[[*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']] = snps_positions.progress_apply(
