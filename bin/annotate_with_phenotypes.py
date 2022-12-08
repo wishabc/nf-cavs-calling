@@ -161,13 +161,13 @@ def parse_clinvar(filepath):
     return phenotypes
 
 def arr_to_str(arr):
-    return '|'.join(sorted(list(arr)))
+    return '|'.join(sorted([x for x in arr if x is not None]))
 
 def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
     snp_id = row['ID']
     snp_posid = row.posID
     return [arr_to_str([ids_phenotypes_dict[y]
-                                for y in all_phenotypes[snp_id][x]])
+                                for y in all_phenotypes.get(snp_id, {}).get(x)])
                                 for x in phenotype_db_names] + [arr_to_str(snps_dict.get(snp_posid, [None, None])[1]) for snps_dict in gtex.values()]
 
 
@@ -215,7 +215,7 @@ def main(phenotypes_dir, snps_path, out_path):
 
     all_phenotypes = {}
 
-    for i in range(len(phenotypes_for_db_list)):
+    for i in tqdm(range(len(phenotypes_for_db_list)), total=len(phenotypes_for_db_list)):
         for phenotype in phenotypes_for_db_list[i]:
             for rs in phenotypes_for_db_list[i][phenotype]:
                 if rs not in all_phenotypes:
