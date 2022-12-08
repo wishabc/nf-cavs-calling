@@ -118,8 +118,8 @@ def parse_phewas(filepath):
     phenotypes = {}
     print('Parsing phewas')
     with open(filepath, 'r') as file:
-        f = file.reqdlines()
-    for k, line in enumerate(tqdm(list(file))):
+        f = file.readlines()
+    for k, line in enumerate(tqdm(list(f))):
         if k == 0:
             continue
         a = line[line.find('"rs'):].split('",')
@@ -138,22 +138,23 @@ def parse_clinvar(filepath):
     phenotypes = {}
     print('Parsing ClinVar')
     with open(filepath, 'r') as file:
-        for k, line in enumerate(file):
-            if k == 0:
-                continue
-            a = line.strip('\n').split('\t')
-            if 'pathogenic' not in a[6].lower() and 'risk factor' not in a[6].lower():
-                continue
+        f = file.readlines()
+    for k, line in enumerate(tqdm(list(f))):
+        if k == 0:
+            continue
+        a = line.strip('\n').split('\t')
+        if 'pathogenic' not in a[6].lower() and 'risk factor' not in a[6].lower():
+            continue
 
-            for ph in a[13].split(';'):
-                if ph in ('not provided', 'not specified'):
-                    continue
-                if ph not in phenotypes:
-                    phenotypes[ph] = set()
-                rs_id = f"rs{a[9]}"
-                # if rs_id not in snps:
-                #     continue
-                phenotypes[ph].add(rs_id)
+        for ph in a[13].split(';'):
+            if ph in ('not provided', 'not specified'):
+                continue
+            if ph not in phenotypes:
+                phenotypes[ph] = set()
+            rs_id = f"rs{a[9]}"
+            # if rs_id not in snps:
+            #     continue
+            phenotypes[ph].add(rs_id)
     return phenotypes
 
 def arr_to_str(arr):
