@@ -234,6 +234,8 @@ def main(phenotypes_dir, snps_path, out_path):
     a = snps_positions.progress_apply(
         lambda x: get_phens_by_id(x, all_phenotypes, ids_phenotypes_dict, gtex), axis=1)
     print(a)
+    print(len([*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']))
+    print(snps_positions)
     snps_positions[[*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']] = a
     
     snps_positions.to_csv(out_path, sep='\t', index=False)
