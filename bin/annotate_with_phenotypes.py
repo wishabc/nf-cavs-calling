@@ -4,7 +4,6 @@ from helpers import starting_columns
 import glob
 import sys
 from tqdm import tqdm
-import json
 
 tqdm.pandas()
 phenotype_db_names = ['grasp', 'ebi', 'clinvar', 'phewas', 'finemapping']
@@ -109,8 +108,6 @@ def parse_gtex(qtlfiles, transqtl):
 
             result['trans'].setdefault(chrpos, (set(), set()))[0].add(tis)
             result['trans'][chrpos][1].add(gen)
-    with open('gtex.json', 'w') as f:
-        json.dump(result, f, indent=2)
     return result
     
     
