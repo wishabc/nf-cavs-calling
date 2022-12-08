@@ -33,16 +33,17 @@ def parse_finemapping(filepath):
     phenotypes = {}
     print('Parsing Finemapping')
     with open(filepath) as file:
-        for k, line in enumerate(file):
-            if k == 0:
-                continue
-            a = line.strip('\n').split(',')
-            if a[0] not in phenotypes:
-                phenotypes[a[0]] = set()
-            rs_id = a[2]
-            # if rs_id not in snps:
-            #     continue
-            phenotypes[a[0]].add(rs_id)
+        f = file.readlines()
+    for k, line in enumerate(tqdm(list(f))):
+        if k == 0:
+            continue
+        a = line.strip('\n').split(',')
+        if a[0] not in phenotypes:
+            phenotypes[a[0]] = set()
+        rs_id = a[2]
+        # if rs_id not in snps:
+        #     continue
+        phenotypes[a[0]].add(rs_id)
     return phenotypes
 
 
@@ -50,19 +51,20 @@ def parse_ebi(filepath):
     phenotypes = {}
     print('Parsing EBI')
     with open(filepath, 'r') as file:
-        for k, line in enumerate(file):
-            if k == 0:
-                continue
-            try:
-                a = line.strip('\n').split('\t')
-                if a[7] not in phenotypes:
-                    phenotypes[a[7]] = set()
-                rs_id = f"rs{a[23]}"
-                # if rs_id not in snps:
-                #     continue
-                phenotypes[a[7]].add(rs_id)
-            except ValueError:
-                continue
+        f = file.readlines()
+    for k, line in enumerate(tqdm(list(f))):
+        if k == 0:
+            continue
+        try:
+            a = line.strip('\n').split('\t')
+            if a[7] not in phenotypes:
+                phenotypes[a[7]] = set()
+            rs_id = f"rs{a[23]}"
+            # if rs_id not in snps:
+            #     continue
+            phenotypes[a[7]].add(rs_id)
+        except ValueError:
+            continue
     return phenotypes
 
 
