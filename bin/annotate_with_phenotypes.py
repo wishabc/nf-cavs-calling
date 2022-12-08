@@ -73,46 +73,46 @@ def parse_gtex(qtlfiles, transqtl, snps):
     result = {'trans': {}, 'cis': {}}
     print('Number of cis-eQTL files:', len(qtlfiles))
 
-    # for qtlfile in tqdm(list(qtlfiles)):
-    #     with open(qtlfile) as qfile:
+    for qtlfile in tqdm(list(qtlfiles)):
+        with open(qtlfile) as qfile:
 
-    #         tis = qtlfile[qtlfile.rfind('/') + 1:qtlfile.find('.v8.')]
-    #         print(tis, end=' ')
+            tis = qtlfile[qtlfile.rfind('/') + 1:qtlfile.find('.v8.')]
+            print(tis, end=' ')
 
-    #         for line in qfile:
+            for line in qfile:
 
-    #             if line.startswith('variant_id'):
-    #                 tit = line.strip('\n').split('\t')
-    #                 titlen = len(tit)
-    #                 continue
+                if line.startswith('variant_id'):
+                    tit = line.strip('\n').split('\t')
+                    titlen = len(tit)
+                    continue
 
-    #             a = line.strip('\n').split('\t')
-    #             a = {tit[x]: a[x] for x in range(titlen)}
+                a = line.strip('\n').split('\t')
+                a = {tit[x]: a[x] for x in range(titlen)}
 
-    #             chrpos = '_'.join(a['variant_id'].split('_')[:2])
+                chrpos = '_'.join(a['variant_id'].split('_')[:2])
 
-    #             if chrpos in snps:
-    #                 result['cis'].set_default(chrpos, (set(), set()))[0].add(tis)
-    #                 result['cis'][chrpos][1].add(a['gene_id'])
+                if chrpos in snps:
+                    result['cis'].set_default(chrpos, (set(), set()))[0].add(tis)
+                    result['cis'][chrpos][1].add(a['gene_id'])
 
-    # # print('Starting to parse transqtl')
-    # # with open(transqtl) as trfile:
-    # #     for line in trfile:
-    # #         if line.startswith('tissue_id'):
-    # #             tit = line.strip('\n').split('\t')
-    # #             titlen = len(tit)
-    # #             continue
+    print('Starting to parse transqtl')
+    with open(transqtl) as trfile:
+        for line in trfile:
+            if line.startswith('tissue_id'):
+                tit = line.strip('\n').split('\t')
+                titlen = len(tit)
+                continue
 
-    # #         a = line.strip('\n').split('\t')
-    # #         a = {tit[x]: a[x] for x in range(titlen)}
+            a = line.strip('\n').split('\t')
+            a = {tit[x]: a[x] for x in range(titlen)}
 
-    # #         chrpos = '_'.join(a['variant_id'].split('_')[:2])
-    # #         tis = a['tissue_id']
-    # #         gen = a['gene_id']
+            chrpos = '_'.join(a['variant_id'].split('_')[:2])
+            tis = a['tissue_id']
+            gen = a['gene_id']
 
-    #         if chrpos in snps:
-    #             result['trans'].set_default(chrpos, (set(), set()))[0].add(tis)
-    #             result['trans'][chrpos][1].add(gen)
+            if chrpos in snps:
+                result['trans'].set_default(chrpos, (set(), set()))[0].add(tis)
+                result['trans'][chrpos][1].add(gen)
     return result
     
     
