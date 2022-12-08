@@ -14,6 +14,7 @@ def pack(arr):
 
 def parse_grasp(filepath, snps):
     phenotypes = {}
+    print(filepath)
     with open(filepath) as file:
         for line in file:
             a = line.strip('\n').split('\t')
