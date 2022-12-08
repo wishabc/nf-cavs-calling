@@ -169,11 +169,11 @@ def main(phenotypes_dir, snps_path, out_path):
     snps_positions = snps[starting_columns]
     snp_ids = snps_positions['ID'].tolist()
     snps_positions['posID'] = snps_positions['#chr'] + '_' + snps_positions['end'].astype(str)
-    grasp = os.path.join(phenotypes_dir, 'pheno', 'grasp_pheno.tsv'),
-    ebi = os.path.join(phenotypes_dir, 'pheno', 'gwas_catalog.tsv'),
-    clinvar = os.path.join(phenotypes_dir, 'pheno', 'variant_summary.txt'),
-    fm = os.path.join(phenotypes_dir, 'pheno', 'finemapping.csv'),
-    phewas = os.path.join(phenotypes_dir, 'pheno', 'phewas-catalog.csv'),
+    grasp = os.path.join(phenotypes_dir, 'pheno', 'grasp_pheno.tsv')
+    ebi = os.path.join(phenotypes_dir, 'pheno', 'gwas_catalog.tsv')
+    clinvar = os.path.join(phenotypes_dir, 'pheno', 'variant_summary.txt')
+    fm = os.path.join(phenotypes_dir, 'pheno', 'finemapping.csv')
+    phewas = os.path.join(phenotypes_dir, 'pheno', 'phewas-catalog.csv')
 
     qtlfiles = glob.glob(os.path.join(phenotypes_dir, 'eqtl', 'signif', '*.txt'))
     transqtl = os.path.join(phenotypes_dir, 'eqtl', 'GTEx_Analysis_v8_trans_eGenes_fdr05.txt')
