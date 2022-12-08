@@ -168,7 +168,7 @@ def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
     snp_posid = row.posID
     print(all_phenotypes)
     print([[ids_phenotypes_dict[y]
-                                for y in all_phenotypes.get(snp_id, {}).get(x)
+                                for y in all_phenotypes.get(snp_id, {}).get(x, [])
                                 if y is not None] for x in phenotype_db_names])
     return [arr_to_str([ids_phenotypes_dict[y]
                                 for y in all_phenotypes.get(snp_id, {}).get(x)
