@@ -78,7 +78,7 @@ def parse_gtex(qtlfiles, transqtl):
 
             tis = qtlfile[qtlfile.rfind('/') + 1:qtlfile.find('.v8.')]
             print(tis, end=' ')
-
+            ft = True
             for line in qfile:
 
                 if line.startswith('variant_id'):
@@ -90,8 +90,10 @@ def parse_gtex(qtlfiles, transqtl):
                 a = {tit[x]: a[x] for x in range(titlen)}
 
                 chrpos = '_'.join(a['variant_id'].split('_')[:2])
-
-                result['cis'].set_default(chrpos, (set(), set()))[0].add(tis)
+                if ft:
+                    print(chrpos)
+                    ft = False
+                result['cis'].setdefault(chrpos, (set(), set()))[0].add(tis)
                 result['cis'][chrpos][1].add(a['gene_id'])
 
     print('Starting to parse transqtl')
