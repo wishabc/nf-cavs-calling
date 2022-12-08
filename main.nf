@@ -172,6 +172,7 @@ workflow annotateWithPheno {
     params.pval_file_dir = "/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/all_aggregations/output/final.ag_files_binom.all"
     pvals = Channel.fromPath("${params.pval_file_dir}/*.bed")
         .map(it -> file(it))
+    annotate_with_phenotypes(pvals)
     
 }
 
