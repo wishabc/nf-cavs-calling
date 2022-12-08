@@ -163,7 +163,8 @@ def remove_phen_name_punctuation(phenotype_name):
     return phenotype_name.lower().replace("'", '').replace('_', ' ')
 
 
-def main(phenotypes_dir, snps, out_path):
+def main(phenotypes_dir, snps_path, out_path):
+    snps = pd.read_table(snps_path)
     snps_positions = snps[starting_columns]
     snp_ids = snps_positions['ID'].tolist()
     snps_positions['posID'] = snps_positions['#chr'] + '_' + snps_positions['end'].astype(str)
