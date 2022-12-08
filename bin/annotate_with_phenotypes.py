@@ -118,17 +118,18 @@ def parse_phewas(filepath):
     phenotypes = {}
     print('Parsing phewas')
     with open(filepath, 'r') as file:
-        for k, line in enumerate(file):
-            if k == 0:
-                continue
-            a = line[line.find('"rs'):].split('",')
-            ph = a[1][1:]
-            if ph not in phenotypes:
-                phenotypes[ph] = set()
-            rs_id = f"rs{int(a[0][3:])}"
-            # if rs_id not in snps:
-            #     continue
-            phenotypes[ph].add(rs_id)
+        f = file.reqdlines()
+    for k, line in enumerate(tqdm(list(file))):
+        if k == 0:
+            continue
+        a = line[line.find('"rs'):].split('",')
+        ph = a[1][1:]
+        if ph not in phenotypes:
+            phenotypes[ph] = set()
+        rs_id = f"rs{int(a[0][3:])}"
+        # if rs_id not in snps:
+        #     continue
+        phenotypes[ph].add(rs_id)
 
     return phenotypes
 
@@ -173,7 +174,8 @@ def remove_phen_name_punctuation(phenotype_name):
 def main(phenotypes_dir, snps_path, out_path):
     print('Reading files')
     snps = pd.read_table(snps_path)
-    snps_positions = snps[starting_columns]
+    snps_positions = snps[[*starting_columns, 'fdrp_bh_ref', 'fdrp_bh_alt']]
+    del snps
     snp_ids = snps_positions['ID'].tolist()
     snps_positions['posID'] = snps_positions['#chr'] + '_' + snps_positions['end'].astype(str)
     grasp = os.path.join(phenotypes_dir, 'pheno', 'grasp_pheno.tsv')
