@@ -111,7 +111,7 @@ def parse_gtex(qtlfiles, transqtl):
             tis = a['tissue_id']
             gen = a['gene_id']
 
-            result['trans'].set_default(chrpos, (set(), set()))[0].add(tis)
+            result['trans'].setdefault(chrpos, (set(), set()))[0].add(tis)
             result['trans'][chrpos][1].add(gen)
     
     return result
