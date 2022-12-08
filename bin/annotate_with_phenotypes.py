@@ -173,7 +173,7 @@ def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
                                 for y in all_phenotypes.get(snp_id, {}).get(x, [])
                                 if y is not None])
                                 for x in phenotype_db_names] + [arr_to_str(snps_dict.get(snp_posid, [None, []])[1]) for snps_dict in gtex.values()]
-    print(len(res))
+    assert len(res) == 7
     return res
 
 
@@ -230,8 +230,11 @@ def main(phenotypes_dir, snps_path, out_path):
     
     print('pheno sizes:', len(phenotypes_ids_dict), len(all_phenotypes))
 
-    snps_positions[[*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']] = snps_positions.progress_apply(
+    
+    a = snps_positions.progress_apply(
         lambda x: get_phens_by_id(x, all_phenotypes, ids_phenotypes_dict, gtex), axis=1)
+    print(a)
+    snps_positions[[*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']] = a
     
     snps_positions.to_csv(out_path, sep='\t', index=False)
 
