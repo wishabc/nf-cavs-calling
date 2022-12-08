@@ -68,7 +68,7 @@ def parse_ebi(filepath):
     return phenotypes
 
 
-def parse_gtex(qtlfiles, transqtl, snps):
+def parse_gtex(qtlfiles, transqtl):
 
     result = {'trans': {}, 'cis': {}}
     print('Number of cis-eQTL files:', len(qtlfiles))
@@ -91,9 +91,8 @@ def parse_gtex(qtlfiles, transqtl, snps):
 
                 chrpos = '_'.join(a['variant_id'].split('_')[:2])
 
-                if chrpos in snps:
-                    result['cis'].set_default(chrpos, (set(), set()))[0].add(tis)
-                    result['cis'][chrpos][1].add(a['gene_id'])
+                result['cis'].set_default(chrpos, (set(), set()))[0].add(tis)
+                result['cis'][chrpos][1].add(a['gene_id'])
 
     print('Starting to parse transqtl')
     with open(transqtl) as trfile:
@@ -110,9 +109,9 @@ def parse_gtex(qtlfiles, transqtl, snps):
             tis = a['tissue_id']
             gen = a['gene_id']
 
-            if chrpos in snps:
-                result['trans'].set_default(chrpos, (set(), set()))[0].add(tis)
-                result['trans'][chrpos][1].add(gen)
+            result['trans'].set_default(chrpos, (set(), set()))[0].add(tis)
+            result['trans'][chrpos][1].add(gen)
+    
     return result
     
     
@@ -169,6 +168,7 @@ def arr_to_str(arr):
 def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
     snp_id = row['ID']
     snp_posid = row.posID
+    assert len(gtex[list(gtex.keys())[0]]) != 0
     res = [arr_to_str([ids_phenotypes_dict[y]
                                 for y in all_phenotypes.get(snp_id, {}).get(x, [])
                                 if y is not None])
@@ -188,7 +188,6 @@ def main(phenotypes_dir, snps_path, out_path):
     snps = pd.read_table(snps_path)
     snps_positions = snps[[*starting_columns, 'fdrp_bh_ref', 'fdrp_bh_alt']]
     del snps
-    snp_ids = snps_positions['ID'].tolist()
     snps_positions['posID'] = snps_positions['#chr'] + '_' + snps_positions['end'].astype(str)
     grasp = os.path.join(phenotypes_dir, 'pheno', 'grasp_pheno.tsv')
     ebi = os.path.join(phenotypes_dir, 'pheno', 'gwas_catalog.tsv')
@@ -206,7 +205,7 @@ def main(phenotypes_dir, snps_path, out_path):
                               parse_finemapping(fm),
                               ]
     print('Started parsing GTEX')
-    gtex = parse_gtex(qtlfiles, transqtl, snps_positions.head(10000).posID)
+    gtex = parse_gtex(qtlfiles, transqtl)
     print('Parsing finished')
     phenotypes_ids_dict = {}
     ids_phenotypes_dict = {}
