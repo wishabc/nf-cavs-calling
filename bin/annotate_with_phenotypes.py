@@ -179,12 +179,14 @@ def main(phenotypes_dir, snps_path, out_path):
 
     qtlfiles = glob.glob(os.path.join(phenotypes_dir, 'eqtl', 'signif', '*.txt'))
     transqtl = os.path.join(phenotypes_dir, 'eqtl', 'GTEx_Analysis_v8_trans_eGenes_fdr05.txt')
+    print('Started parsing DBs')
     phenotypes_for_db_list = [parse_grasp(grasp, snp_ids),
                               parse_ebi(ebi, snp_ids),
                               parse_clinvar(clinvar, snp_ids),
                               parse_phewas(phewas, snp_ids),
                               parse_finemapping(fm, snp_ids),
                               ]
+    print('Started parsing GTEX')
     gtex = parse_gtex(qtlfiles, transqtl, snps_positions.posID)
     print('Parsing finished')
     phenotypes_ids_dict = {}
