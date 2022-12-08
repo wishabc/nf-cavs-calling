@@ -13,7 +13,7 @@ def pack(arr):
     return '\t'.join(map(str, arr)) + '\n'
 
 
-def parse_grasp(filepath, snps):
+def parse_grasp(filepath):
     phenotypes = {}
     print('Parsing Grasp')
     with open(filepath) as file:
@@ -29,7 +29,7 @@ def parse_grasp(filepath, snps):
     return phenotypes
 
 
-def parse_finemapping(filepath, snps):
+def parse_finemapping(filepath):
     phenotypes = {}
     print('Parsing Finemapping')
     with open(filepath) as file:
@@ -40,13 +40,13 @@ def parse_finemapping(filepath, snps):
             if a[0] not in phenotypes:
                 phenotypes[a[0]] = set()
             rs_id = a[2]
-            if rs_id not in snps:
-                continue
+            # if rs_id not in snps:
+            #     continue
             phenotypes[a[0]].add(rs_id)
     return phenotypes
 
 
-def parse_ebi(filepath, snps):
+def parse_ebi(filepath):
     phenotypes = {}
     print('Parsing EBI')
     with open(filepath, 'r') as file:
@@ -58,8 +58,8 @@ def parse_ebi(filepath, snps):
                 if a[7] not in phenotypes:
                     phenotypes[a[7]] = set()
                 rs_id = f"rs{a[23]}"
-                if rs_id not in snps:
-                    continue
+                # if rs_id not in snps:
+                #     continue
                 phenotypes[a[7]].add(rs_id)
             except ValueError:
                 continue
@@ -114,7 +114,7 @@ def parse_gtex(qtlfiles, transqtl, snps):
     
     
 
-def parse_phewas(filepath, snps):
+def parse_phewas(filepath):
     phenotypes = {}
     print('Parsing phewas')
     with open(filepath, 'r') as file:
@@ -126,14 +126,14 @@ def parse_phewas(filepath, snps):
             if ph not in phenotypes:
                 phenotypes[ph] = set()
             rs_id = f"rs{int(a[0][3:])}"
-            if rs_id not in snps:
-                continue
+            # if rs_id not in snps:
+            #     continue
             phenotypes[ph].add(rs_id)
 
     return phenotypes
 
 
-def parse_clinvar(filepath, snps):
+def parse_clinvar(filepath):
     phenotypes = {}
     print('Parsing ClinVar')
     with open(filepath, 'r') as file:
@@ -150,8 +150,8 @@ def parse_clinvar(filepath, snps):
                 if ph not in phenotypes:
                     phenotypes[ph] = set()
                 rs_id = f"rs{a[9]}"
-                if rs_id not in snps:
-                    continue
+                # if rs_id not in snps:
+                #     continue
                 phenotypes[ph].add(rs_id)
     return phenotypes
 
@@ -185,11 +185,11 @@ def main(phenotypes_dir, snps_path, out_path):
     qtlfiles = glob.glob(os.path.join(phenotypes_dir, 'eqtl', 'signif', '*.txt'))
     transqtl = os.path.join(phenotypes_dir, 'eqtl', 'GTEx_Analysis_v8_trans_eGenes_fdr05.txt')
     print('Started parsing DBs')
-    phenotypes_for_db_list = [parse_grasp(grasp, snp_ids),
-                              parse_ebi(ebi, snp_ids),
-                              parse_clinvar(clinvar, snp_ids),
-                              parse_phewas(phewas, snp_ids),
-                              parse_finemapping(fm, snp_ids),
+    phenotypes_for_db_list = [parse_grasp(grasp),
+                              parse_ebi(ebi),
+                              parse_clinvar(clinvar),
+                              parse_phewas(phewas),
+                              parse_finemapping(fm),
                               ]
     print('Started parsing GTEX')
     gtex = parse_gtex(qtlfiles, transqtl, snps_positions[snps_positions[['fdrp_bh_ref', 'fdrp_bh_alt']].min(axis=1) <= 0.05].posID)
