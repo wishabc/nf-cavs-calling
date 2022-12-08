@@ -166,6 +166,7 @@ def remove_phen_name_punctuation(phenotype_name):
 
 
 def main(phenotypes_dir, snps_path, out_path):
+    print('Reading files')
     snps = pd.read_table(snps_path)
     snps_positions = snps[starting_columns]
     snp_ids = snps_positions['ID'].tolist()
