@@ -215,14 +215,12 @@ def main(phenotypes_dir, snps_path, out_path):
 
     all_phenotypes = {}
 
-    for i, db in enumerate(phenotypes_for_db_list):
+    for i in range(len(phenotypes_for_db_list)):
         for phenotype in phenotypes_for_db_list[i]:
             for rs in phenotypes_for_db_list[i][phenotype]:
-                print(rs)
                 if rs not in all_phenotypes:
                     all_phenotypes[rs] = {x: set() for x in phenotype_db_names}
-                print(db, all_phenotypes)
-                all_phenotypes[rs][db].add(
+                all_phenotypes[rs][phenotype_db_names[i]].add(
                     phenotypes_ids_dict[remove_phen_name_punctuation(phenotype)])
     
     print('pheno sizes:', len(phenotypes_ids_dict), len(all_phenotypes))
