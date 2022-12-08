@@ -23,8 +23,8 @@ def parse_grasp(filepath, snps):
         if a[1] not in phenotypes:
             phenotypes[a[1]] = set()
         rs_id = f"rs{a[0]}"
-        if rs_id not in snps:
-            continue
+        # if rs_id not in snps:
+        #     continue
         phenotypes[a[1]].add(rs_id)
     return phenotypes
 
