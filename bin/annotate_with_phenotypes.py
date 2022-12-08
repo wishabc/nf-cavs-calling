@@ -187,7 +187,7 @@ def main(phenotypes_dir, snps_path, out_path):
                               parse_finemapping(fm, snp_ids),
                               ]
     print('Started parsing GTEX')
-    gtex = parse_gtex(qtlfiles, transqtl, snps_positions.posID)
+    gtex = parse_gtex(qtlfiles, transqtl, snps_positions[snps_positions[['fdrp_bh_ref', 'fdrp_bh_alt']].min(axis=1) <= 0.05].posID)
     print('Parsing finished')
     phenotypes_ids_dict = {}
     ids_phenotypes_dict = {}
