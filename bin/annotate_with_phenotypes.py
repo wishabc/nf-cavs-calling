@@ -71,7 +71,7 @@ def parse_gtex(qtlfiles, transqtl, snps):
     result = {'trans': {}, 'cis': {}}
     print('Number of cis-eQTL files:', len(qtlfiles))
 
-    for qtlfile in qtlfiles:
+    for qtlfile in tqdm(list(qtlfiles)):
         with open(qtlfile) as qfile:
 
             tis = qtlfile[qtlfile.rfind('/') + 1:qtlfile.find('.v8.')]
@@ -93,6 +93,7 @@ def parse_gtex(qtlfiles, transqtl, snps):
                     result['cis'].set_default(chrpos, (set(), set()))[0].add(tis)
                     result['cis'][chrpos][1].add(a['gene_id'])
 
+    print('Starting to parse transqtl')
     with open(transqtl) as trfile:
         for line in trfile:
             if line.startswith('tissue_id'):
