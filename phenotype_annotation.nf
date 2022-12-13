@@ -44,7 +44,7 @@ process run_ldsc {
         --h2 ${phenotype_sumstats} \
         --ref-ld-chr ld_files/${ld_prefix} \
         --frqfile-chr frqfiles/${frq_prefix} \
-        --w-ld-chr ld_files/${ld_prefix} \
+        --w-ld-chr weights/${ld_prefix} \
         --overlap-annot \
         --print-coefficients \
         --print-delete-vals \
