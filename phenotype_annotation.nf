@@ -51,7 +51,7 @@ process run_ldsc {
     tag "${phen_name}"
 
     input:
-        tuple val(phen_id), val(phen_name) path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
     
     output:
         tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
