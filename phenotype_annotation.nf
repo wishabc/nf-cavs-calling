@@ -28,7 +28,7 @@ process run_ldsc {
 
     input:
         tuple val(phen_id), val(phen_name), path(phenotype_sumstats), val(ld_prefix), path(baselineLD)
-        path frqfiles
+        tuple val(frq_prefix), path(frqfiles)
     output:
         tuple val(phen_id), val(phen_name), path("${name}*")
 
@@ -56,7 +56,9 @@ workflow LDSC {
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
     params.frqfiles = "/net/seq/data2/projects/sabramov/LDSC/UKBB.allele_freqs/UKBB.QC."
-    run_ldsc(phens.combine(annotations), file("${params.frqfiles}*"))
+    frqs = Channel.of(file(params.frqfiles))
+        .map(it -> tuple(it.name, file("${it}*")))
+    run_ldsc(phens.combine(annotations), frqs)
 }
 
 
