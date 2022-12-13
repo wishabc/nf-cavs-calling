@@ -24,26 +24,24 @@ params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
 
 process find_ld {
     publishDir "${params.outdir}/l2"
-    tag "${phen_name}"
+    tag "${phen_name}:${chrom}"
     conda params.ldsc_conda
 
     input:
-        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(chrom)
     
     output:
         tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
     
     script:
     """
-    for CHR in {1..22}; do
-        /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
-            --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
-            --ld-wind-cm 1.0 \
-            --out ld_files/${ld_prefix}\$CHR \
-            --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38.\$CHR \
-            --annot ld_files/${ld_prefix}\$CHR.annot.gz \
-            --l2
-    done
+    /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
+        --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
+        --ld-wind-cm 1.0 \
+        --out ld_files/${ld_prefix}${chrom} \
+        --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38.${chrom} \
+        --annot ld_files/${ld_prefix}${chrom}.annot.gz \
+        --l2
     """
 }
 
@@ -83,10 +81,11 @@ workflow LDSC {
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
-    
+    chroms = Channel.of(1..23)
     params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
     params.weights = "/home/sabramov/LDSC/weights/weights."
-    ld_data = find_ld(phens.combine(annotations))
+    ld_data = find_ld(phens.combine(annotations).combine(chroms))
+        .groupTuple()
     frqs = Channel.of(file(params.frqfiles))
         .map(it -> tuple(it.name, file("${it}*.frq")))
     run_ldsc(ld_data.combine(frqs))
