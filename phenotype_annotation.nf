@@ -27,7 +27,7 @@ process run_ldsc {
     tag "${phen_name}"
 
     input:
-        tuple val(phen_id), val(phen_name), path(phenotype_sumstats), path(baselineLD)
+        tuple val(phen_id), val(phen_name), path(phenotype_sumstats), val(ld_prefix), path(baselineLD)
 
     output:
         tuple val(phen_id), val(phen_name), path("${name}*")
@@ -37,8 +37,8 @@ process run_ldsc {
     """
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${phenotype_sumstats} \
-        --ref-ld-chr ${baselineLD}. \
-        --w-ld-chr ${baselineLD}. \
+        --ref-ld-chr ${ld_prefix} \
+        --w-ld-chr ${ld_prefix} \
         --overlap-annot \
         --print-coefficients \
         --print-delete-vals \
@@ -47,7 +47,8 @@ process run_ldsc {
 }
 
 workflow LDSC {
-    params.annotations = Channel.of(file("/net/seq/data2/projects/sabramov/LDSC/test_intersection/*"))
+    params.annotations = Channel.of(
+        tuple("baselineLD.", file("/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.*")))
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
