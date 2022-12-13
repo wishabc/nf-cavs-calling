@@ -33,7 +33,7 @@ process find_ld {
     script:
     """
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
-        --print-snps list.txt \
+        --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
         --ld-wind-cm 1.0 \
         --out ld_files/${ld_prefix} \
         --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38 \
@@ -79,7 +79,7 @@ workflow LDSC {
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
     
-    params.frqfiles = "/net/seq/data2/projects/sabramov/LDSC/UKBB.allele_freqs/UKBB.QC."
+    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G*.frq"
     params.weights = "/home/sabramov/LDSC/weights/weights."
     ld_data = find_ld(phens.combine(annotations))
     run_ldsc(ld_data.combine(frqs))
