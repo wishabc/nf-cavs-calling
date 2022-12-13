@@ -36,6 +36,10 @@ process run_ldsc {
     name = "${phen_id}.result"
     """
     mkdir phen_results
+    mkdir weights
+    for file in ld_files/*.l2.ldscore.gz; do
+        zcat \$file | awk '{print \$1,\$2,\$3,\$4}' | gzip > weights/`basename \$file`
+    done
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${phenotype_sumstats} \
         --ref-ld-chr ld_files/${ld_prefix} \
