@@ -39,9 +39,9 @@ process find_ld {
         /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
             --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
             --ld-wind-cm 1.0 \
-            --out ld_files/${ld_prefix}.\$CHR \
+            --out ld_files/${ld_prefix}\$CHR \
             --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38.\$CHR \
-            --annot ld_files/${ld_prefix}.\$CHR.annot.gz \
+            --annot ld_files/${ld_prefix}\$CHR.annot.gz \
             --l2
     done
     """
