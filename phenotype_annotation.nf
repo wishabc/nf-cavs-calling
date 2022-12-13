@@ -28,7 +28,7 @@ process run_ldsc {
 
     input:
         tuple val(phen_id), val(phen_name), path(phenotype_sumstats), val(ld_prefix), path(baselineLD)
-
+        path frqfiles
     output:
         tuple val(phen_id), val(phen_name), path("${name}*")
 
@@ -38,6 +38,7 @@ process run_ldsc {
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${phenotype_sumstats} \
         --ref-ld-chr ${ld_prefix} \
+        --frqfile-chr ${frqfiles} \
         --w-ld-chr ${ld_prefix} \
         --overlap-annot \
         --print-coefficients \
@@ -47,15 +48,15 @@ process run_ldsc {
 }
 
 workflow LDSC {
-    params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection'
-    params.annotations = Channel.of("baselineLD.")
-        .map(it -> tuple(it, file("${params.ann_path}/${it}*")))
+    params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.'
+    annotations = Channel.of(file(params.ann_path))
+        .map(it -> tuple(it.name, file("${it}*")))
 
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
-    
-    run_ldsc(phens.combine(params.annotations))
+    params.frqfiles = "/net/seq/data2/projects/sabramov/LDSC/UKBB.allele_freqs/UKBB.QC."
+    run_ldsc(phens.combine(annotations), file("${params.frqfiles}*"))
 }
 
 
