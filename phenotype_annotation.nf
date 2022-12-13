@@ -26,6 +26,7 @@ process find_ld {
     publishDir "${params.outdir}/l2"
     tag "${phen_name}:chr${chrom}"
     conda params.ldsc_conda
+    maxForks 20
 
     input:
         tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(chrom)
