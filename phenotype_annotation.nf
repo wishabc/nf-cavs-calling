@@ -28,10 +28,10 @@ process find_ld {
     conda params.conda
 
     input:
-        val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
     
     output:
-        val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
     
     script:
     """
