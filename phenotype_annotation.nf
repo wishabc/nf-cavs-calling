@@ -38,7 +38,7 @@ process run_ldsc {
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${phenotype_sumstats} \
         --ref-ld-chr ${ld_prefix} \
-        --frqfile-chr ${frqfiles} \
+        --frqfile-chr ${frq_prefix} \
         --w-ld-chr ${ld_prefix} \
         --overlap-annot \
         --print-coefficients \
@@ -58,7 +58,7 @@ workflow LDSC {
     params.frqfiles = "/net/seq/data2/projects/sabramov/LDSC/UKBB.allele_freqs/UKBB.QC."
     frqs = Channel.of(file(params.frqfiles))
         .map(it -> tuple(it.name, file("${it}*")))
-    run_ldsc(phens.combine(annotations), frqs)
+    run_ldsc(phens.combine(annotations).combine(frqs))
 }
 
 
