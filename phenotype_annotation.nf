@@ -32,14 +32,15 @@ process find_ld {
         tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(chrom)
     
     output:
-        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("${name}*")
     
     script:
+    name = "ld_files/${ld_prefix}${chrom}"
     """
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
         --ld-wind-cm 1.0 \
-        --out ld_files/${ld_prefix}${chrom} \
+        --out ${name} \
         --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38.${chrom} \
         --annot ld_files/${ld_prefix}${chrom}.annot.gz \
         --l2
