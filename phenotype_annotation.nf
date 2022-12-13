@@ -82,9 +82,11 @@ workflow LDSC {
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
     
-    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G*.frq"
+    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
     params.weights = "/home/sabramov/LDSC/weights/weights."
     ld_data = find_ld(phens.combine(annotations))
+    frqs = Channel.of(file(params.frqfiles))
+        .map(it -> tuple(it.name, file("${it}*.frq")))
     run_ldsc(ld_data.combine(frqs))
 }
 
