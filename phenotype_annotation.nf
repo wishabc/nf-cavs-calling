@@ -35,8 +35,15 @@ process run_ldsc {
     script:
     name = "${phen_id}.result"
     """
+    ./ldsc.py \
+        --print-snps list.txt \
+        --ld-wind-cm 1.0 \
+        --out ld_files/${ld_prefix} \
+        --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38 \
+        --annot ld_files/${ld_prefix} \
+        --l2
+
     mkdir phen_results
-    mkdir weights
     for file in ld_files/*.l2.ldscore.gz; do
         zcat \$file | awk '{print \$1,\$2,\$3,\$4}' | gzip > weights/`basename \$file`
     done
@@ -44,7 +51,7 @@ process run_ldsc {
         --h2 ${phenotype_sumstats} \
         --ref-ld-chr ld_files/${ld_prefix} \
         --frqfile-chr frqfiles/${frq_prefix} \
-        --w-ld-chr weights/${ld_prefix} \
+        --w-ld-chr /home/sabramov/LDSC/weights/weights. \
         --overlap-annot \
         --print-coefficients \
         --print-delete-vals \
