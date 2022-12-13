@@ -21,13 +21,34 @@ process annotate_with_phenotypes {
 
 // TODO wrap in apptainer
 params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
+
+process find_ld {
+
+    input:
+        val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
+    
+    output:
+        val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
+    
+    script:
+    """
+    /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
+        --print-snps list.txt \
+        --ld-wind-cm 1.0 \
+        --out ld_files/${ld_prefix} \
+        --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38 \
+        --annot ld_files/${ld_prefix} \
+        --l2
+    """
+}
+
 process run_ldsc {
     conda params.ldsc_conda
     publishDir "${params.outdir}/ldsc"
     tag "${phen_name}"
 
     input:
-        tuple val(phen_id), val(phen_name), path(phenotype_sumstats), val(ld_prefix), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
+        tuple val(phen_id), val(phen_name) path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
     
     output:
         tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
@@ -35,23 +56,13 @@ process run_ldsc {
     script:
     name = "${phen_id}.result"
     """
-    ./ldsc.py \
-        --print-snps list.txt \
-        --ld-wind-cm 1.0 \
-        --out ld_files/${ld_prefix} \
-        --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38 \
-        --annot ld_files/${ld_prefix} \
-        --l2
 
     mkdir phen_results
-    for file in ld_files/*.l2.ldscore.gz; do
-        zcat \$file | awk '{print \$1,\$2,\$3,\$4}' | gzip > weights/`basename \$file`
-    done
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${phenotype_sumstats} \
         --ref-ld-chr ld_files/${ld_prefix} \
-        --frqfile-chr frqfiles/${frq_prefix} \
-        --w-ld-chr /home/sabramov/LDSC/weights/weights. \
+        --frqfile-chr ${params.frqfiles} \
+        --w-ld-chr ${params.weights} \
         --overlap-annot \
         --print-coefficients \
         --print-delete-vals \
@@ -67,10 +78,11 @@ workflow LDSC {
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
+    
     params.frqfiles = "/net/seq/data2/projects/sabramov/LDSC/UKBB.allele_freqs/UKBB.QC."
-    frqs = Channel.of(file(params.frqfiles))
-        .map(it -> tuple(it.name, file("${it}*")))
-    run_ldsc(phens.combine(annotations).combine(frqs))
+    params.weights = "/home/sabramov/LDSC/weights/weights."
+    ld_data = find_ld(phens.combine(annotations))
+    run_ldsc(ld_data.combine(frqs))
 }
 
 
