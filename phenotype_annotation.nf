@@ -49,7 +49,7 @@ process run_ldsc {
 workflow LDSC {
     params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection'
     params.annotations = Channel.of("baselineLD.")
-        .map(it -> tuple(it, "${params.ann_path}/${it}*"))
+        .map(it -> tuple(it, file("${params.ann_path}/${it}*")))
 
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
