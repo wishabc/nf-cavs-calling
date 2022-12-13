@@ -25,6 +25,7 @@ params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
 process find_ld {
     publishDir "${params.outdir}/l2"
     tag "${phen_name}"
+    conda params.conda
 
     input:
         val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*")
