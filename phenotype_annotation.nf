@@ -81,7 +81,7 @@ workflow LDSC {
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
-    chroms = Channel.of(1..23)
+    chroms = Channel.of(1..22)
     params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
     params.weights = "/home/sabramov/LDSC/weights/weights."
     ld_data = find_ld(phens.combine(annotations).combine(chroms))
