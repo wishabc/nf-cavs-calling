@@ -27,22 +27,24 @@ process run_ldsc {
     tag "${phen_name}"
 
     input:
-        tuple val(phen_id), val(phen_name), path(phenotype_sumstats), val(ld_prefix), path(baselineLD), val(frq_prefix), path(frqfiles)
+        tuple val(phen_id), val(phen_name), path(phenotype_sumstats), val(ld_prefix), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
+    
     output:
-        tuple val(phen_id), val(phen_name), path("${name}*")
+        tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
 
     script:
     name = "${phen_id}.result"
     """
+    mkdir phen_results
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${phenotype_sumstats} \
-        --ref-ld-chr ${ld_prefix} \
-        --frqfile-chr ${frq_prefix} \
-        --w-ld-chr ${ld_prefix} \
+        --ref-ld-chr ld_files/${ld_prefix} \
+        --frqfile-chr frqfiles/${frq_prefix} \
+        --w-ld-chr ld_files/${ld_prefix} \
         --overlap-annot \
         --print-coefficients \
         --print-delete-vals \
-        --out ${name}
+        --out phen_results/${name}
     """
 }
 
