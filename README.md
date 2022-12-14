@@ -36,8 +36,7 @@ There are two config files in the repository.
 - ```nextflow.config``` - contains enviornment configuration. Detailed explanation can be found at https://www.nextflow.io/docs/latest/config.html. 
 - ```babachi_params.config``` - specifies thresholds and paths to input files.
 
-Following parameters should be present in ```babachi_params.config```. Each option can be specified either in ```babachi_params.config``` file or in command line using double dash (```--```) before the param name (e.g. ```--vcf_file```).
-- ```vcf_file``` - path to input ```all.vcf.gz``` file with SNVs called in all samples
+Following parameters should be present in ```babachi_params.config```. Each option can be specified either in ```babachi_params.config``` file or in command line using 
 
 - ```outdir``` - directory to save results into.
 

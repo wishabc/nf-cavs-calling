@@ -1,7 +1,6 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
 include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs; aggregate_pvals } from "./pval_calc"
-include { motifEnrichment } from "./motif_enrichment"
 
 def set_key_for_group_tuple(ch) {
   ch.groupTuple()
@@ -12,7 +11,6 @@ def set_key_for_group_tuple(ch) {
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
-params.footprints_master = ""
 
 
 process merge_and_gzip {
@@ -110,7 +108,7 @@ workflow aggregation {
                 .map(it -> tuple('all', it)) | merge_and_gzip
 
         }
-        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.') // | motifEnrichment
+        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')
     emit:
         out
 }
@@ -118,27 +116,17 @@ workflow aggregation {
 workflow annotateWithFootprints {
     take:
         pval_files
-        footprints
     main:
-        data = pval_files.join(footprints, remainder: true)
+        annotations = Channel.fromPath(params.samples_file)
+            .splitCsv(header:true, sep:'\t')
+            .map(row -> tuple(row.ag_id,
+                                file(row.hotspots_file), 
+                                row.footprint_path ? file(row.footprint_path) : null)
+                )
+        data = pval_files.join(annotations)
         annotations = annotate_variants(data)
     emit:
         annotations
-}
-
-
-workflow withExistingFootprints {
-    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
-        .map(it -> tuple(file(it).simpleName, file(it)))
-    hotspots = Channel.fromPath(params.samples_file)
-        .splitCsv(header:true, sep:'\t')
-        .map(row -> tuple(row.ag_id, file(row.hotspots_file)))
-    d = sample_pvals.join(hotspots)
-
-    footprints = Channel.fromPath(params.footprints_master)
-        .splitCsv(header:true, sep:'\t')
-        .map(row -> tuple(row.ag_id, file(row.footprint_path)))
-    annotateWithFootprints(d, footprints)
 }
 
 workflow aggregatePvals {
@@ -158,7 +146,6 @@ workflow {
     // Calculate P-value + exclude 1-st round CAVs 
     no_cavs_snps = callCavsFromVcfsBinom(intersect_files, iter1_prefix)
 
-
     iter2_prefix = 'final.'
     // Reestimate BAD, and add excluded SNVs
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
@@ -167,9 +154,16 @@ workflow {
     sample_split_pvals = split_into_samples(binom_p).flatten()
         .map(it -> tuple(it.simpleName, it))
 
-    footprints = Channel.fromPath(params.footprints_master)
-        .splitCsv(header:true, sep:'\t')
-        .map(row -> tuple(row.ag_id, file(row.footprint_path)))
+    // Annotate with footprints and hotspots + aggregate by provided aggregation key
     ann_pvals = annotateWithFootprints(sample_split_pvals, footprints)
     aggregation(ann_pvals)
+}
+
+
+// Debug workflows
+workflow withFootprints {
+    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
+        .map(it -> tuple(file(it).simpleName, file(it)))
+    
+    annotateWithFootprints(sample_pvals)
 }

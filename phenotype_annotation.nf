@@ -1,6 +1,9 @@
+#!/usr/bin/env nextflow
+params.conda = "$moduleDir/environment.yml"
+
 params.phenotypes_data = "/home/sabramov/phenotypes_data"
 
-
+// Annotates with pheWAS, clinvar, finemapping, grasp, ebi-gwas phenotypes
 process annotate_with_phenotypes {
     conda params.conda
     tag "${sample_id}"
@@ -30,21 +33,23 @@ process find_ld {
     conda params.ldsc_conda
 
     input:
-        tuple val(ld_prefix), path("ld_files/*"), val(chrom)
+        val chrom
     
     output:
-        tuple val(ld_prefix), path("${name}*")
+        tuple path("${name}*"), path(ann_path)
     
     script:
-    name = "result/${ld_prefix}${chrom}"
+    prefix = file(params.ann_path).name
+    name = "result/${prefix}${chrom}"
+    ann_path = "${params.ann_path}${chrom}.annot.gz"
     """
     mkdir result
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
-        --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
+        --print-snps ${params.ukbb_snps} \
         --ld-wind-cm 1.0 \
         --out ${name} \
         --bfile /home/sabramov/LDSC/plink_files/1000G.EUR.hg38.${chrom} \
-        --annot ld_files/${ld_prefix}${chrom}.annot.gz \
+        --annot ${ann_path} \
         --l2
     """
 }
@@ -56,12 +61,15 @@ process run_ldsc {
 
     input:
         tuple val(ld_prefix), path("ld_files/*"), val(phen_id), val(phen_name), path(sumstats_file)
+        tuple val(phen_id), val(phen_name), path(sumstats_file)
+        path "ld_files/*"
     
     output:
         tuple val(phen_id), val(phen_name), path("${name}*")
 
     script:
     name = "${phen_id}.result"
+    ld_prefix = file(params.ann_path).name
     """
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${sumstats_file} \
@@ -77,8 +85,9 @@ process run_ldsc {
 
 workflow LDSC {
     params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.'
-    annotations = Channel.of(file(params.ann_path))
-        .map(it -> tuple(it.name, file("${it}*")))
+    params.ukbb_snps = "/net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv"
+    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
+    params.weights = "/home/sabramov/LDSC/weights/weights."
 
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
@@ -88,6 +97,9 @@ workflow LDSC {
     params.weights = "/home/sabramov/LDSC/weights/weights.hm3_noMHC."
     ld_data = find_ld(annotations.combine(chroms)).groupTuple()
     run_ldsc(ld_data.join(annotations).combine(phens))
+
+    ld_data = find_ld(chroms).collect()
+    run_ldsc(phens, ld_data)
 }
 
 workflow regressionOnly {
