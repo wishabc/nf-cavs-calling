@@ -23,7 +23,9 @@ process annotate_with_phenotypes {
 params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
 
 process find_ld {
-    publishDir "${params.outdir}/l2"
+    publishDir "${params.outdir}/l2_logs", pattern: "${name}*.${chrom}.log"
+    publishDir "${params.outdir}/l2", pattern: "${name}*.${chrom}.l2.ldscore.gz"
+    publishDir "${params.outdir}/l2_logs", pattern: "${name}*.${chrom}.l2.M*"
     tag "${phen_name}:chr${chrom}"
     conda params.ldsc_conda
     maxForks 20
@@ -32,11 +34,12 @@ process find_ld {
         tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(chrom)
     
     output:
-        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("${name}*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), path("${name}*")
     
     script:
-    name = "ld_files/${ld_prefix}${chrom}"
+    name = "result/${ld_prefix}${chrom}"
     """
+    mkdir result
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --print-snps /net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv \
         --ld-wind-cm 1.0 \
@@ -53,7 +56,7 @@ process run_ldsc {
     tag "${phen_name}"
 
     input:
-        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
+        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
     
     output:
         tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
