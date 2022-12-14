@@ -97,7 +97,8 @@ workflow regressionOnly {
     params.weights = "/home/sabramov/LDSC/weights/weights."
     annotations = Channel.fromPath("${params.ann_path}*")
         .concat(
-            Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2/result/baselineLD.*")
+            Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2/result/baselineLD.*"),
+            Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2_logs/result/baselineLD.*.M*")
         ).collect()
         .map(it -> tuple(file(params.ann_path).name, it))
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
