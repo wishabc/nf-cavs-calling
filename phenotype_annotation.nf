@@ -58,12 +58,11 @@ process run_ldsc {
         tuple val(ld_prefix), path("ld_files/*"), val(phen_id), val(phen_name), path(sumstats_file)
     
     output:
-        tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
+        tuple val(phen_id), val(phen_name), path("${name}*")
 
     script:
     name = "${phen_id}.result"
     """
-    mkdir phen_results
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
         --h2 ${sumstats_file} \
         --ref-ld-chr ld_files/${ld_prefix} \
@@ -72,7 +71,7 @@ process run_ldsc {
         --overlap-annot \
         --print-coefficients \
         --print-delete-vals \
-        --out phen_results/${name}
+        --out ${name}
     """
 }
 
