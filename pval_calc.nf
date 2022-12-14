@@ -19,12 +19,9 @@ process calculate_pvalue {
 
     script:
     name = "${indiv_id}.pvalue.bed"
-    additional_param = params.recalc_w ? "--recalc-w" : ""
     """
     python3 $moduleDir/bin/calc_pval.py -I '${badmap_intersect_file}' \
-         -O ${name} -s ${strategy} --stats-file ${stats_file} \
-          --es-method ${params.es_method} \
-           ${additional_param}
+         -O ${name} -s ${strategy} --stats-file ${stats_file}
     """
 }
 

@@ -103,6 +103,7 @@ workflow LDSC {
 }
 
 workflow regressionOnly {
+    // Remove second part from concat once M logs being processed
     ld_data = Channel.fromPath("${params.ann_path}*")
         .concat(
             Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2/result/baselineLD.*"),
