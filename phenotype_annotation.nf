@@ -93,7 +93,8 @@ workflow LDSC {
 
 workflow regressionOnly {
     params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.'
-
+    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
+    params.weights = "/home/sabramov/LDSC/weights/weights."
     annotations = Channel.fromPath("${params.ann_path}*")
         .concat(
             Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2/result/baselindeLD.*")
