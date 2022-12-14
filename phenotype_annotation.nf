@@ -25,7 +25,7 @@ params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
 process find_ld {
     publishDir "${params.outdir}/l2_logs", pattern: "${name}.log"
     publishDir "${params.outdir}/l2", pattern: "${name}.l2.ldscore.gz"
-    publishDir "${params.outdir}/l2_logs", pattern: "${name}.l2.M*"
+    publishDir "${params.outdir}/l2", pattern: "${name}.l2.M*"
     tag "chr${chrom}"
     conda params.ldsc_conda
 
@@ -86,7 +86,7 @@ workflow LDSC {
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
     chroms = Channel.of(1..22)
     params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
-    params.weights = "/home/sabramov/LDSC/weights/weights."
+    params.weights = "/home/sabramov/LDSC/weights/weights.hm3_noMHC."
     ld_data = find_ld(annotations.combine(chroms)).groupTuple()
     run_ldsc(ld_data.join(annotations).combine(phens))
 }
