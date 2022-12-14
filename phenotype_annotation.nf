@@ -26,15 +26,14 @@ process find_ld {
     publishDir "${params.outdir}/l2_logs", pattern: "${name}.log"
     publishDir "${params.outdir}/l2", pattern: "${name}.l2.ldscore.gz"
     publishDir "${params.outdir}/l2_logs", pattern: "${name}.l2.M*"
-    tag "${phen_name}:chr${chrom}"
+    tag "chr${chrom}"
     conda params.ldsc_conda
-    maxForks 20
 
     input:
-        tuple val(phen_id), val(phen_name), path(sumstats_file), val(ld_prefix), path("ld_files/*"), val(chrom)
+        tuple val(ld_prefix), path("ld_files/*"), val(chrom)
     
     output:
-        tuple val(phen_id), val(ld_prefix), path("${name}*")
+        tuple val(ld_prefix), path("${name}*")
     
     script:
     name = "result/${ld_prefix}${chrom}"
@@ -56,7 +55,7 @@ process run_ldsc {
     tag "${phen_name}"
 
     input:
-        tuple val(phen_id), val(ld_prefix), path("ld_files/*"), val(phen_name), path(sumstats_file), path("ld_files/*"), val(frq_prefix), path("frqfiles/*")
+        tuple val(ld_prefix), path("ld_files/*"), val(phen_id), val(phen_name), path(sumstats_file), path("ld_files/*")
     
     output:
         tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
@@ -88,12 +87,8 @@ workflow LDSC {
     chroms = Channel.of(1..22)
     params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
     params.weights = "/home/sabramov/LDSC/weights/weights."
-    data = phens.combine(annotations)
-    ld_data = find_ld(data.combine(chroms)).groupTuple(by: [0,1])
-    
-    frqs = Channel.of(file(params.frqfiles))
-        .map(it -> tuple(it.name, file("${it}*.frq")))
-    run_ldsc(ld_data.join(phens).join(annotations, by: 1).combine(frqs))
+    ld_data = find_ld(annotations.combine(chroms)).groupTuple()
+    run_ldsc(ld_data.join(annotations).combine(phens))
 }
 
 
