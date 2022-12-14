@@ -23,9 +23,9 @@ process annotate_with_phenotypes {
 params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
 
 process find_ld {
-    publishDir "${params.outdir}/l2_logs", pattern: "${name}*.${chrom}.log"
-    publishDir "${params.outdir}/l2", pattern: "${name}*.${chrom}.l2.ldscore.gz"
-    publishDir "${params.outdir}/l2_logs", pattern: "${name}*.${chrom}.l2.M*"
+    publishDir "${params.outdir}/l2_logs", pattern: "${name}.log"
+    publishDir "${params.outdir}/l2", pattern: "${name}.l2.ldscore.gz"
+    publishDir "${params.outdir}/l2_logs", pattern: "${name}.l2.M*"
     tag "${phen_name}:chr${chrom}"
     conda params.ldsc_conda
     maxForks 20
