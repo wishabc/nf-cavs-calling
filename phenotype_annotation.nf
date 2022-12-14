@@ -61,10 +61,9 @@ process run_ldsc {
     script:
     name = "${phen_id}.result"
     """
-
     mkdir phen_results
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
-        --h2 ${phenotype_sumstats} \
+        --h2 ${sumstats_file} \
         --ref-ld-chr ld_files/${ld_prefix} \
         --frqfile-chr ${params.frqfiles} \
         --w-ld-chr ${params.weights} \
@@ -86,8 +85,7 @@ workflow LDSC {
     chroms = Channel.of(1..22)
     params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
     params.weights = "/home/sabramov/LDSC/weights/weights."
-    ld_data = find_ld(phens.combine(annotations).combine(chroms))
-    ld_data.groupTuple(by: [0,3])
+    ld_data = find_ld(phens.combine(annotations).combine(chroms)).groupTuple(by: [0,3])
     frqs = Channel.of(file(params.frqfiles))
         .map(it -> tuple(it.name, file("${it}*.frq")))
     run_ldsc(ld_data.combine(frqs))
