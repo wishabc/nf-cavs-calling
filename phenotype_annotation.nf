@@ -55,7 +55,7 @@ process run_ldsc {
     tag "${phen_name}"
 
     input:
-        tuple val(ld_prefix), path("ld_files/*"), val(phen_id), val(phen_name), path(sumstats_file), path("ld_files/*")
+        tuple val(ld_prefix), path("ld_files/*"), val(phen_id), val(phen_name), path(sumstats_file)
     
     output:
         tuple val(phen_id), val(phen_name), path("phen_results/${name}*")
@@ -91,6 +91,19 @@ workflow LDSC {
     run_ldsc(ld_data.join(annotations).combine(phens))
 }
 
+workflow regressionOnly {
+    params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.'
+
+    annotations = Channel.fromPath("${params.ann_path}*")
+        .concat(
+            Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2/result/baselindeLD.*")
+        ).collect()
+        .map(it -> tuple(file(params.ann_path).name, it))
+    phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
+    run_ldsc(annotations.combine(phens))
+}
 
 workflow annotateWithPheno {
     params.pval_file_dir = "/net/seq/data2/projects/sabramov/ENCODE4/cav-calling/babachi_1.5_common_final/all_aggregations/output/final.ag_files_binom.all"
