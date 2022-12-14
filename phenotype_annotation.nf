@@ -85,7 +85,7 @@ workflow LDSC {
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
     chroms = Channel.of(1..22)
-    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G"
+    params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G.EUR.hg38."
     params.weights = "/home/sabramov/LDSC/weights/weights.hm3_noMHC."
     ld_data = find_ld(annotations.combine(chroms)).groupTuple()
     run_ldsc(ld_data.join(annotations).combine(phens))
