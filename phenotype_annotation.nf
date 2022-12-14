@@ -3,9 +3,9 @@ params.conda = "$moduleDir/environment.yml"
 
 params.phenotypes_data = "/home/sabramov/phenotypes_data"
 
+
 // TODO wrap in apptainer
 params.ldsc_conda = "/home/sabramov/miniconda3/envs/ldsc"
-
 params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.'
 params.ukbb_snps = "/net/seq/data2/projects/sabramov/LDSC/UKBB_hm3.snps.tsv"
 params.frqfiles = "/home/sabramov/LDSC/plink_files/1000G.EUR.hg38."
@@ -35,6 +35,7 @@ process find_ld {
     publishDir "${params.outdir}/l2", pattern: "${name}.l2.ldscore.gz"
     publishDir "${params.outdir}/l2", pattern: "${name}.l2.M*"
     tag "chr${chrom}"
+    scratch true
     conda params.ldsc_conda
 
     input:
@@ -61,8 +62,11 @@ process find_ld {
 
 process run_ldsc {
     conda params.ldsc_conda
-    publishDir "${params.outdir}/ldsc"
+    publishDir "${params.outdir}/ldsc", pattern: "${name}.results"
+    publishDir "${params.outdir}/ldsc_logs", pattern: "${name}.logs"
+    publishDir "${params.outdir}/ldsc_logs", pattern: "${name}.part_delete"
     tag "${phen_name}"
+    scratch true
 
     input:
         tuple val(phen_id), val(phen_name), path(sumstats_file)
@@ -72,7 +76,7 @@ process run_ldsc {
         tuple val(phen_id), val(phen_name), path("${name}*")
 
     script:
-    name = "${phen_id}.result"
+    name = "${phen_id}"
     ld_prefix = file(params.ann_path).name
     """
     /home/sabramov/projects/ENCODE4/ldsc/ldsc.py \
@@ -99,17 +103,15 @@ workflow LDSC {
 }
 
 workflow regressionOnly {
-    params.ann_path = '/net/seq/data2/projects/sabramov/LDSC/test_intersection/baselineLD.'
-    annotations = Channel.fromPath("${params.ann_path}*")
+    ld_data = Channel.fromPath("${params.ann_path}*")
         .concat(
             Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2/result/baselineLD.*"),
             Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/test_ldsc/output/l2_logs/result/baselineLD.*.M*")
         ).collect()
-        .map(it -> tuple(file(params.ann_path).name, it))
     phens = Channel.fromPath("/net/seq/data2/projects/sabramov/LDSC/UKBB.phenotypes.test.tsv")
         .splitCsv(header:true, sep:'\t')
         .map(row -> tuple(row.phen_id, row.phen_name, file(row.sumstats_file)))
-    run_ldsc(annotations.combine(phens))
+    run_ldsc(phens, ld_data)
 }
 
 workflow annotateWithPheno {
