@@ -8,8 +8,10 @@ import multiprocessing as mp
 
 
 result_columns = starting_columns + ['mean_BAD', 
-    '# of SNPs', 'max_cover', 'footprints_n'] + [get_field_by_ftype(allele, ftype) 
-    for allele in alleles for ftype in ('es-weighted-mean', 'es-mean', 'pval-ag')]
+    '# of SNPs', 'max_cover', 'footprints_n',
+    'es_weighted_mean', 'es_mean', 
+    'logitp_ref', 'logitp_alt'
+    ]
 
 def aggregate_snp(snp_df):
     pvals = {}
@@ -66,10 +68,9 @@ def aggregate_apply(df):
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
     for allele in alleles:
-        es_mean, es_weighted_mean = effect_sizes[allele]
         new_df[get_field_by_ftype(allele, 'pval-ag')] = pvals[allele]
-        new_df[get_field_by_ftype(allele, 'es-mean')] = es_mean
-        new_df[get_field_by_ftype(allele, 'es-weighted-mean')] = es_weighted_mean
+    new_df['es_mean'] = effect_sizes['ref'][0]
+    new_df['es_weighted_mean'] = effect_sizes['ref'][1]
     new_df['# of SNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('coverage').max()
     return new_df
@@ -114,6 +115,7 @@ def calc_fdr(aggr_df):
                 alpha=0.05,
                     method='fdr_bh')
         aggr_df[f"fdrp_bh_{allele}"] = fdr_arr
+    aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
     return aggr_df
 
 def main(input_path, out_path, cover_tr=10, jobs=1):

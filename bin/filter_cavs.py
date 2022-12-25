@@ -1,11 +1,10 @@
 import argparse
 import pandas as pd
-from helpers import alleles, starting_columns
+from helpers import starting_columns
 
 def main(agg_file, snps_file, output_file, fdr_tr):
     df = pd.read_table(agg_file)
     if not df.empty:
-        df['min_fdr'] = df[[f'fdrp_bh_{allele}' for allele in alleles]].min(axis=1)
         df = df[(df['min_fdr'] >= fdr_tr) | pd.isna(df['min_fdr'])]
     snps_df = pd.read_table(snps_file)
     if not snps_df.empty:
