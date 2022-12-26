@@ -120,7 +120,7 @@ workflow annotateWithFootprints {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.ag_id,
                                 file(row.hotspots_file), 
-                                row.footprint_path ? file(row.footprint_path) : null)
+                                row?.footprint_path ? file(row.footprint_path) : null)
                 )
         data = pval_files.join(annotations)
         annotations = annotate_variants(data)
@@ -149,7 +149,7 @@ workflow {
         .map(it -> tuple(it.simpleName, it))
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    ann_pvals = annotateWithFootprints(sample_split_pvals, footprints)
+    ann_pvals = annotateWithFootprints(sample_split_pvals)
     aggregation(ann_pvals)
 }
 
