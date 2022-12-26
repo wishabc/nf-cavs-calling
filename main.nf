@@ -10,7 +10,6 @@ def set_key_for_group_tuple(ch) {
 
 
 params.conda = "$moduleDir/environment.yml"
-params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
 
 
 process merge_and_gzip {
@@ -129,11 +128,6 @@ workflow annotateWithFootprints {
         annotations
 }
 
-workflow aggregatePvals {
-    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
-        .map(it -> tuple(file(it).simpleName, file(it)))
-    aggregation(sample_pvals)
-}
 
 workflow {
     // Estimate BAD and call 1-st round CAVs
@@ -161,6 +155,14 @@ workflow {
 
 
 // Debug workflows
+params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
+workflow aggregatePvals {
+    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
+        .map(it -> tuple(file(it).simpleName, file(it)))
+    aggregation(sample_pvals)
+}
+
+
 workflow withFootprints {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
