@@ -22,7 +22,7 @@ process apply_babachi {
     name = "${indiv_id}.${outpath}intersect.bed"
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
-    cat ${snps_file} | \$10 >= 0.05 {print;} > snps.common.bed
+    cat ${snps_file} | awk '\$10 >= 0.05 { print; }' > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le 100 ]]; then
 	    touch ${name}
         touch ${badmap_file}
