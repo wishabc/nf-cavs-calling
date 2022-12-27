@@ -14,7 +14,7 @@ def main(new_badmap, old_badmap, output):
         new_df.to_csv(output, sep='\t', index=False)
         return
     old_df = set_index(pd.read_table(old_badmap))
-    
+    print(new_df.index)
     imputed_cavs = old_df[~new_df.index]
     df = pd.concat([new_df, imputed_cavs])
     if len(df.index) != len(old_df.index):
