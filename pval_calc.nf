@@ -78,7 +78,7 @@ process add_cavs {
     publishDir "${params.outdir}/added_cavs"
     conda params.conda
     tag "${indiv_id}"
-    scratch true
+    //scratch true
 
     input:
         tuple val(indiv_id), path(new_badmap), path(old_badmap)
