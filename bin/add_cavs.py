@@ -15,7 +15,7 @@ def main(new_badmap, old_badmap, output):
         return
     old_df = set_index(pd.read_table(old_badmap))
     print(new_df.index)
-    imputed_cavs = old_df[~new_df.index]
+    imputed_cavs = old_df[old_df.index.difference(new_df.index)]
     df = pd.concat([new_df, imputed_cavs])
     if len(df.index) != len(old_df.index):
         print(len(df.index), len(old_df.index), len(new_df.index), len(imputed_cavs.index))
