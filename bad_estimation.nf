@@ -64,6 +64,8 @@ workflow estimateBadByIndiv {
             .filter { it[1].exists() }
             .unique()
 
+        filtered_vcfs.count().view()
+
         out = estimateBad(filtered_vcfs, prefix) 
     emit:
         filtered_vcfs
