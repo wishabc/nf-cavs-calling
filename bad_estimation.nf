@@ -22,7 +22,8 @@ process apply_babachi {
     name = "${indiv_id}.${outpath}intersect.bed"
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
-    cat ${snps_file} | awk '\$10 >= 0.05 { print; }' > snps.common.bed
+    head -n 1 ${snps_file} > header.txt
+    tail -n +2 ${snps_file} | awk '\$10 >= 0.05 { print; }' > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le 100 ]]; then
 	    touch ${name}
         touch ${badmap_file}
@@ -33,7 +34,7 @@ process apply_babachi {
         -s ${params.states} -a ${params.allele_tr}
 
 
-    head -1 ${badmap_file} | xargs -I % echo "#chr\tstart\tend\tID\tref\talt\tref_counts\talt_counts\tsample_id\tMAF\tFMR\t%" > ${name}
+    head -1 ${badmap_file} | xargs -I % echo "`cat header.txt`\t%" > ${name}
     
     # Avoid intersecting with empty file
     if [[ `wc -l <${snps_file}` -ge 2 ]]; then
