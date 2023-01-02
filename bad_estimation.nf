@@ -62,9 +62,7 @@ workflow estimateBadByIndiv {
         filtered_vcfs = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.indiv_id, file(row.snps_file)))
-            .filter { it[1].exists() }
             .unique()
-        filtered_vcfs.count().view { "${it}" }
         out = estimateBad(filtered_vcfs, prefix) 
     emit:
         filtered_vcfs
