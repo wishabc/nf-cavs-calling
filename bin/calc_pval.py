@@ -98,7 +98,7 @@ def calc_pval_for_indiv(input_filename, output_filename, stats_file=None, mode='
     else:
         stats_df = None
     df = calc_pval_for_df(df, stats_df, mode, allele_tr,modify_w=modify_w, es_method=es_method)
-    df[result_columns].to_csv(output_filename, sep='\t', index=None)
+    df.to_csv(output_filename, sep='\t', index=None)
 
 
 def calc_pval_for_df(df, nb_params, mode, allele_tr, modify_w, es_method):
