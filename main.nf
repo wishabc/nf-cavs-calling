@@ -155,7 +155,7 @@ workflow {
 
 
 // Debug workflows
-params.sample_pvals_dir = "$launchDir/${params.outdir}/sample_pvals"
+params.sample_pvals_dir = "$launchDir/${params.outdir}/annotations"
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
