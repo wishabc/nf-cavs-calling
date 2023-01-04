@@ -12,7 +12,7 @@ def set_key_for_group_tuple(ch) {
 params.conda = "$moduleDir/environment.yml"
 
 
-process merge_and_gzip {
+process merge_files {
     conda params.conda
     publishDir "${params.outdir}/pvals_nonaggregated.${params.aggregation_key}", pattern: "${name}"
     scratch true
@@ -95,19 +95,21 @@ workflow aggregation {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
                     .splitCsv(header:true, sep:'\t')
                     .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-            pvals = set_key_for_group_tuple(sample_split_pvals
-                .join(sample_cl_correspondence)
-                .filter(it -> !it[2].isEmpty())
-                .map(
-                    it -> tuple(it[2], it[1])
-                )).groupTuple() | merge_and_gzip
+            pvals = sample_split_pvals
+                | join(sample_cl_correspondence)
+                | filter(it -> !it[2].isEmpty())
+                | map(it -> tuple(it[2], it[1]))
+                | set_key_for_group_tuple 
+                | groupTuple() 
         } else {
-            pvals = sample_split_pvals.map(it -> it[1])
-                .collect()
-                .map(it -> tuple('all', it)) | merge_and_gzip
+            pvals = sample_split_pvals
+                | map(it -> it[1])
+                | collect()
+                | map(it -> tuple('all', it)) 
+                
 
         }
-        out = aggregate_pvals(pvals, "binom.${agg_key}", 'final.')
+        out = aggregate_pvals(merge_files(pvals), "binom.${agg_key}", 'final.')
     emit:
         out
 }
@@ -154,7 +156,7 @@ workflow {
 }
 
 
-// Debug workflows
+// Only aggregation workflow
 params.sample_pvals_dir = "$launchDir/${params.outdir}/annotations"
 workflow aggregatePvals {
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
