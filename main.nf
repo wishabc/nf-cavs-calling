@@ -59,7 +59,7 @@ process annotate_variants {
     scratch true
 
     input:
-        tuple val(sample_id), path(pval_file), path(hotspots_file), val(footprint_file)
+        tuple val(sample_id), path(pval_file), val(hotspots_file), val(footprint_file)
 
     output:
         tuple val(sample_id), path(name)
@@ -67,10 +67,15 @@ process annotate_variants {
     script:
     name = "${sample_id}.fp_annotation.bed"
     footprint_f = footprint_file ? footprint_file : "empty.bed"
+    hotspots_f = hotspots_file ? hotspots_file : "empty.bed"
     """
     if [[ "${footprint_f}" == "empty.bed" ]]; then
         touch ${footprint_f}
     fi
+    if [[ "${hotspots_f}" == "empty.bed" ]]; then
+        touch ${hotspots_f}
+    fi
+
     sort-bed ${pval_file} > pval_f.bed
 
     bedmap --header \
@@ -79,7 +84,7 @@ process annotate_variants {
     
     bedmap --header \
         --indicator pval_f.bed \
-        ${hotspots_file} >> hotspots.txt
+        ${hotspots_f} >> hotspots.txt
 
     echo -e "`head -1 ${pval_file}`\tfootprints\thotspots" > ${name}
     paste pval_f.bed footprints.txt hotspots.txt >> ${name}
@@ -121,7 +126,7 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.ag_id,
-                                file(row.hotspots_file), 
+                                row?.hotspots_file ? file(row.hotspots_file) : null, 
                                 row?.footprint_path ? file(row.footprint_path) : null)
                 )
         data = pval_files.join(annotations)
