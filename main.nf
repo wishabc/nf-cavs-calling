@@ -109,7 +109,7 @@ workflow aggregation {
         } else {
             pvals = sample_split_pvals
                 | map(it -> it[1])
-                | collect()
+                | collect(sort: true)
                 | map(it -> tuple('all', it)) 
                 
 
@@ -160,7 +160,7 @@ workflow {
         | flatten()
         | map(it -> tuple(it.simpleName, it))
         | annotateWithFootprints
-        // | aggregation
+        | aggregation
 }   
 
 
