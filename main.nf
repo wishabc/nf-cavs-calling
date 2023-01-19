@@ -152,14 +152,14 @@ workflow {
     // Reestimate BAD, and add excluded SNVs
     iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
     imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
-    binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)[0]
-    sample_split_pvals = split_into_samples(binom_p).flatten()
-        .map(it -> tuple(it.simpleName, it))
-
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    ann_pvals = annotateWithFootprints(sample_split_pvals)
-    aggregation(ann_pvals)
-}
+    binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)[0]
+        | split_into_samples
+        | flatten()
+        | map(it -> tuple(it.simpleName, it))
+        | annotateWithFootprints
+        | aggregation
+}   
 
 
 // Only aggregation workflow
