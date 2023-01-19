@@ -50,7 +50,7 @@ workflow estimateBad {
     main:
         non_empty_snps = extracted_snps.filter { it[1].countLines() >= 100 }
         out = apply_babachi(non_empty_snps, outpath).intersect
-            .filter { it[1].countLines() > 1 }
+            | filter { it[1].countLines() > 1 }
     emit:
         out
 }
