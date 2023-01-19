@@ -95,11 +95,11 @@ workflow aggregation {
     take:
         sample_split_pvals
     main:
-        agg_key = params.aggregation_key ? params.aggregation_key : "all"
+        agg_key = params.aggregation_key ?: "all"
         if (agg_key != 'all') {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                    .splitCsv(header:true, sep:'\t')
-                    .map(row -> tuple(row.ag_id, row[params.aggregation_key]))
+                    | splitCsv(header:true, sep:'\t')
+                    | map(row -> tuple(row.ag_id, row[params.aggregation_key]))
             pvals = sample_split_pvals
                 | join(sample_cl_correspondence)
                 | filter(it -> !it[2].isEmpty())
@@ -150,8 +150,10 @@ workflow {
 
     iter2_prefix = 'final.'
     // Reestimate BAD, and add excluded SNVs
-    iter2_intersections = estimateBad(no_cavs_snps, iter2_prefix)
-    imputed_cavs = addImputedCavs(iter2_intersections.join(intersect_files))
+    imputed_cavs = estimateBad(no_cavs_snps, iter2_prefix)
+        | join(intersect_files)
+        | addImputedCavs
+
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
     binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)[0]
         | split_into_samples
