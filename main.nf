@@ -124,15 +124,16 @@ workflow annotateWithFootprints {
         pval_files
     main:
         annotations = Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.ag_id,
+            | splitCsv(header:true, sep:'\t')
+            | map(row -> tuple(row.ag_id,
                                 row?.hotspots_file ? file(row.hotspots_file) : null, 
                                 row?.footprint_path ? file(row.footprint_path) : null)
                 )
-        data = pval_files.join(annotations)
-        annotations = annotate_variants(data)
+        out = pval_files
+            | join(annotations)
+            | annotate_variants
     emit:
-        annotations
+        out
 }
 
 
@@ -140,7 +141,7 @@ workflow {
     // Estimate BAD and call 1-st round CAVs
     iter1_prefix = 'iter1.'
 
-    bads = Channel.of(params.states.split(','))
+    bads = Channel.of(params.states.tokenize(','))
     filtered_vcfs_and_intersect = estimateBadByIndiv(iter1_prefix)
     filtered_vcfs = filtered_vcfs_and_intersect[0]
     intersect_files = filtered_vcfs_and_intersect[1]
