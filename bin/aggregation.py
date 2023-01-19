@@ -95,6 +95,8 @@ def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
     j = min(jobs,
         max(1, mp.cpu_count()))
     n = len(groups_list) // j
+    if n == 0:
+        n = 1
     subgroups = [[groups.get_group(x) for x in groups_list[i: i+n]] for i in range(0, len(groups_list), n)]
     ctx = mp.get_context('forkserver')
 
