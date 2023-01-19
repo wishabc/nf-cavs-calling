@@ -159,7 +159,7 @@ workflow {
         | split_into_samples
         | flatten()
         | map(it -> tuple(it.simpleName, it))
-        // | annotateWithFootprints
+        | annotateWithFootprints
         // | aggregation
 }   
 
