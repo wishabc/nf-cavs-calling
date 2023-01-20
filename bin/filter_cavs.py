@@ -8,7 +8,7 @@ def main(agg_file, snps_file, output_file, fdr_tr):
         df = df[(df['min_fdr'] >= fdr_tr) | pd.isna(df['min_fdr'])]
     snps_df = pd.read_table(snps_file)
     if not snps_df.empty:
-        snps_df = snps_df.merge(df, how='inner')[starting_columns + ['ref_counts', 'alt_counts', 'sample_id', 'AAF', 'RAF', 'FMR']]
+        snps_df = snps_df.merge(df[starting_columns], how='inner')[starting_columns + ['ref_counts', 'alt_counts', 'sample_id', 'AAF', 'RAF', 'FMR']]
 
     snps_df.to_csv(output_file, sep='\t', index=False)
 
