@@ -1,11 +1,8 @@
 import pandas as pd
 from scipy.stats import binom, nbinom
-from helpers import alleles, get_field_by_ftype, starting_columns
+from helpers import alleles, get_field_by_ftype
 import argparse
 import numpy as np
-
-result_ftypes = ('es', 'pval', 'w')
-result_columns = starting_columns + ['ref_counts', 'alt_counts', 'sample_id', 'MAF', 'FMR', 'BAD'] + [get_field_by_ftype(allele, ftype) for allele in alleles for ftype in result_ftypes]
 
 
 # nbinom_dist

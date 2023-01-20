@@ -6,8 +6,8 @@ from statsmodels.stats.multitest import multipletests
 import numpy as np
 import multiprocessing as mp
 
-
-result_columns = starting_columns + ['mean_BAD', 
+pval_file_leave_columns = [*starting_columns, 'AAF', 'RAF', 'FMR']
+result_columns = pval_file_leave_columns + [ 'mean_BAD', 
     '# of SNPs', 'max_cover', 'footprints_n',
     'es_weighted_mean', 'es_mean', 
     'logitp_ref', 'logitp_alt'
@@ -60,10 +60,10 @@ def logit_aggregate_pvalues(pval_list):
     return combine_pvalues(pvalues, method='mudholkar_george')[1]
 
 def df_to_group(df):
-    return df.groupby(starting_columns, as_index=False)
+    return df.groupby(pval_file_leave_columns , as_index=False)
 
 def aggregate_apply(df):
-    new_df = df.loc[:, starting_columns].head(1)
+    new_df = df.loc[:, pval_file_leave_columns].head(1)
     mean_BAD, pvals, effect_sizes, footprints_n = aggregate_snp(df)
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
