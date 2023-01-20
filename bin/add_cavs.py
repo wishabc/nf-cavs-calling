@@ -17,7 +17,8 @@ def main(new_badmap, old_badmap, output):
     imputed_cavs = old_df.loc[old_df.index.difference(new_df.index)]
     df = pd.concat([new_df, imputed_cavs])
     if len(df.index) != len(old_df.index):
-        print(len(df.index), len(old_df.index), len(new_df.index), len(imputed_cavs.index))
+        print(len(df.index), len(old_df.index), len(old_df.index.difference(new_df.index)),
+         len(new_df.index), len(imputed_cavs.index))
         raise AssertionError
     df.to_csv(output, sep='\t', index=False)
 
