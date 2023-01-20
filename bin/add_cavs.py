@@ -5,7 +5,7 @@ from helpers import starting_columns
 
 def set_index(df):
     if not df.empty:
-        df.index = df.apply(lambda row: "@".join(map(str, [row[x] for x in starting_columns])), axis=1)
+        df.index = df.apply(lambda row: "@".join(map(str, [row[x] for x in starting_columns + ['sample_id']])), axis=1)
     return df
 
 def main(new_badmap, old_badmap, output):
