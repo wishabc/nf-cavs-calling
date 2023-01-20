@@ -127,7 +127,7 @@ workflow annotateWithFootprints {
             | splitCsv(header:true, sep:'\t')
             | map(row -> tuple(row.ag_id,
                                 row?.hotspots_file ? file(row.hotspots_file) : null, 
-                                row?.footprint_path ? file(row.footprint_path) : null)
+                                row?.footprints_file ? file(row.footprints_file) : null)
                 )
         out = pval_files
             | join(annotations)
