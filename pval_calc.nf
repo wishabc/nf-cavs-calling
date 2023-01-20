@@ -111,7 +111,6 @@ workflow calcPvalBinom {
         pval_files = calc_pval_binom(data, prefix)
     emit:
         pval_files
-        agg_files
 }
 
 
