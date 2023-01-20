@@ -1,17 +1,13 @@
 #!/usr/bin/env nextflow
-
-stats_dir = "${params.outdir}/stats"
 params.conda = "$moduleDir/environment.yml"
 
-process calculate_pvalue {
+process calc_pval_binom {
     tag "${indiv_id}"
-    publishDir "${params.outdir}/${output}pval_files_${strategy}"
+    publishDir "${params.outdir}/${output}pval_files_binom"
     conda params.conda
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
-        path stats_file
-        val strategy
         val output
 
     output:
@@ -20,8 +16,10 @@ process calculate_pvalue {
     script:
     name = "${indiv_id}.pvalue.bed"
     """
-    python3 $moduleDir/bin/calc_pval.py -I '${badmap_intersect_file}' \
-         -O ${name} -s ${strategy} --stats-file ${stats_file}
+    python3 $moduleDir/bin/calc_pval_binom.py \
+        -I '${badmap_intersect_file}' \
+        -O ${name} \
+        --recalc-w
     """
 }
 
@@ -33,7 +31,7 @@ process aggregate_pvals {
     cpus 5
 
     input:
-        tuple val(indiv_id), path(pval_vcf)
+        tuple val(indiv_id), path(pval_file)
         val strategy
         val output
 
@@ -46,7 +44,7 @@ process aggregate_pvals {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/aggregation.py -I '${pval_vcf}' \
+    python3 $moduleDir/bin/aggregation.py -I '${pval_file}' \
         -O '${name}' --jobs ${task.cpus} \
         --ct ${params.fdr_cov_tr}
     """
@@ -68,8 +66,8 @@ process exclude_cavs {
     """
     export OPENBLAS_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} \
-     -b ${bad_annotations} -O ${name} \
-     --fdr ${params.exclude_fdr_tr}
+        -b ${bad_annotations} -O ${name} \
+        --fdr ${params.exclude_fdr_tr}
     """
 }
 
@@ -90,19 +88,19 @@ process add_cavs {
     name = "${indiv_id}.added_cavs.intersect.bed"
     """
     python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} \
-     -o ${old_badmap} --output not_sorted_cavs.bed
+        -o ${old_badmap} --output not_sorted_cavs.bed
     head -1 not_sorted_cavs.bed > ${name}
     sort-bed not_sorted_cavs.bed >> ${name}
     """
 }
 
-workflow addImputedCavs {
+workflow addExcludedCavs {
     take:
         data
     main:
-        add_cavs(data)
+        out = add_cavs(data)
     emit:
-        add_cavs.out
+        out
 }
 
 workflow calcPvalBinom {
@@ -110,8 +108,7 @@ workflow calcPvalBinom {
         data
         prefix
     main:
-        pval_files = calculate_pvalue(data, "${projectDir}", 'binom', prefix)
-        agg_files = aggregate_pvals(pval_files, 'binom', prefix)
+        pval_files = calc_pval_binom(data, prefix)
     emit:
         pval_files
         agg_files
@@ -123,8 +120,8 @@ workflow callCavsFromVcfsBinom {
         bad_annotations
         prefix
     main:
-        pval_agg_files = calcPvalBinom(bad_annotations, prefix)
-        agg_files = pval_agg_files[1]
+        pval_files = calcPvalBinom(bad_annotations, prefix)
+        agg_files = aggregate_pvals(pval_files, 'binom', prefix)
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
     emit:

@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
-include { callCavsFromVcfsBinom; calcPvalBinom; addImputedCavs; aggregate_pvals } from "./pval_calc"
+include { callCavsFromVcfsBinom; calcPvalBinom; addExcludedCavs; aggregate_pvals } from "./pval_calc"
 
 def set_key_for_group_tuple(ch) {
   ch.groupTuple()
@@ -150,12 +150,12 @@ workflow {
 
     iter2_prefix = 'final.'
     // Reestimate BAD, and add excluded SNVs
-    imputed_cavs = estimateBad(no_cavs_snps, iter2_prefix)
+    all_snps = estimateBad(no_cavs_snps, iter2_prefix)
         | join(intersect_files)
-        | addImputedCavs
+        | addExcludedCavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    binom_p = calcPvalBinom(imputed_cavs, iter2_prefix)[0]
+    binom_p = calcPvalBinom(all_snps, iter2_prefix)
         | split_into_samples
         | flatten()
         | map(it -> tuple(it.simpleName, it))

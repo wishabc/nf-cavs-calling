@@ -1,26 +1,29 @@
 import argparse
 import pandas as pd
-from helpers import get_field_by_ftype, alleles, starting_columns
+from helpers import alleles, starting_columns
 from scipy.stats import combine_pvalues
 from statsmodels.stats.multitest import multipletests
 import numpy as np
 import multiprocessing as mp
+import math
 
-pval_file_leave_columns = [*starting_columns, 'AAF', 'RAF', 'FMR']
-result_columns = pval_file_leave_columns + [ 'mean_BAD', 
+
+keep_columns = [*starting_columns, 'AAF', 'RAF', 'FMR']
+result_columns = keep_columns + [ 'mean_BAD', 
     '# of SNPs', 'max_cover', 'footprints_n',
     'es_weighted_mean', 'es_mean', 
-    'logitp_ref', 'logitp_alt'
+    'logit_pval_ref', 'logit_pval_alt'
     ]
 
 def aggregate_snp(snp_df):
     pvals = {}
     effect_sizes = {}
     for allele in alleles:
-        pvals[allele] = logit_aggregate_pvalues(snp_df[get_field_by_ftype(allele)])
-        effect_sizes[allele] = aggregate_es(snp_df[get_field_by_ftype(allele, 'es')],
-                                            snp_df[[get_field_by_ftype(al) for al in alleles]].min(axis=1),
-                                            snp_df['coverage'])
+        pvals[allele] = logit_aggregate_pvalues(snp_df[f'pval_{allele}'])
+
+    effect_sizes = aggregate_es(snp_df['es'],
+                                snp_df[['pval_ref', 'pval_alt']].min(axis=1),
+                                snp_df['coverage'])
     mean_BAD = snp_df['BAD'].mean()
 
     footprints_n = 0
@@ -60,17 +63,18 @@ def logit_aggregate_pvalues(pval_list):
     return combine_pvalues(pvalues, method='mudholkar_george')[1]
 
 def df_to_group(df):
-    return df.groupby(pval_file_leave_columns , as_index=False)
+    return df.groupby(starting_columns, as_index=False)
 
 def aggregate_apply(df):
-    new_df = df.loc[:, pval_file_leave_columns].head(1)
+    new_df = df.loc[:, keep_columns].head(1)
     mean_BAD, pvals, effect_sizes, footprints_n = aggregate_snp(df)
+    es_mean, es_weighted_mean = effect_sizes
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
     for allele in alleles:
-        new_df[get_field_by_ftype(allele, 'pval-ag')] = pvals[allele]
-    new_df['es_mean'] = effect_sizes['ref'][0]
-    new_df['es_weighted_mean'] = effect_sizes['ref'][1]
+        new_df[f'logit_pval_{allele}'] = pvals[allele]
+    new_df['es_mean'] = es_mean
+    new_df['es_weighted_mean'] = es_weighted_mean
     new_df['# of SNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('coverage').max()
     return new_df
@@ -94,9 +98,7 @@ def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
     groups_list = list(groups.groups)
     j = min(jobs,
         max(1, mp.cpu_count()))
-    n = len(groups_list) // j
-    if n == 0:
-        n = 1
+    n = math.ceil(len(groups_list) / j)
     subgroups = [[groups.get_group(x) for x in groups_list[i: i+n]] for i in range(0, len(groups_list), n)]
     ctx = mp.get_context('forkserver')
 
@@ -113,9 +115,10 @@ def calc_fdr(aggr_df):
             fdr_arr = None
         else:
             _, fdr_arr, _, _ = multipletests(
-                aggr_df[get_field_by_ftype(allele, 'pval-ag')],
+                aggr_df[f'logit_pval_{allele}'],
                 alpha=0.05,
-                    method='fdr_bh')
+                method='fdr_bh'
+            )
         aggr_df[f"fdrp_bh_{allele}"] = fdr_arr
     aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
     return aggr_df

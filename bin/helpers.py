@@ -47,19 +47,3 @@ def check_states(string):
         raise ValueError
     else:
         return ret_val
-
-def get_field_by_ftype(allele, ftype='pval'):
-    if ftype == 'pval':
-        return f'pval_{allele}'
-    elif ftype == 'es':
-        return f'es_{allele}'
-    elif ftype == 'w':
-        return f'w_{allele}'
-    elif ftype == 'pval-ag':
-        return f'logit_pval_{allele}'
-    elif ftype == 'es-weighted-mean':
-        return f'aggregated_es_weighted_{allele}'
-    elif ftype == 'es-mean':
-        return f'aggregated_es_{allele}'
-    else:
-        raise ValueError
