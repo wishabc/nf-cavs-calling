@@ -10,7 +10,7 @@ import math
 
 keep_columns = [*starting_columns, 'AAF', 'RAF', 'FMR']
 result_columns = keep_columns + ['mean_BAD', 
-    '# of SNPs', 'max_cover',
+    'nSNPs', 'max_cover',
     'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
     'logit_pval_ref', 'logit_pval_alt'
