@@ -9,8 +9,9 @@ import math
 
 
 keep_columns = [*starting_columns, 'AAF', 'RAF', 'FMR']
-result_columns = keep_columns + [ 'mean_BAD', 
-    '# of SNPs', 'max_cover', 'footprints_n',
+result_columns = keep_columns + ['mean_BAD', 
+    '# of SNPs', 'max_cover',
+    'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
     'logit_pval_ref', 'logit_pval_alt'
     ]
@@ -29,7 +30,7 @@ def aggregate_snp(snp_df):
     footprints_n = 0
     if "footprints" in snp_df.columns:
         footprints_n = snp_df['footprints'].sum()
-    return mean_BAD, pvals, effect_sizes, footprints_n
+    return mean_BAD, pvals, effect_sizes, footprints_n, snp_df['hotspots'].sum()
 
 
 def expit(x):                                        
@@ -67,10 +68,11 @@ def df_to_group(df):
 
 def aggregate_apply(df):
     new_df = df.loc[:, keep_columns].head(1)
-    mean_BAD, pvals, effect_sizes, footprints_n = aggregate_snp(df)
+    mean_BAD, pvals, effect_sizes, footprints_n, hotspots_n = aggregate_snp(df)
     es_mean, es_weighted_mean = effect_sizes
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
+    new_df['hotspots_n'] = hotspots_n
     for allele in alleles:
         new_df[f'logit_pval_{allele}'] = pvals[allele]
     new_df['es_mean'] = es_mean
