@@ -16,6 +16,6 @@ dependencies:
   - nextflow=22.04.0
   - pyfaidx
   - samtools=1.15
-- pip:
-  - https://github.com/wishabc/nf-babachi
+  - pip:
+    - git+https://github.com/wishabc/nf-babachi
 prefix: /home/sabramov/miniconda3/envs/cav-calling
