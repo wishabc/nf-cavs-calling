@@ -52,7 +52,6 @@ process aggregate_pvals {
 
 process exclude_cavs {
     conda params.conda
-    publishDir "${params.outdir}/excluded_cavs"
     tag "${indiv_id}"
     
     input:
@@ -73,7 +72,6 @@ process exclude_cavs {
 
 
 process add_cavs {
-    publishDir "${params.outdir}/added_cavs"
     conda params.conda
     tag "${indiv_id}"
     scratch true

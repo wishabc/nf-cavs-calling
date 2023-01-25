@@ -7,7 +7,6 @@ process apply_babachi {
     scratch true
     tag "${indiv_id}"
     publishDir "${params.outdir}/${outpath}badmaps", pattern: "${badmap_file}"
-    publishDir "${params.outdir}/${outpath}intersect", pattern: "${name}"
     conda params.conda
 
 	input:
