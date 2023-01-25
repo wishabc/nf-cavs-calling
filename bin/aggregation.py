@@ -16,6 +16,10 @@ result_columns = keep_columns + ['mean_BAD',
     'logit_pval_ref', 'logit_pval_alt'
     ]
 
+
+def calc_sum_if_exists(snp_df, column):
+    return snp_df[column].sum() if column in snp_df.columns else 0
+
 def aggregate_snp(snp_df):
     pvals = {}
     effect_sizes = {}
@@ -26,11 +30,7 @@ def aggregate_snp(snp_df):
                                 snp_df[['pval_ref', 'pval_alt']].min(axis=1),
                                 snp_df['coverage'])
     mean_BAD = snp_df['BAD'].mean()
-
-    footprints_n = 0
-    if "footprints" in snp_df.columns:
-        footprints_n = snp_df['footprints'].sum()
-    return mean_BAD, pvals, effect_sizes, footprints_n, snp_df['hotspots'].sum()
+    return mean_BAD, pvals, effect_sizes, calc_sum_if_exists(snp_df, 'hotspots'), calc_sum_if_exists(snp_df, 'footprints')
 
 
 def expit(x):                                        
@@ -68,7 +68,7 @@ def df_to_group(df):
 
 def aggregate_apply(df):
     new_df = df.loc[:, keep_columns].head(1)
-    mean_BAD, pvals, effect_sizes, footprints_n, hotspots_n = aggregate_snp(df)
+    mean_BAD, pvals, effect_sizes, hotspots_n, footprints_n = aggregate_snp(df)
     es_mean, es_weighted_mean = effect_sizes
     new_df['mean_BAD'] = mean_BAD
     new_df['footprints_n'] = footprints_n
