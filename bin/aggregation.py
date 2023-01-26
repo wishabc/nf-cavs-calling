@@ -104,7 +104,7 @@ def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
     subgroups = [[groups.get_group(x) for x in groups_list[i: i+n]] for i in range(0, len(groups_list), n)]
     snps = []
     if j > 1:
-        ctx = mp.get_context('spawn')
+        ctx = mp.get_context('forkserver')
 
         with ctx.Pool(j) as pool:
             results = [pool.apply_async(aggregate_subgroup, (g, )) for g in subgroups]
