@@ -77,7 +77,7 @@ def aggregate_apply(df):
         new_df[f'logit_pval_{allele}'] = pvals[allele]
     new_df['es_mean'] = es_mean
     new_df['es_weighted_mean'] = es_weighted_mean
-    new_df['# of SNPs'] = len(df.index)
+    new_df['nSNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('coverage').max()
     return new_df
 
