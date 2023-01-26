@@ -28,7 +28,7 @@ process aggregate_pvals {
     publishDir "${params.outdir}/${output}ag_files_${strategy}"
     conda params.conda
     tag "${indiv_id}"
-    cpus 5
+    cpus 1
 
     input:
         tuple val(indiv_id), path(pval_file)

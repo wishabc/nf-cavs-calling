@@ -105,7 +105,6 @@ def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
     snps = []
     if j > 1:
         ctx = mp.get_context('forkserver')
-
         with ctx.Pool(j) as pool:
             results = [pool.apply_async(aggregate_subgroup, (g, )) for g in subgroups]
             for r in results:
