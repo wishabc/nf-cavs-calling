@@ -8,7 +8,7 @@ import multiprocessing as mp
 import math
 
 
-keep_columns = [*starting_columns, 'AAF', 'RAF', 'FMR']
+keep_columns = [*starting_columns, 'AAF', 'RAF']
 result_columns = keep_columns + ['mean_BAD', 
     'nSNPs', 'max_cover',
     'footprints_n', 'hotspots_n',
