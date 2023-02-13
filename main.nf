@@ -184,13 +184,13 @@ workflow withFootprints {
 process anova {
     conda params.conda
 
-    publishDir "${params.outdir}/anova.S${params.min_samples}.${params.aggregation_key}"
+    publishDir "${params.outdir}/anova.minS${params.min_samples}"
 
     output:
         path name
 
     script:
-    name = "anova.key"
+    name = "anova.${params.aggregation_key}.bed"
     """
     python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
         ${name} --ct ${params.fdr_cov_tr} \
