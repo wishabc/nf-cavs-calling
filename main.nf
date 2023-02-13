@@ -179,3 +179,30 @@ workflow withFootprints {
     
     annotateWithFootprints(sample_pvals)
 }
+
+
+process anova {
+    conda params.conda
+
+    publishDir "${params.outdir}/anova.S${params.min_samples}.${params.aggregation_key}"
+
+    output:
+        path name
+
+    script:
+    name = "anova.key"
+    """
+    python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
+        ${name} --ct ${params.fdr_cov_tr} \
+        --min_samples ${params.min_samples} \
+        --min_groups ${params.min_groups}
+    """
+}
+
+
+workflow calcAnova {
+    params.min_samples = 5
+    params.min_groups = 2
+    params.nonagr_pval_dir = "$launchDir/${params.outdir}/pvals_nonaggregated.${params.aggregation_key}/"
+    out = anova()
+}
