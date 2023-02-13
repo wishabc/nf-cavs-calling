@@ -52,7 +52,7 @@ def main(melt, min_samples=3, min_groups=2, cover_tr=20):
     tested_melt = melt.merge(
         testable_pairs, on=['variant_id', 'group_id']
     )
-    return tested_melt.groupby('variant_id').progress_apply(linear_reg)
+    return tested_melt.groupby('variant_id').apply(linear_reg)
 
 
 if __name__ == '__main__':
