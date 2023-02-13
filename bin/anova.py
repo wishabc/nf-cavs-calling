@@ -7,6 +7,10 @@ import argparse
 
 def read_non_aggregated_files(dir_path):
     tables = []
+    pval_files = list(dir_path)
+    if len(pval_files) == 0:
+        print(f'No p-value files found in {dir_path}!')
+        raise ValueError
     for file in os.listdir(dir_path):
         group_id = file.split('.')[0]
         tb_df = pd.read_table(os.path.join(dir_path, file))
