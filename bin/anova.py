@@ -24,7 +24,7 @@ def linear_reg(df):
     snp_data = df.iloc[0]
     return pd.DataFrame({
         **{x: [snp_data[x]] for x in ['#chr', 'start', 'end', 'ID', 'ref', 'alt']},
-        'groups': '|'.join(df['group_id'].tolist()),
+        'groups': '|'.join(df['group_id'].unique()),
         'anova_pvalue': [smf.ols('es ~ C(group_id)', data=df).fit().f_pvalue],
     })
 
