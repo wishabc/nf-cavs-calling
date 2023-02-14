@@ -193,9 +193,13 @@ process anova {
     name = "anova.${params.aggregation_key}.bed"
     """
     python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
-        ${name} --ct ${params.fdr_cov_tr} \
+        anova_pvals.bed \
+        --ct ${params.fdr_cov_tr} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups}
+    
+    head -1 anova_pvals.bed > ${name}
+    sort-bed anova_pvals.bed >> ${name}
     """
 }
 
