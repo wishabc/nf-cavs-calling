@@ -202,8 +202,8 @@ process anova {
     head -1 pvals.anova.bed > ${anova}
     sort-bed pvals.anova.bed >> ${anova}
 
-    head -1 pvals.melt.bed > ${melt}
-    sort-bed pvals.melt.bed >> ${melt}
+    head -1 pvals.tested.bed > ${melt}
+    sort-bed pvals.tested.bed >> ${melt}
     """
 }
 
