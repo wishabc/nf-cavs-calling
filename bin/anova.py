@@ -56,13 +56,13 @@ def main(melt, min_samples=3, min_groups=2, cover_tr=20):
     tested_melt = melt.merge(
         testable_pairs, on=['variant_id', 'group_id']
     )
-    return tested_melt.groupby('variant_id').apply(linear_reg)
+    return tested_melt, tested_melt.groupby('variant_id').apply(linear_reg)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
     parser.add_argument('input_file', help='Non-aggregated file with tested CAVs')
-    parser.add_argument('output_file', help='File to save calculated ANOVA p-value into')
+    parser.add_argument('prefix', help='Prefix to files to save output files into')
     parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=20)
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
@@ -72,9 +72,12 @@ if __name__ == '__main__':
     min_samples = args.min_samples # of samples
     min_groups_per_variant = args.min_groups
     fdr_cov_tr = args.ct
-    anova_results = main(melt, cover_tr=fdr_cov_tr,
+    tested_melt, anova_results = main(melt, cover_tr=fdr_cov_tr,
         min_samples=min_samples, min_groups=min_groups_per_variant)
     
     anova_results['anova_fdr'] = multipletests(anova_results['anova_pvalue'],
         method='fdr_bh')[1]
-    anova_results.to_csv(args.output_file, sep='\t', index=False)
+    
+    tested_melt.to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+
+    anova_results.to_csv(f"{args.prefix}.anova.bed", sep='\t', index=False)

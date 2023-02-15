@@ -187,19 +187,23 @@ process anova {
     publishDir "${params.outdir}/anova.minS${params.min_samples}"
 
     output:
-        path name
+        tuple path(anova), path(melt)
 
     script:
-    name = "anova.${params.aggregation_key}.bed"
+    anova = "anova.${params.aggregation_key}.bed"
+    melt = "tested_variants.anova.${params.aggregation_key}.bed"
     """
     python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
-        anova_pvals.bed \
+        pvals \
         --ct ${params.fdr_cov_tr} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups}
     
-    head -1 anova_pvals.bed > ${name}
-    sort-bed anova_pvals.bed >> ${name}
+    head -1 pvals.anova.bed > ${anova}
+    sort-bed pvals.anova.bed >> ${anova}
+
+    head -1 pvals.melt.bed > ${melt}
+    sort-bed pvals.melt.bed >> ${melt}
     """
 }
 
