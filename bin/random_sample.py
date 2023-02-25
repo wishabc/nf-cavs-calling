@@ -181,7 +181,7 @@ def make_full_df(input_df, context_df):
 
     input_df[
     ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
-        + [f'palindromic_{i}' for i in range(1, 4)]] = input_df.progress_apply(
+        + [f'palindromic_{i}' for i in range(1, 4)]] = input_df.apply(
         get_mutation_stats, axis=1
     )
 
