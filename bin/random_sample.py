@@ -103,10 +103,12 @@ def sample_index(n_aggregated, random_state=42):
 
 def main(nonaggregated_df, seed_start=20, seed_step=10):
     # sampling_df - df with 2-level index: [variant_id, count (0-based)]
+    print('Making sampling df')
     sampling_df, non_unique_df, unique_index = get_sampling_df(nonaggregated_df)
 
     frac_regs = []
     for seed in range(seed_start, seed_start + seed_step + 1):
+        print(f'Processing seed: {seed}')
         sampled_variants_index = sample_index(
             non_unique_df,
             seed
