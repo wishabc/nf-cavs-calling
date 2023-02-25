@@ -1,14 +1,13 @@
 import pandas as pd
 import argparse
 import statsmodels.formula.api as smf
-from scipy.special import logit, expit
 import scipy.stats as st
 import numpy as np
 from statsmodels.stats.multitest import multipletests
-import sys
 
 
 maf_bins_fr = [0.00001, 0.0001, 0.001, 0.01, 0.05, 0.1, 0.2]
+mutations = ['C>A', 'C>T', 'C>G', 'T>A']
 
 
 def get_sampling_df(df):
@@ -99,6 +98,73 @@ def sample_index(n_aggregated, random_state=42):
     sample_ind = sample_ind.reset_index().rename(columns={'index': 'variant_id'})
     return pd.MultiIndex.from_frame(sample_ind)
 
+def comp(x):
+    return {
+        'A': 'T',
+        'C': 'G',
+        'G': 'C',
+        'T': 'A'
+    }.get(x)
+
+def revcomp(s):
+    return ''.join([comp(x) for x in s[::-1]])
+
+def palindromic(ref, alt):
+    return {ref, alt} == {'A', 'T'} or {ref, alt} == {'G', 'C'}
+
+def get_mutation_stats(row):
+    ref = row['ref']
+    alt = row['alt']
+    assert row['sequence'][20] == ref
+    preceding = row['sequence'][:20]
+    following = row['sequence'][21:]
+    flank_len = len(preceding)
+    if palindromic(ref, alt):
+        initial_fwd = f'{ref}>{alt}' in mutations
+        ref_orient = True
+        fwd = initial_fwd  # if cycle dosen't break
+        palindromic_res = [True] + [False] * flank_len
+        for i in range(flank_len):
+            left = preceding[-i - 1]
+            right = following[i]
+            if not palindromic(left, right):
+                fwd = 'T' not in {left, right} and not (left == right == 'G')
+                ref_orient = not (fwd ^ initial_fwd)
+                break
+            palindromic_res[i + 1] = True
+        if initial_fwd:
+            sub = f'{ref}>{alt}'
+        else:
+            sub = f'{alt}>{ref}'
+        
+    else:        
+        palindromic_res = [False] * (flank_len + 1)
+        for sub, ref_orient, fwd in [
+            (f'{ref}>{alt}', True, True),
+            (f'{comp(ref)}>{comp(alt)}', True, False),
+            (f'{alt}>{ref}', False, True),
+            (f'{comp(alt)}>{comp(ref)}', False, False),
+        ]:
+            if sub in mutations:
+                break
+            
+    if not fwd:
+        preceding, following = revcomp(following), revcomp(preceding)
+        
+    return pd.Series(list(preceding)[-3:] + list(following)[:3] + [sub, fwd, ref_orient] + palindromic_res[:4])
+
+
+def make_full_df(input_df, context_df):
+    input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
+    input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
+    input_df = input_df.merge(context_df)
+    input_df[
+        ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
+         + [f'palindromic_{i}' for i in range(1, 4)]] = input_df.progress_apply(
+            get_mutation_stats, axis=1
+        )
+    return input_df
+
 
 def main(nonaggregated_df, seed_start=20, seed_step=10):
     # sampling_df - df with 2-level index: [variant_id, count (0-based)]
@@ -127,13 +193,15 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Sampling one of recurrent variants")
     parser.add_argument('-I', help='Non-aggregated BED file')
+    parser.add_argument('-c', help='File with context annotation')
     parser.add_argument('-O', help='File to save calculated metrics')
     parser.add_argument('--start', type=int, help='Start value for seed', default=10)
     parser.add_argument('--step', type=int, help='Step size for seed values', default=10)
 
     args = parser.parse_args()
     input_df = pd.read_table(args.I)
-    input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
-    input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
+    context_df = pd.read_table(args.c, header=None, names=['#chr', 'start', 'end', 'sequence'])
+    
+    input_df = make_full_df(input_df, context_df)
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)

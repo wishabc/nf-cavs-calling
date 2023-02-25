@@ -18,6 +18,7 @@ process random_sample {
     python3 $moduleDir/bin/random_sample.py \
         -I ${params.sampling_file} \
         -O ${name} \
+        -c ${params.context_file} \
         --start ${step_start} \
         --step ${params.samples_per_job}
     """
@@ -26,6 +27,7 @@ process random_sample {
 workflow {
     params.sampling_count = 1000
     params.samples_per_job = 10
+    params.context_file = "/net/seq/data2/projects/sabramov/ENCODE4/dnase-annotations/context/output/variants_context.bed"
     params.sampling_file = "/net/seq/data2/projects/sabramov/ENCODE4/dnase-cavs/output/pvals_nonaggregated.origin/Normal.sorted.bed"
     sampling_results = Channel.of(1..params.sampling_count - 1) 
         | map(it -> it * params.samples_per_job)
