@@ -135,5 +135,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     input_df = pd.read_table(args.I)
     input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
+    input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
