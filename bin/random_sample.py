@@ -1,0 +1,137 @@
+import pandas as pd
+import argparse
+import statsmodels.formula.api as smf
+from scipy.special import logit, expit
+import scipy.stats as st
+import numpy as np
+from statsmodels.stats.multitest import multipletests
+import sys
+
+
+maf_bins_fr = [0.00001, 0.0001, 0.001, 0.01, 0.05, 0.1, 0.2]
+
+
+def get_sampling_df(df):
+    variants_df = df.reset_index()
+    variants_df['sample'] = variants_df.groupby('variant_id').cumcount()
+    variants_df = variants_df.set_index(['variant_id', 'sample']).sort_index()
+
+    non_unique_variants_ids = variants_df[
+            variants_df.index[(slice(None), 1), :]
+        ].index.get_level_values('variant_id')
+    non_unique_df = variants_df.loc[(non_unique_variants_ids, slice(None)), :]
+    return variants_df, non_unique_df, variants_df.index.difference(non_unique_df.index)
+
+
+def wilson(p, n, z = 1.96):
+    denominator = 1 + z ** 2/n
+    centre_adjusted_probability = p + z * z / (2 * n)
+    adjusted_standard_deviation = np.sqrt((p * (1 - p) + z * z / (4 * n)) / n)
+    
+    lower_bound = (centre_adjusted_probability - z * adjusted_standard_deviation) / denominator
+    upper_bound = (centre_adjusted_probability + z * adjusted_standard_deviation) / denominator
+    return (lower_bound, upper_bound)
+
+
+def frac_bins_data(df):
+    pos = (df['imbalanced']).sum()
+    n = len(df.index)
+    p = pos / n
+    if n == 0:
+        lb, ub = 0, 1
+    else:
+        lb, ub = wilson(p, n)
+    return pd.DataFrame({
+        'imb_frac': [p],
+        'frac_lower_bound': [lb],
+        'frac_upper_bound': [ub],
+        'num_observations': [n],
+    })
+
+
+def get_fraction_trend_from_df(df, maf_bins=maf_bins_fr, estimate=False):
+    signature = 'signature1'
+    #  ctx_label = 'CTX3'
+    
+    cts = df.pivot_table(index=signature, columns='imbalanced', values='ID', aggfunc='count')
+    ctsx = (pd.isna(cts) | (cts <= 2)).iloc[:, 0] + (pd.isna(cts) | (cts <= 2)).iloc[:, 1]
+    singular_signatures = ctsx[ctsx].index
+
+    all_data = df[~df[signature].isin(singular_signatures)
+                  & df['MAF'].notna() & (df['MAF'] > min(maf_bins))
+                  & (df['MAF'] <= max(maf_bins))]
+    
+    all_data['MAF_rank'] = all_data['MAF'].rank()
+    all_data['imbalanced_numeric'] = all_data['imbalanced'].astype(int)
+    all_data['maf_bin'] = pd.cut(all_data['MAF'], bins=maf_bins)
+    
+    frac_reg = all_data.groupby('maf_bin').apply(frac_bins_data).droplevel(1)
+    
+    if estimate:
+        reduced = smf.logit(f"imbalanced_numeric ~ {signature}*pref_orient + FMR + BAD + mut_rates_roulette", data=all_data).fit(maxiter=50)
+        full = smf.logit(f"imbalanced_numeric ~ {signature}*pref_orient + FMR + BAD + mut_rates_roulette + MAF_rank", data=all_data).fit(maxiter=50)
+        ctxp = smf.logit(f"imbalanced_numeric ~ {signature}*pref_orient", data=all_data).fit(maxiter=50)
+
+        llr = full.llf - reduced.llf
+        pval = st.chi2.sf(llr, df=1)
+    
+        all_data['reduced'] = reduced.predict(all_data)
+        all_data['full'] = full.predict(all_data)
+        all_data['ctx'] = ctxp.predict(all_data)
+    
+        gb = all_data.groupby('maf_bin')[['reduced', 'full', 'ctx']].mean()
+
+        frac_reg[['reduced', 'full', 'ctx']] = gb[['reduced', 'full', 'ctx']]
+    else:
+        llr = 0
+        pval = 1
+    frac_reg['llr'] = llr
+    frac_reg['pval'] = pval
+
+    return frac_reg
+
+
+def sample_index(n_aggregated, random_state=42):
+    rng = np.random.default_rng(seed=random_state)
+    sample_ind = pd.Series(
+        rng.integers(n_aggregated),
+        index=n_aggregated.index,
+        name='sample')
+    sample_ind = sample_ind.reset_index().rename(columns={'index': 'variant_id'})
+    return pd.MultiIndex.from_frame(sample_ind)
+
+
+def main(nonaggregated_df, seed_start=20, seed_step=10):
+    # sampling_df - df with 2-level index: [variant_id, count (0-based)]
+    sampling_df, non_unique_df, unique_index = get_sampling_df(nonaggregated_df)
+
+    frac_regs = []
+    for seed in range(seed_start, seed_start + seed_step + 1):
+        sampled_variants_index = sample_index(
+            non_unique_df,
+            seed
+        )
+        sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
+        sample_df['FDR'] = multipletests(
+                    sample_df['min_pval'],
+                    method='fdr_bh'
+                )[1]
+        sample_df['imbalanced'] = (sample_df['FDR'] <= 0.05) #& (np.abs(sample_df['es']) >= np.log2(1.5))
+        frac = get_fraction_trend_from_df(sample_df, estimate=True)
+        frac_regs.append(frac)
+
+    return pd.concat(frac_regs)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Sampling one of recurrent variants")
+    parser.add_argument('-I', help='Non-aggregated BED file')
+    parser.add_argument('-O', help='File to save calculated metrics')
+    parser.add_argument('--start', type=int, help='Start value for seed', default=10)
+    parser.add_argument('--step', type=int, help='Step size for seed values', default=10)
+
+    args = parser.parse_args()
+    input_df = pd.read_table(args.I)
+    input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
+    df = main(input_df, seed_start=args.start, seed_step=args.end)
+    df.to_csv(args.O, sep='\t', index=False)
