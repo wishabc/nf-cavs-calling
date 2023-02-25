@@ -223,7 +223,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     input_df = pd.read_table(args.I)
     context_df = pd.read_table(args.c, header=None, names=['#chr', 'start', 'end', 'sequence'])
-    
+    print('Preprocessing df')
     input_df = make_full_df(input_df, context_df)
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
