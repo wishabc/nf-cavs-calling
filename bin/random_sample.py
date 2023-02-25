@@ -17,7 +17,7 @@ def get_sampling_df(df):
     variants_df = variants_df.set_index(['variant_id', 'sample']).sort_index()
 
     non_unique_variants_ids = variants_df[
-            variants_df.index[(slice(None), 1), :]
+            variants_df.loc[(slice(None), 1), :]
         ].index.get_level_values('variant_id')
     non_unique_df = variants_df.loc[(non_unique_variants_ids, slice(None)), :]
     return variants_df, non_unique_df, variants_df.index.difference(non_unique_df.index)
