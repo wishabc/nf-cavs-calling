@@ -17,8 +17,9 @@ def get_sampling_df(df):
     variants_df = variants_df.set_index(['variant_id', 'sample']).sort_index()
 
     non_unique_variants_ids = variants_df.loc[(slice(None), 1), :].index.get_level_values('variant_id')
-    non_unique_df = variants_df.loc[(non_unique_variants_ids, slice(None)), :]
-    return variants_df, non_unique_df, variants_df.index.difference(non_unique_df.index)
+    non_unique_n_aggregated = df['variant_id'].value_counts().loc[non_unique_variants_ids]
+    non_unique_df_index = variants_df.loc[(non_unique_variants_ids, slice(None)), :].index
+    return variants_df, non_unique_n_aggregated, variants_df.index.difference(non_unique_df_index)
 
 
 def wilson(p, n, z = 1.96):
@@ -102,13 +103,13 @@ def sample_index(n_aggregated, random_state=42):
 def main(nonaggregated_df, seed_start=20, seed_step=10):
     # sampling_df - df with 2-level index: [variant_id, count (0-based)]
     print('Making sampling df')
-    sampling_df, non_unique_df, unique_index = get_sampling_df(nonaggregated_df)
+    sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(nonaggregated_df)
 
     frac_regs = []
     for seed in range(seed_start, seed_start + seed_step + 1):
         print(f'Processing seed: {seed}')
         sampled_variants_index = sample_index(
-            non_unique_df,
+            non_unique_n_aggregated,
             seed
         )
         sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
