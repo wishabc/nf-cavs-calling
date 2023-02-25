@@ -158,16 +158,6 @@ def make_full_df(input_df, context_df):
     input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
     input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
     input_df = input_df.merge(context_df)
-
-    input_df[
-    ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
-        + [f'palindromic_{i}' for i in range(1, 4)]] = input_df.apply(
-        get_mutation_stats, axis=1
-    )
-    input_df['signature1'] = input_df.apply(lambda row: f"{row['-1']}[{row['sub']}]{row['1']}", axis=1)
-    input_df['signature2'] = input_df.apply(lambda row: f"{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}", axis=1)
-    input_df['signature3'] = input_df.apply(lambda row: f"{row['-3']}{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}{row['3']}", axis=1)
-
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].replace('.', np.nan).astype(np.float_)
     input_df = input_df[(input_df['MAF'] != '.') & pd.notna(input_df['MAF'])]
 
@@ -182,7 +172,14 @@ def make_full_df(input_df, context_df):
     input_df['imbalanced_side_is_major'] = input_df['es_maj'] > 0
     input_df.loc[input_df['es_maj'] == 0, 'imbalanced_side_is_major'] = np.nan
     input_df['revMAF'] = 0.5 - input_df['MAF']
-
+    input_df[
+    ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
+        + [f'palindromic_{i}' for i in range(1, 4)]] = input_df.apply(
+        get_mutation_stats, axis=1
+    )
+    input_df['signature1'] = input_df.apply(lambda row: f"{row['-1']}[{row['sub']}]{row['1']}", axis=1)
+    input_df['signature2'] = input_df.apply(lambda row: f"{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}", axis=1)
+    input_df['signature3'] = input_df.apply(lambda row: f"{row['-3']}{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}{row['3']}", axis=1)
 
 
     return input_df
