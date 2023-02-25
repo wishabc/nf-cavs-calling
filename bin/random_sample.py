@@ -159,6 +159,7 @@ def make_full_df(input_df, context_df):
     input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
     input_df = input_df.merge(context_df)
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].replace('.', np.nan).astype(np.float_)
+    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
     input_df = input_df[(input_df['MAF'] != '.') & pd.notna(input_df['MAF'])]
 
     input_df['ref_is_major'] = input_df['RAF'] >= input_df['AAF']
