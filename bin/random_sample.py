@@ -154,10 +154,11 @@ def get_mutation_stats(row):
     return pd.Series(list(preceding)[-3:] + list(following)[:3] + [sub, fwd, ref_orient] + palindromic_res[:4])
 
 
-def make_full_df(input_df, context_df):
+def make_full_df(input_df, context_df, mut_df):
     input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
     input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
-    input_df = input_df.merge(context_df)
+    input_df = input_df.merge(context_df).merge(mut_df)
+    input_df['chr'] = input_df['#chr']
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].replace('.', np.nan).astype(np.float_)
     input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
     input_df = input_df[(input_df['MAF'] != '.') & pd.notna(input_df['MAF'])]
@@ -220,8 +221,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     input_df = pd.read_table(args.I)
+    mut_rates = pd.read_table(args.m)
     context_df = pd.read_table(args.c, header=None, names=['#chr', 'start', 'end', 'sequence'])
     print('Preprocessing df')
-    input_df = make_full_df(input_df, context_df)
+    input_df = make_full_df(input_df, context_df, mut_rates)
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
