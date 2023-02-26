@@ -157,7 +157,11 @@ def get_mutation_stats(row):
 def make_full_df(input_df, context_df, mut_df):
     input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
     input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
-    input_df = input_df.merge(context_df).merge(mut_df)
+    
+    es_mean = df.groupby('variant_id')['es'].mean().reset_index().rename(columns={'es': 'es_weighted_mean'})
+    
+    input_df = input_df.merge(context_df).merge(mut_df).merge(es_mean)
+
     input_df['chr'] = input_df['#chr']
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].replace('.', np.nan).astype(np.float_)
     input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
@@ -175,10 +179,9 @@ def make_full_df(input_df, context_df, mut_df):
 
     input_df['revMAF'] = 0.5 - input_df['MAF']
     input_df[
-    ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
-        + [f'palindromic_{i}' for i in range(1, 4)]] = input_df.apply(
-        get_mutation_stats, axis=1
-    )
+            ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
+            + [f'palindromic_{i}' for i in range(1, 4)]
+        ] = input_df.apply(get_mutation_stats, axis=1)
 
     input_df['maj_orient'] = np.where(
         input_df['ref_is_major'], 
