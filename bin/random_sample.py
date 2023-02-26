@@ -206,7 +206,7 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
     sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(nonaggregated_df)
 
     frac_regs = []
-    for seed in range(seed_start, seed_start + seed_step + 1):
+    for seed in range(seed_start, seed_start + seed_step):
         print(f'Processing seed: {seed}')
         sampled_variants_index = sample_index(
             non_unique_n_aggregated,
