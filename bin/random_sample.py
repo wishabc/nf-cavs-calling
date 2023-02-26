@@ -215,6 +215,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Sampling one of recurrent variants")
     parser.add_argument('-I', help='Non-aggregated BED file')
     parser.add_argument('-c', help='File with context annotation')
+    parser.add_argument('-m', help='File with extracted mutation rates')
     parser.add_argument('-O', help='File to save calculated metrics')
     parser.add_argument('--start', type=int, help='Start value for seed', default=10)
     parser.add_argument('--step', type=int, help='Step size for seed values', default=10)
