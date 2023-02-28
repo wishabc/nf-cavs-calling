@@ -59,6 +59,7 @@ def censored_binom_pmf(n, p, allele_tr):
 
 def censored_binom_pvalue(x, n, p, w, allele_tr):
     norm_coef = 0
+    print(allele_tr)
     if allele_tr > 0:
         norm_coef = binom_cdf(n - (allele_tr - 1), n, p, w) - binom_cdf(allele_tr - 1, n, p, w)
     else:
@@ -93,7 +94,6 @@ def recalc_ws(ws, p1, p2):
 
 def calc_pval_for_indiv(input_filename, output_filename, allele_tr=5, modify_w=False, es_method='exp'):
     df = pd.read_table(input_filename)
-    print(allele_tr)
     df = calc_pval_for_df(df, allele_tr=allele_tr, modify_w=modify_w, es_method=es_method)
     df.to_csv(output_filename, sep='\t', index=None)
 
