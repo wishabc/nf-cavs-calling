@@ -53,7 +53,7 @@ Following parameters should be present in ```params.config```. Each option can b
 - `aggregation_key` - column name in `samples_file`. Samples are grouped according to values in that columns and aggregated. Use `"all"` to aggregate all the data;
 - ```allele_tr``` - allelic reads threshold, SNVs with less than ```allele_tr``` reads on one of the alleles are filtered out;
 
-- ```fdr_cov_tr``` - coverage threshold. SNPs with less than `fdr_cov_tr` are not considered to be CAV candidates.
+- ```coverage_tr``` - coverage threshold. SNPs with less than `fdr_cov_tr` are not considered to be CAV candidates.
 
 - ```exclude_fdr_tr``` - FDR threshold below which SNVs are called CAVs and excluded from the set of SNVs used for badmaps re-estimation
 

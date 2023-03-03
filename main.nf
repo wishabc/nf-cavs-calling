@@ -195,7 +195,7 @@ process anova {
     """
     python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
         pvals \
-        --ct ${params.fdr_cov_tr} \
+        --ct ${params.coverage_tr} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups}
     

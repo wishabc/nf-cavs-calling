@@ -46,7 +46,7 @@ process aggregate_pvals {
     export OMP_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/aggregation.py -I '${pval_file}' \
         -O '${name}' --jobs ${task.cpus} \
-        --ct ${params.fdr_cov_tr}
+        --ct ${params.coverage_tr}
     """
 }
 
