@@ -1,41 +1,8 @@
 import pandas as pd
-from scipy.stats import binom, nbinom
-from helpers import alleles
+from scipy.stats import binom
 import argparse
 import numpy as np
 
-
-# nbinom_dist
-def nbinom_sf(x, r, p, w):
-    return w * nbinom.sf(x, r, p) + (1 - w) * nbinom.sf(x, r, 1 - p)
-
-
-def nbinom_pmf(x, r, p, w):
-    return w * nbinom.pmf(x, r, p) + (1 - w) * nbinom.pmf(x, r, 1 - p)
-
-def map_func_to_array(arr, func):
-    return arr * func(arr)
-
-def censored_nbinom_expectation(x, r, p, w, allele_tr):
-    #vector_map = np.vectorize(map_func_to_array)
-    return (r * ((1 - p) / p * w + (1 - w) * p / (1 - p)) - map_func_to_array(np.tile(np.arange(5), (x.shape[0], 1)).transpose(), lambda y: nbinom_pmf(y, r, p, w)).sum(axis=0)) / nbinom_sf(allele_tr - 1, r, p, w)
-    
-def censored_nbinom_es(x, r, p, w, allele_tr):
-    return np.log2(x / censored_nbinom_expectation(x, r, p, w, allele_tr))
-
-def censored_nbinom_pvalue(x, r, p, w, allele_tr):
-    norm_coef = 0
-    if allele_tr > 0:
-        norm_coef = nbinom_sf(allele_tr - 1, r, p, w)
-    else:
-        norm_coef = 1
-
-    return nbinom_sf(x - 1, r, p, w) / norm_coef
-
-def modify_w_nbinom(rs, p, ws, counts):
-    p1 = ws * nbinom.pmf(counts, rs, p)
-    p2 = (1 - ws) * nbinom.pmf(counts, rs, 1 - p)
-    return recalc_ws(ws, p1, p2)
 
 # binom dist
 def binom_sf(x, n, p, w):
@@ -44,18 +11,6 @@ def binom_sf(x, n, p, w):
 def binom_cdf(x, n, p, w):
     return (1 - w) * binom.cdf(x, n, p) + w * binom.cdf(x, n, 1 - p)
 
-def binom_pmf(x, n, p, w):
-    return (1 - w) * binom.pmf(x, n, p) + w * binom.pmf(x, n, 1 - p)
-
-def censored_binom_pmf(n, p, allele_tr):
-    dist1 = binom(n, p)
-    dist2 = binom(n, 1 - p)
-    norm = (dist1.cdf(n - allele_tr) + dist2.cdf(n - allele_tr)
-    - dist1.cdf(allele_tr - 1) - dist2.cdf(allele_tr - 1))
-    return [
-        (dist1.pmf(i) + dist2.pmf(i)) / norm if (i >= allele_tr and i <= n - allele_tr) else 0
-        for i in range(allele_tr, n - allele_tr + 1)
-    ]
 
 def censored_binom_pvalue(x, n, p, w, allele_tr):
     norm_coef = 0
