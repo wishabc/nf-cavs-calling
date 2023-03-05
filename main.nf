@@ -28,8 +28,8 @@ process merge_files {
     name = "${group_key}.sorted.bed"
     """
     python3 $moduleDir/bin/merge_files.py f.txt ${files}
-    head -n1 f.txt > ${name}
-    sort-bed f.txt >> ${name}
+    head -n1 f.txt > "${name}"
+    sort-bed f.txt >> "${name}"
     """
 }
 
