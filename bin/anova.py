@@ -7,11 +7,11 @@ import argparse
 
 def read_non_aggregated_files(dir_path):
     tables = []
-    pval_files = list(dir_path)
+    pval_files = list(os.listdir(dir_path))
     if len(pval_files) == 0:
         print(f'No p-value files found in {dir_path}!')
         raise ValueError
-    for file in os.listdir(dir_path):
+    for file in pval_files:
         group_id = file.split('.')[0]
         tb_df = pd.read_table(os.path.join(dir_path, file))
         tb_df['group_id'] = group_id
@@ -61,14 +61,14 @@ def main(melt, min_samples=3, min_groups=2, cover_tr=20):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
-    parser.add_argument('input_file', help='Non-aggregated file with tested CAVs')
+    parser.add_argument('input_files_dir', help='Non-aggregated file with tested CAVs')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
     parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=20)
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     args = parser.parse_args()
 
-    melt = read_non_aggregated_files(args.input_file)
+    melt = read_non_aggregated_files(args.input_files_dir)
     min_samples = args.min_samples # of samples
     min_groups_per_variant = args.min_groups
     fdr_cov_tr = args.ct
