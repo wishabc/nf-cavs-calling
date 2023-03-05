@@ -41,7 +41,7 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
     # variants present in >=2 groups
     tested_ids = groups_per_variant[groups_per_variant >= min_groups_per_variant].index
 
-    testable_variant_group_pairs = samples_num.reset_index()
+    testable_variant_group_pairs = samples_num.reset_index().drop(columns=0)
 
     return testable_variant_group_pairs[
          testable_variant_group_pairs['variant_id'].isin(tested_ids)
