@@ -44,7 +44,7 @@ process aggregate_pvals {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/aggregation.py -I '${pval_file}' \
+    python3 $moduleDir/bin/aggregation.py -I ${pval_file} \
         -O '${name}' --jobs ${task.cpus} \
         --ct ${params.coverage_tr}
     """
