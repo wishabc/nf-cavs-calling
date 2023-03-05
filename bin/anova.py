@@ -56,7 +56,7 @@ def main(melt, min_samples=3, min_groups=2, cover_tr=20):
     tested_melt = melt.merge(
         testable_pairs, on=['variant_id', 'group_id']
     )
-    return tested_melt, tested_melt.groupby('variant_id').apply(linear_reg)
+    return tested_melt, None#tested_melt.groupby('variant_id').apply(linear_reg)
 
 
 if __name__ == '__main__':
@@ -75,9 +75,9 @@ if __name__ == '__main__':
     tested_melt, anova_results = main(melt, cover_tr=fdr_cov_tr,
         min_samples=min_samples, min_groups=min_groups_per_variant)
     
-    anova_results['anova_fdr'] = multipletests(anova_results['anova_pvalue'],
-        method='fdr_bh')[1]
+    # anova_results['anova_fdr'] = multipletests(anova_results['anova_pvalue'],
+    #     method='fdr_bh')[1]
     
     tested_melt.to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
 
-    anova_results.to_csv(f"{args.prefix}.anova.bed", sep='\t', index=False)
+    #anova_results.to_csv(f"{args.prefix}.anova.bed", sep='\t', index=False)
