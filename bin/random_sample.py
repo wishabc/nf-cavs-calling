@@ -154,7 +154,7 @@ def get_mutation_stats(row):
     return pd.Series(list(preceding)[-3:] + list(following)[:3] + [sub, fwd, ref_orient] + palindromic_res[:4])
 
 
-def make_full_df(input_df, context_df, mut_df):
+def make_full_df(input_df, context_df, mut_df, non_cpg):
     input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
     input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
     
@@ -195,8 +195,9 @@ def make_full_df(input_df, context_df, mut_df):
     input_df['signature1'] = input_df.apply(lambda row: f"{row['-1']}[{row['sub']}]{row['1']}", axis=1)
     input_df['signature2'] = input_df.apply(lambda row: f"{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}", axis=1)
     input_df['signature3'] = input_df.apply(lambda row: f"{row['-3']}{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}{row['3']}", axis=1)
-
-
+    if non_cpg:
+        input_df['cpg'] = ((input_df['sub'] != 'A>T') & (input_df['1'] == 'G')) | ((input_df['sub'] == 'C>G') & (input_df['-1'] == 'C'))
+        input_df = input_df[~input_df['cpg']]
     return input_df
 
 
@@ -231,6 +232,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', help='File with context annotation')
     parser.add_argument('-m', help='File with extracted mutation rates')
     parser.add_argument('-O', help='File to save calculated metrics')
+    parser.add_argument('--noncpg', help='Use only non-cpg', default=False, action="store_true")
     parser.add_argument('--start', type=int, help='Start value for seed', default=10)
     parser.add_argument('--step', type=int, help='Step size for seed values', default=10)
 
@@ -239,6 +241,6 @@ if __name__ == '__main__':
     mut_rates = pd.read_table(args.m)
     context_df = pd.read_table(args.c, header=None, names=['#chr', 'start', 'end', 'sequence'])
     print('Preprocessing df')
-    input_df = make_full_df(input_df, context_df, mut_rates)
+    input_df = make_full_df(input_df, context_df, mut_rates, args.noncpg)
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
