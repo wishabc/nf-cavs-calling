@@ -14,7 +14,7 @@ process random_sample {
 
     script:
     name = "${step_start}.sampling.tsv"
-    cpg = params.cpg ? '--cpg' : ''
+    cpg = params.cpg ? '--noncpg' : ''
     """
     python3 $moduleDir/bin/random_sample.py \
         -I ${params.sampling_file} \
@@ -28,7 +28,7 @@ process random_sample {
 }
 
 workflow {
-    params.cpg = false
+    params.noncpg = false
     params.sampling_count = 1000
     params.samples_per_job = 10
     params.mutation_rates = "/home/sabramov/projects/mutationRates/output/mutation_rates/mut_rates.annotation.bed"
