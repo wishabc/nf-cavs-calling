@@ -213,7 +213,7 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
             seed
         )
         sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
-        sample_df = sample_df(frac=0.75, random_state=seed, axis=0)
+        sample_df = sample_df.sample(frac=0.75, random_state=seed, axis=0)
         sample_df['FDR'] = multipletests(
                     sample_df['min_pval'],
                     method='fdr_bh'
