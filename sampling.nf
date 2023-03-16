@@ -22,7 +22,7 @@ process random_sample {
         -c ${params.context_file} \
         -m ${params.mutation_rates} \
         --start ${step_start} \
-        --step ${params.samples_per_job}
+        --step ${params.samples_per_job} \
         ${cpg}
     """
 }
