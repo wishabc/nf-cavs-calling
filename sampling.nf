@@ -14,7 +14,7 @@ process random_sample {
 
     script:
     name = "${step_start}.sampling.tsv"
-    cpg = params.cpg ? '--noncpg' : ''
+    cpg = params.noncpg ? '--noncpg' : ''
     """
     python3 $moduleDir/bin/random_sample.py \
         -I ${params.sampling_file} \
