@@ -31,7 +31,7 @@ workflow {
     params.mutation_rates = "/home/sabramov/projects/mutationRates/output/mutation_rates/mut_rates.annotation.bed"
     params.context_file = "/net/seq/data2/projects/sabramov/ENCODE4/dnase-annotations/context/output/variants_context.bed"
     params.sampling_file = "/net/seq/data2/projects/sabramov/ENCODE4/dnase-cavs/output/pvals_nonaggregated.origin/Normal.sorted.bed"
-    sampling_results = Channel.of(1..params.sampling_count - 1) 
+    sampling_results = Channel.of(1..params.sampling_count) 
         | map(it -> it * params.samples_per_job)
         | toInteger()
         | random_sample
