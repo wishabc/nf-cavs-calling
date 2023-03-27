@@ -214,7 +214,7 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
             seed
         )
         sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
-        sample_df = sample_df.sample(frac=0.75, random_state=seed, axis=0)
+        #sample_df = sample_df.sample(frac=0.75, random_state=seed, axis=0)
         sample_df['FDR'] = multipletests(
                     sample_df['min_pval'],
                     method='fdr_bh'
@@ -241,6 +241,7 @@ if __name__ == '__main__':
     mut_rates = pd.read_table(args.m)
     context_df = pd.read_table(args.c, header=None, names=['#chr', 'start', 'end', 'sequence'])
     print('Preprocessing df')
+    ## takes long. Need to optimize at some point
     input_df = make_full_df(input_df, context_df, mut_rates, args.noncpg)
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
