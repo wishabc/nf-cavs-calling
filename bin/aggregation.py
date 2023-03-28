@@ -85,8 +85,7 @@ def aggregate_apply(df):
 def aggregate_subgroup(subgroup):
     return pd.concat([aggregate_apply(x) for x in subgroup])
 
-def aggregate_pvalues_df(pval_df_path, jobs, cover_tr):
-    pval_df = pd.read_table(pval_df_path)
+def aggregate_pvalues_df(pval_df, jobs, cover_tr):
     pval_df['coverage'] = pval_df.eval('ref_counts + alt_counts')
     if not pval_df.empty:
         pval_df = pval_df[pval_df.eval(f'coverage >= {cover_tr}')]
@@ -129,7 +128,8 @@ def calc_fdr(aggr_df):
     return aggr_df
 
 def main(input_path, out_path, cover_tr=10, jobs=1):
-    aggr_df = aggregate_pvalues_df(input_path, jobs, cover_tr)
+    pval_df = pd.read_table(input_path)
+    aggr_df = aggregate_pvalues_df(pval_df, jobs, cover_tr)
     fdr_df = calc_fdr(aggr_df)
     fdr_df.to_csv(out_path, sep='\t', index=False)
 

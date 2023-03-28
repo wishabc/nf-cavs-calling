@@ -1,9 +1,62 @@
 import os
-from statsmodels.stats.multitest import multipletests
-import statsmodels.formula.api as smf
 import pandas as pd
 import argparse
+import numpy as np
+from scipy.optimize import minimize
+from scipy.stats import binom, chi2
+from statsmodels.stats.multitest import multipletests
+from tqdm import tqdm
+from aggregation import aggregate_pvalues_df, calc_fdr
 
+
+
+def test_each_group(df):
+    g = df.groupby('group_id')
+    ess = []
+    stds = []
+    liks = []
+    deltals = []
+    pvals = []
+    grps = []
+    alpha = np.log(2)/2
+    for g_id in g.groups:
+        t = g.get_group(g_id)
+        es, lhd =  get_ml_es_estimation(t['x'], t['n'])
+        lhd0 = censored_binomial_likelihood(t['x'], t['n'], 0.5).sum()
+        std = np.cosh(alpha * es) / (alpha * np.sqrt(t['n'].sum()))
+        ess.append(es)
+        liks.append(lhd)
+        stds.append(std)
+        deltals.append(lhd - lhd0)
+        pvals.append(chi2.logsf(lhd - lhd0, 1))
+        grps.append(t['group_id'].iloc[0])
+    return grps, ess, stds, deltals, pvals, np.sum(liks)
+
+def test_snp(df):
+    variant_id = df['variant_id'].iloc[0]
+    m = len(df['group_id'].unique())
+    x = df['x'].to_numpy()
+    n = df['n'].to_numpy()
+    L0 = censored_binomial_likelihood(x, n, 0.5).sum()
+    e1, L1 = get_ml_es_estimation(x, n)
+    groups, ess2, stds, DLs, ps_individual, L2 = test_each_group(df)
+    p_overall = chi2.logsf(L1 - L0, 1)
+    p_differential = chi2.logsf(L2 - L1, m - 1)
+    p_zero_int = chi2.logsf(L2 - L0, m)
+    return [variant_id, groups, m, e1, ess2, stds, L0, L1 - L0, L2 - L1, ps_individual, p_overall, p_differential, p_zero_int]
+    
+
+def censored_binomial_likelihood(xs, ns, p, tr=5):
+    b = binom(ns, p)
+    return b.logpmf(xs) - np.log(b.cdf(ns - tr) - b.cdf(tr - 1))
+
+def get_ml_es_estimation(x, n):
+    def target(p):
+        return -censored_binomial_likelihood(x, n, p).sum()
+    p = minimize(target, 0.5, bounds=((0.001, 0.999),)).x[0]
+    e = np.log2(p) - np.log2(1 - p)
+    return e, -target(p)
+    
 
 def read_non_aggregated_files(dir_path):
     tables = []
@@ -19,14 +72,6 @@ def read_non_aggregated_files(dir_path):
     res = pd.concat(tables)
     res['variant_id'] = res['#chr'] + '_' + res['end'].astype(str) + '_' + res['alt']
     return res
-
-def linear_reg(df):
-    snp_data = df.iloc[0]
-    return pd.DataFrame({
-        **{x: [snp_data[x]] for x in ['#chr', 'start', 'end', 'ID', 'ref', 'alt']},
-        'groups': '|'.join(df['group_id'].unique()),
-        'anova_pvalue': [smf.ols('es ~ C(group_id)', data=df).fit().f_pvalue],
-    })
 
 
 def find_testable_pairs(df, min_samples, min_groups_per_variant):
@@ -48,15 +93,77 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
     ]
 
 
-def main(melt, min_samples=3, min_groups=2, cover_tr=20):
-    melt = melt[melt.eval(f'ref_counts + alt_counts >= {cover_tr}')]
+def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
+    melt = read_non_aggregated_files(melt_path)
+    melt['n'] = melt.eval('ref_counts + alt_counts')
+    melt = melt[melt.eval(f'n >= {cover_tr}')]
+    df['x'] = np.round(
+        np.where(
+            df['BAD'] == 1, 
+            df['ref_counts'],
+            ((1 - 1 / (1 + np.power(2, df['es']))) * df['n'])
+        )
+    )
+
     testable_pairs = find_testable_pairs(melt, min_samples=min_samples,
         min_groups_per_variant=min_groups)
     # filter only testable variants + cell_types
     tested_melt = melt.merge(
         testable_pairs, on=['variant_id', 'group_id']
     )
-    return tested_melt, None#tested_melt.groupby('variant_id').apply(linear_reg)
+    # Total aggregation (find constitutive CAVs)
+    constitutive_df = calc_fdr(
+        aggregate_pvalues_df(tested_melt, jobs=1, cover_tr=cover_tr)).rename(
+        {'min_fdr': 'min_fdr_overall'}
+    )
+    # Rename common columns
+    constitutive_df = constitutive_df[['variant_id', 'min_fdr_overall']]
+    # merge with tested variants
+    tested_melt = tested_melt.merge(constitutive_df)
+
+    # LRT (ANOVA-like)
+    gb = tested_melt.groupby('variant_id')
+    rows = []
+    ### TODO: make in parallel
+    for g_id in tqdm(list(gb.groups)):
+        rows.append(test_snp(gb.get_group(g_id)))
+    result = pd.DataFrame(rows,
+                     columns=[
+                         'variant_id',
+                         'group_id',
+                         'm',
+                         'e1',
+                         'group_es',
+                         'group_es_std',
+                         'L0',
+                         'DL1',
+                         'DL2',
+                         'group_pval',
+                         'p_overall',
+                         'p_differential',
+                         'p_zero_int'
+                     ])
+    result['differential_FDR'] = multipletests(
+        np.exp(result['p_differential']),
+        method='fdr_bh'
+    )[1]
+    
+    ## Check and remove 
+    # explode result to get by group significance and merge with tested_melt
+    result = result.explode(['group_id', 'group_es', 'group_es_std', 'group_pval'],
+        ignore_index=True).merge(tested_melt)
+
+    # set default inividual fdr and find differential snps
+    result['min_fdr_group'] = np.nan
+    differential_idxs = result['differential_FDR'] <= 0.05
+    
+    # Group-wise aggregation
+    group_wise_aggregation = calc_fdr(tested_melt[differential_idxs].groupby('group_id').apply(
+        lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
+    )).rename({'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']]
+    result = result.merge(group_wise_aggregation)
+    
+    return tested_melt, result
 
 
 if __name__ == '__main__':
@@ -67,17 +174,14 @@ if __name__ == '__main__':
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     args = parser.parse_args()
-
-    melt = read_non_aggregated_files(args.input_files_dir)
     min_samples = args.min_samples # of samples
     min_groups_per_variant = args.min_groups
     fdr_cov_tr = args.ct
-    tested_melt, anova_results = main(melt, cover_tr=fdr_cov_tr,
-        min_samples=min_samples, min_groups=min_groups_per_variant)
+    df, result = main(
+        args.input_files_dir,
+        cover_tr=fdr_cov_tr,
+        min_samples=min_samples,
+        min_groups=min_groups_per_variant)
     
-    # anova_results['anova_fdr'] = multipletests(anova_results['anova_pvalue'],
-    #     method='fdr_bh')[1]
-    
-    tested_melt.to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
-
-    #anova_results.to_csv(f"{args.prefix}.anova.bed", sep='\t', index=False)
+    df.to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+    result.to_csv(f"{args.prefix}.cell_selective.bed", sep='\t', index=False)
