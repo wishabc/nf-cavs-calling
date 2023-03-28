@@ -114,7 +114,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested_melt, jobs=1, cover_tr=cover_tr)
     ).rename(
-        {'min_fdr': 'min_fdr_overall'}
+        columns={'min_fdr': 'min_fdr_overall'}
     )
     print(constitutive_df.columns)
     # Rename common columns
@@ -155,13 +155,12 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
         ignore_index=True).merge(tested_melt)
 
     # set default inividual fdr and find differential snps
-    result['min_fdr_group'] = np.nan
     differential_idxs = result['differential_FDR'] <= 0.05
     
     # Group-wise aggregation
     group_wise_aggregation = calc_fdr(tested_melt[differential_idxs].groupby('group_id').apply(
         lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
-    )).rename({'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']]
+    )).rename(columns={'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']]
     result = result.merge(group_wise_aggregation)
     
     return tested_melt, result
