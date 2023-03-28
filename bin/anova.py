@@ -160,9 +160,8 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     # Group-wise aggregation
     group_wise_aggregation = calc_fdr(tested_melt[differential_idxs].groupby('group_id').apply(
         lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
-    )).rename(columns={'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']]
+    )).rename(columns={'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']].reset_index(drop=True)
     result = result.merge(group_wise_aggregation)
-    
     return tested_melt, result
 
 
