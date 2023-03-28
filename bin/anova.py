@@ -112,11 +112,13 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     )
     # Total aggregation (find constitutive CAVs)
     constitutive_df = calc_fdr(
-        aggregate_pvalues_df(tested_melt, jobs=1, cover_tr=cover_tr)).rename(
+        aggregate_pvalues_df(tested_melt, jobs=1, cover_tr=cover_tr)
+    ).rename(
         {'min_fdr': 'min_fdr_overall'}
     )
+    print(constitutive_df.columns)
     # Rename common columns
-    constitutive_df = constitutive_df[['variant_id', 'min_fdr_overall']]
+    constitutive_df = constitutive_df
     # merge with tested variants
     tested_melt = tested_melt.merge(constitutive_df)
 
