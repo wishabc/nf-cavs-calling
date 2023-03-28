@@ -96,11 +96,11 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     melt = read_non_aggregated_files(melt_path)
     melt['n'] = melt.eval('ref_counts + alt_counts')
     melt = melt[melt.eval(f'n >= {cover_tr}')]
-    df['x'] = np.round(
+    melt['x'] = np.round(
         np.where(
-            df['BAD'] == 1, 
-            df['ref_counts'],
-            ((1 - 1 / (1 + np.power(2, df['es']))) * df['n'])
+            melt['BAD'] == 1, 
+            melt['ref_counts'],
+            ((1 - 1 / (1 + np.power(2, melt['es']))) * melt['n'])
         )
     )
 
@@ -124,7 +124,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     gb = tested_melt.groupby('variant_id')
     rows = []
     ### TODO: make in parallel
-    for g_id in tqdm(list(gb.groups)):
+    for g_id in list(gb.groups):
         rows.append(test_snp(gb.get_group(g_id)))
     result = pd.DataFrame(rows,
                      columns=[
