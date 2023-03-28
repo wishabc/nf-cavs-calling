@@ -5,7 +5,6 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import binom, chi2
 from statsmodels.stats.multitest import multipletests
-from tqdm import tqdm
 from aggregation import aggregate_pvalues_df, calc_fdr
 
 
