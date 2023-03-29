@@ -155,6 +155,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     result = tested_melt.merge(
         result.explode(['group_id', 'group_es', 'group_es_std', 'group_pval'],
         ignore_index=True), how='left')
+    print(len(result.index), result.columns)
 
     # set default inividual fdr and find differential snps
     differential_idxs = result['differential_FDR'] <= 0.05
