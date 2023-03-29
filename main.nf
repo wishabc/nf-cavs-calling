@@ -189,20 +189,14 @@ process anova {
         tuple path(anova), path(melt)
 
     script:
-    anova = "pvals.cell_selective.${params.aggregation_key}.bed"
-    melt = "tested_variants.anova.${params.aggregation_key}.bed"
+    anova = "${params.aggregation_key}.cell_selective.bed"
+    melt = "${params.aggregation_key}.tested.bed"
     """
     python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
-        pvals \
+        ${params.aggregation_key} \
         --ct ${params.coverage_tr} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups}
-    
-    head -1 pvals.cell_selective.bed > ${anova}
-    sort-bed pvals.cell_selective.bed >> ${anova}
-
-    head -1 pvals.tested.bed > ${melt}
-    sort-bed pvals.tested.bed >> ${melt}
     """
 }
 

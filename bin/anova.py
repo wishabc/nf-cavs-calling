@@ -116,11 +116,11 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     ).rename(
         columns={'min_fdr': 'min_fdr_overall'}
     )
-    print(constitutive_df.columns)
     # Rename common columns
     constitutive_df = constitutive_df
     # merge with tested variants
-    tested_melt = tested_melt.merge(constitutive_df)
+    tested_melt = tested_melt.merge(constitutive_df, how='left')
+    print(len(tested_melt.index))
 
     # LRT (ANOVA-like)
     gb = tested_melt.groupby('variant_id')
@@ -148,11 +148,13 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
         np.exp(result['p_differential']),
         method='fdr_bh'
     )[1]
+    print(len(result.index))
     
     ## Check and remove 
     # explode result to get by group significance and merge with tested_melt
-    result = result.explode(['group_id', 'group_es', 'group_es_std', 'group_pval'],
-        ignore_index=True).merge(tested_melt)
+    result = tested_melt.merge(
+        result.explode(['group_id', 'group_es', 'group_es_std', 'group_pval'],
+        ignore_index=True), how='left')
 
     # set default inividual fdr and find differential snps
     differential_idxs = result['differential_FDR'] <= 0.05
@@ -161,7 +163,8 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     group_wise_aggregation = calc_fdr(tested_melt[differential_idxs].groupby('group_id').apply(
         lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
     )).rename(columns={'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']].reset_index(drop=True)
-    result = result.merge(group_wise_aggregation)
+    print(len(group_wise_aggregation.index))
+    result = result.merge(group_wise_aggregation, how='left')
     return tested_melt, result
 
 
