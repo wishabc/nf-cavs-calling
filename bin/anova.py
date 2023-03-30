@@ -64,7 +64,7 @@ def read_non_aggregated_files(dir_path):
     if len(pval_files) == 0:
         print(f'No p-value files found in {dir_path}!')
         raise ValueError
-    for file in pval_files:
+    for file in tqdm(pval_files):
         group_id = file.split('.')[0]
         tb_df = pd.read_table(os.path.join(dir_path, file))
         tb_df['group_id'] = group_id
