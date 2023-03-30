@@ -8,6 +8,7 @@ from statsmodels.stats.multitest import multipletests
 from aggregation import aggregate_pvalues_df, calc_fdr
 from tqdm import tqdm
 
+tqdm.pandas()
 
 def test_each_group(df):
     g = df.groupby('group_id')
@@ -159,8 +160,9 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     differential_idxs = result['differential_FDR'] <= 0.05
     
     # Group-wise aggregation
-    group_wise_aggregation = calc_fdr(tested_melt[differential_idxs].groupby('group_id').apply(
-        lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
+    group_wise_aggregation = calc_fdr(
+        result[differential_idxs].groupby('group_id').progress_apply(
+            lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
     )).rename(columns={'min_fdr': 'min_fdr_group'})[['variant_id', 'group_id', 'min_fdr_group']].reset_index(drop=True)
     print(len(group_wise_aggregation.index))
     result = result.merge(group_wise_aggregation, how='left')
