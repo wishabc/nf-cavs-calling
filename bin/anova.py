@@ -95,6 +95,7 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
 
 def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     melt = read_non_aggregated_files(melt_path)
+    melt = melt[melt['#chr'] == 'chr1']
     melt['n'] = melt.eval('ref_counts + alt_counts')
     melt = melt[melt.eval(f'n >= {cover_tr}')]
     melt['x'] = np.round(
