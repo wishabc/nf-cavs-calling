@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 from scipy.stats import binom, chi2
 from statsmodels.stats.multitest import multipletests
 from aggregation import aggregate_pvalues_df, calc_fdr
-
+from tqdm import tqdm
 
 
 def test_each_group(df):
@@ -116,17 +116,15 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     ).rename(
         columns={'min_fdr': 'min_fdr_overall'}
     )
-    # Rename common columns
-    constitutive_df = constitutive_df
     # merge with tested variants
-    tested_melt = tested_melt.merge(constitutive_df, how='left')
+    tested_melt = tested_melt.merge(constitutive_df[['variant_id', 'min_fdr_overall']], how='left')
     print(len(tested_melt.index))
 
     # LRT (ANOVA-like)
     gb = tested_melt.groupby('variant_id')
     rows = []
     ### TODO: make in parallel
-    for g_id in list(gb.groups):
+    for g_id in tqdm(list(gb.groups)):
         rows.append(test_snp(gb.get_group(g_id)))
     result = pd.DataFrame(rows,
                      columns=[
