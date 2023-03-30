@@ -97,7 +97,6 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
 
 def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     melt = read_non_aggregated_files(melt_path)
-    melt = melt[melt['#chr'] == 'chr1']
     melt['n'] = melt.eval('ref_counts + alt_counts')
     melt = melt[melt.eval(f'n >= {cover_tr}')]
     melt['x'] = np.round(
@@ -173,6 +172,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
         [*starting_columns,
             'group_id', 
             'min_fdr_group',
+            'min_fdr_overall',
             'differential_FDR',
             'm',
             'e1',
@@ -186,7 +186,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
             'p_differential',
             'p_zero_int'
          ]
-    ]
+    ].drop_duplicates()
     return tested_melt, result
 
 
