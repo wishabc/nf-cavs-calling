@@ -112,6 +112,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     tested_melt = melt.merge(
         testable_pairs, on=['variant_id', 'group_id']
     )
+    print(f'Testing {len(tested_melt.variant_id.unique())} variants')
     # Total aggregation (find constitutive CAVs)
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested_melt, jobs=1, cover_tr=cover_tr)
@@ -125,6 +126,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     # LRT (ANOVA-like)
     gb = tested_melt.groupby('variant_id')
     rows = []
+    print(len(list(gb.groups)))
     ### TODO: make in parallel
     for g_id in tqdm(list(gb.groups)):
         rows.append(test_snp(gb.get_group(g_id)))
