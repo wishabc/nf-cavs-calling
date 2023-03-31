@@ -79,8 +79,9 @@ def aggregate_apply(df):
     new_df['es_weighted_mean'] = es_weighted_mean
     new_df['nSNPs'] = len(df.index)
     new_df['max_cover'] = df.eval('coverage').max()
-    if 'variant_id' in df.columns:
-        new_df['variant_id'] = df.iloc[0].loc['variant_id']
+    for extra_column in ('variant_id', 'group_id'):
+        if extra_column in df.columns:
+            new_df[extra_column] = df.iloc[0].loc[extra_column]
     return new_df
 
 

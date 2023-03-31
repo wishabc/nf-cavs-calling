@@ -27,7 +27,7 @@ process merge_files {
     script:
     name = "${group_key}.sorted.bed"
     """
-    python3 $moduleDir/bin/merge_files.py f.txt ${files}
+    python3 $moduleDir/bin/merge_files.py f.txt ${group_key} ${files}
     head -n1 f.txt > "${name}"
     sort-bed f.txt >> "${name}"
     """
