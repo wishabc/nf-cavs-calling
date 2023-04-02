@@ -6,11 +6,8 @@ from scipy.optimize import minimize
 from scipy.stats import binom, chi2
 from statsmodels.stats.multitest import multipletests
 from aggregation import aggregate_pvalues_df, calc_fdr
-from tqdm import tqdm
 from helpers import starting_columns
 
-
-tqdm.pandas()
 
 def test_each_group(df):
     g = df.groupby('group_id')
@@ -52,28 +49,13 @@ def censored_binomial_likelihood(xs, ns, p, tr=5):
     b = binom(ns, p)
     return b.logpmf(xs) - np.log(b.cdf(ns - tr) - b.cdf(tr - 1))
 
+
 def get_ml_es_estimation(x, n):
     def target(p):
         return -censored_binomial_likelihood(x, n, p).sum()
     p = minimize(target, 0.5, bounds=((0.001, 0.999),)).x[0]
     e = np.log2(p) - np.log2(1 - p)
     return e, -target(p)
-    
-
-def read_non_aggregated_files(dir_path):
-    tables = []
-    pval_files = list(os.listdir(dir_path))
-    if len(pval_files) == 0:
-        print(f'No p-value files found in {dir_path}!')
-        raise ValueError
-    for file in tqdm(pval_files):
-        group_id = file.split('.')[0]
-        tb_df = pd.read_table(os.path.join(dir_path, file))
-        tb_df['group_id'] = group_id
-        tables.append(tb_df)
-    res = pd.concat(tables)
-    res['variant_id'] = res['#chr'] + '_' + res['end'].astype(str) + '_' + res['alt']
-    return res
 
 
 def find_testable_pairs(df, min_samples, min_groups_per_variant):
@@ -96,7 +78,8 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
 
 
 def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
-    melt = read_non_aggregated_files(melt_path)
+    melt = pd.read_table(melt_path)
+    melt['variant_id'] = melt['#chr'] + '_' + melt['end'].astype(str) + '_' + melt['alt']
     melt['n'] = melt.eval('ref_counts + alt_counts')
     melt = melt[melt.eval(f'n >= {cover_tr}')]
     melt['x'] = np.round(
@@ -129,7 +112,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     rows = []
     print(len(list(gb.groups)))
     ### TODO: make in parallel
-    for g_id in tqdm(list(gb.groups)):
+    for g_id in list(gb.groups):
         rows.append(test_snp(gb.get_group(g_id)))
     result = pd.DataFrame(rows,
                      columns=[
@@ -192,7 +175,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
-    parser.add_argument('input_files_dir', help='Non-aggregated file with tested CAVs')
+    parser.add_argument('input_data', help='Non-aggregated file with tested CAVs')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
     parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=20)
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
@@ -202,10 +185,10 @@ if __name__ == '__main__':
     min_groups_per_variant = args.min_groups
     fdr_cov_tr = args.ct
     df, result = main(
-        args.input_files_dir,
+        args.input_data,
         cover_tr=fdr_cov_tr,
         min_samples=min_samples,
         min_groups=min_groups_per_variant)
     
-    df.to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
-    result.to_csv(f"{args.prefix}.cell_selective.bed", sep='\t', index=False)
+    df.to_csv(f"{args.prefix}.differential_tested.bed", sep='\t', index=False)
+    result.to_csv(f"{args.prefix}.differential_pvals.bed", sep='\t', index=False)

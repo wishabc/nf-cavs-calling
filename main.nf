@@ -91,6 +91,30 @@ process annotate_variants {
     """
 }
 
+process anova {
+    conda params.conda
+    publishDir "${params.outdir}/anovaLR"
+
+    input:
+        path input_data
+
+    output:
+        tuple path(anova), path(melt)
+
+    script:
+    anova = "${params.aggregation_key}.differential_pvals.bed"
+    melt = "${params.aggregation_key}.differential_tested.bed"
+    """
+    python3 $moduleDir/bin/anova.py \
+        ${input_data} \
+        ${params.aggregation_key} \
+        --ct ${params.coverage_tr} \
+        --min_samples ${params.min_samples} \
+        --min_groups ${params.min_groups} \
+        
+    """
+}
+
 workflow aggregation {
     take:
         sample_split_pvals
@@ -114,9 +138,24 @@ workflow aggregation {
                 
 
         }
-        out = aggregate_pvals(merge_files(pvals), "binom.${agg_key}", 'final.')
+        merged = merge_files(pvals)
+        out = aggregate_pvals(merged, "binom.${agg_key}", 'final.')
+        
+        if (agg_key != "all") {
+            out.collectFile(
+                storeDir: params.outdir,
+                name: "aggregated.${agg_key}.bed",
+            )
+            non_aggregated_merge = merged.collectFile(
+                storeDir: params.outdir,
+                name: "not_aggregated.${agg_key}.bed",
+            )
+        } else {
+            non_aggregated_merge = merged
+        }
     emit:
         out
+        non_aggregated_merge
 }
 
 workflow annotateWithFootprints {
@@ -155,55 +194,26 @@ workflow {
         | addExcludedCavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    binom_p = calcPvalBinom(all_snps, iter2_prefix)
+    agg_files = calcPvalBinom(all_snps, iter2_prefix)
         | split_into_samples
         | flatten()
         | map(it -> tuple(it.simpleName, it))
         | annotateWithFootprints
         | aggregation
+    
+    anova(agg_files[1])
 }   
 
 
-// Only aggregation workflow
-params.sample_pvals_dir = "$launchDir/${params.outdir}/annotations"
+// Aggregation only workflow
 workflow aggregatePvals {
+    params.sample_pvals_dir = "$launchDir/${params.outdir}/annotations"
     sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
         .map(it -> tuple(file(it).simpleName, file(it)))
     aggregation(sample_pvals)
 }
 
-
-workflow withFootprints {
-    sample_pvals = Channel.fromPath("${params.sample_pvals_dir}/*.bed")
-        .map(it -> tuple(file(it).simpleName, file(it)))
-    
-    annotateWithFootprints(sample_pvals)
-}
-
-
-process anova {
-    conda params.conda
-    publishDir "${params.outdir}/anova.minS${params.min_samples}"
-
-    output:
-        tuple path(anova), path(melt)
-
-    script:
-    anova = "${params.aggregation_key}.cell_selective.bed"
-    melt = "${params.aggregation_key}.tested.bed"
-    """
-    python3 $moduleDir/bin/anova.py ${params.nonagr_pval_dir} \
-        ${params.aggregation_key} \
-        --ct ${params.coverage_tr} \
-        --min_samples ${params.min_samples} \
-        --min_groups ${params.min_groups}
-    """
-}
-
-
 workflow calcAnova {
-    params.min_samples = 5
-    params.min_groups = 2
-    params.nonagr_pval_dir = "$launchDir/${params.outdir}/pvals_nonaggregated.${params.aggregation_key}/"
-    out = anova()
+    params.nonagr_pval_dir = "$launchDir/${params.outdir}/not_aggregated.${params.aggregation_key}.bed"
+    out = Channel.of(file(params.nonagr_pval_dir)) | anova
 }
