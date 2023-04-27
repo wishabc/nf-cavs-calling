@@ -10,7 +10,7 @@ import math
 
 keep_columns = [*starting_columns, 'AAF', 'RAF']
 result_columns = keep_columns + ['mean_BAD', 
-    'nSNPs', 'max_cover',
+    'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
     'logit_pval_ref', 'logit_pval_alt'
@@ -78,7 +78,8 @@ def aggregate_apply(df):
     new_df['es_mean'] = es_mean
     new_df['es_weighted_mean'] = es_weighted_mean
     new_df['nSNPs'] = len(df.index)
-    new_df['max_cover'] = df.eval('coverage').max()
+    new_df['max_cover'] = df['coverage'].max()
+    new_df['mean_cover'] = df['coverage'].mean()
     for extra_column in ('variant_id', 'group_id'):
         if extra_column in df.columns:
             new_df[extra_column] = df.iloc[0].loc[extra_column]
