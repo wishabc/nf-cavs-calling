@@ -200,8 +200,6 @@ workflow {
         | map(it -> tuple(it.simpleName, it))
         | annotateWithFootprints
         | aggregation
-    
-    anova(agg_files[1])
 }   
 
 
