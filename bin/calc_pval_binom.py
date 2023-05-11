@@ -48,6 +48,7 @@ def recalc_ws(ws, p1, p2):
 
 def calc_pval_for_indiv(input_filename, output_filename, allele_tr=5, modify_w=False, es_method='exp'):
     df = pd.read_table(input_filename)
+    df = df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')
     df = df[[x for x in df.columns if x not in ['w', 'es', 'pval_ref', 'pval_alt']]]
     df = calc_pval_for_df(df, allele_tr=allele_tr, modify_w=modify_w, es_method=es_method)
     df.to_csv(output_filename, sep='\t', index=None)

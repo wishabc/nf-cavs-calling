@@ -65,7 +65,7 @@ process annotate_variants {
         tuple val(sample_id), path(name)
 
     script:
-    name = "${sample_id}.fp_annotation.bed"
+    name = "${sample_id}.nonaggregated.bed"
     footprint_f = footprint_file ? footprint_file : "empty.bed"
     hotspots_f = hotspots_file ? hotspots_file : "empty.bed"
     """
