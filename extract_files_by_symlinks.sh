@@ -14,10 +14,10 @@ function extract_symlink () {
 export -f extract_symlink
 case $2 in
     "-n")
-        find $1 -exec echo "moving {}" \;
+        find $1 -exec echo $( extract_symlink "$@" ) \;
         ;;
     "-f")
-        find $1 -exec bash -c 'extract_symlink "$@"' bash {} \; | pv
+        find $1 -exec bash -c 'extract_symlink "$@"' bash {} \;
         ;;
     "*") 
         echo "Neither -f nor -n are provided"
