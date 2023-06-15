@@ -14,7 +14,7 @@ function extract_symlink () {
 export -f extract_symlink
 case $2 in
     "-n")
-        find $1 -exec bash -c 'res=`echo "$( extract_symlink $@ )"`; if [[ "$res" != "" ]]; then echo "mv $@ $res"; fi' bash {} \;
+        find $1 -exec bash -c 'a="$@"; b=$( readlink $a ); if [[ "$b" != "" ]]; then echo mv $b $a; fi' bash {} \;
         ;;
     "-f")
         find $1 -exec bash -c 'extract_symlink "$@"' bash {} \;
