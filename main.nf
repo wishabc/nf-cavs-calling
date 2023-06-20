@@ -10,6 +10,16 @@ def set_key_for_group_tuple(ch) {
   | transpose()
 }
 
+def check_var(var) {
+    if (var) {
+        if (file(var).exists) {
+            return file(var)
+        }
+    } else {
+        return ""
+    }
+}
+
 
 process apply_babachi {
 	cpus 3
@@ -207,6 +217,7 @@ workflow aggregation {
         non_aggregated_merge
 }
 
+
 workflow annotateWithFootprints {
     take:
         pval_files
@@ -214,10 +225,10 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header:true, sep:'\t')
             | map(row -> tuple(row.ag_id,
-                    row?.hotspots_file ? file(row.hotspots_file) : "", 
-                    row?.footprints_file ? file(row.footprints_file) : "")
+                    check_var(row?.hotspots_file), 
+                    check_var(row?.footprints_file)
+                    )
                 )
-            | map(t -> tuple(t[0], t[1].exists ? t[1] : "", t[2].exists ? t[2] : ""))
         out = pval_files
             | join(annotations)
             | annotate_variants
