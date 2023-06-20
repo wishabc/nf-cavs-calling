@@ -2,10 +2,11 @@
 include { estimateBadByIndiv; estimateBad } from "./bad_estimation"
 include { callCavsFromVcfsBinom; calcPvalBinom; addExcludedCavs; aggregate_pvals } from "./pval_calc"
 
+
 def set_key_for_group_tuple(ch) {
   ch.groupTuple()
-  .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
-  .transpose()
+  | map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
+  | transpose()
 }
 
 
