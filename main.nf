@@ -214,9 +214,10 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header:true, sep:'\t')
             | map(row -> tuple(row.ag_id,
-                    row?.hotspots_file ? file(row.hotspots_file) : null, 
-                    row?.footprints_file ? file(row.footprints_file) : null)
+                    row?.hotspots_file ? file(row.hotspots_file) : "", 
+                    row?.footprints_file ? file(row.footprints_file) : "")
                 )
+            | map(t -> tuple(t[0], t[1].exists ? t[1] : "", t[2].exists ? t[2] : ""))
         out = pval_files
             | join(annotations)
             | annotate_variants
