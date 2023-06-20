@@ -18,7 +18,7 @@ result_columns = keep_columns + ['mean_BAD',
 
 
 def calc_sum_if_exists(snp_df, column):
-    return snp_df[column].sum() if column in snp_df.columns else 0
+    return sum([int(x) for x in snp_df[column].tolist() if x != '-']) if column in snp_df.columns else 0
 
 def aggregate_snp(snp_df):
     pvals = {}
