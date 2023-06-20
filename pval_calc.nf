@@ -3,12 +3,12 @@ params.conda = "$moduleDir/environment.yml"
 
 process calc_pval_binom {
     tag "${indiv_id}"
-    publishDir "${params.outdir}/${output}pval_files_binom"
+    publishDir "${params.outdir}/${prefix}.pval_files"
     conda params.conda
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
-        val output
+        val prefix
 
     output:
         tuple val(indiv_id), path(name)
@@ -17,7 +17,7 @@ process calc_pval_binom {
     name = "${indiv_id}.pvalue.bed"
     """
     python3 $moduleDir/bin/calc_pval_binom.py \
-        -I '${badmap_intersect_file}' \
+        -I ${badmap_intersect_file} \
         -O ${name} \
         --recalc-w
     """
@@ -25,15 +25,13 @@ process calc_pval_binom {
 
 
 process aggregate_pvals {
-    publishDir "${params.outdir}/${output}ag_files_${strategy}"
+    publishDir "${params.outdir}/${prefix}.ag_files.${params.aggregation_key}"
     conda params.conda
     tag "${indiv_id}"
-    cpus 1
 
     input:
         tuple val(indiv_id), path(pval_file)
-        val strategy
-        val output
+        val prefix
 
     output:
         tuple val(indiv_id), path(name)
@@ -44,8 +42,10 @@ process aggregate_pvals {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export GOTO_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/aggregation.py -I ${pval_file} \
-        -O '${name}' --jobs ${task.cpus} \
+    python3 $moduleDir/bin/aggregation.py \
+        -I ${pval_file} \
+        -O ${name} \
+        --jobs ${task.cpus} \
         --ct ${params.coverage_tr}
     """
 }
@@ -64,8 +64,13 @@ process exclude_cavs {
     name = "${indiv_id}.snps.bed"
     """
     export OPENBLAS_NUM_THREADS=${task.cpus}
-    python3 $moduleDir/bin/filter_cavs.py -a ${agg_vcf} \
-        -b ${bad_annotations} -O ${name} \
+    export GOTO_NUM_THREADS=${task.cpus}
+    export OMP_NUM_THREADS=${task.cpus}
+
+    python3 $moduleDir/bin/filter_cavs.py \
+        -a ${agg_vcf} \
+        -b ${bad_annotations} \
+        -O ${name} \
         --fdr ${params.exclude_fdr_tr}
     """
 }
@@ -85,8 +90,11 @@ process add_cavs {
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
     """
-    python3 $moduleDir/bin/add_cavs.py -n ${new_badmap} \
-        -o ${old_badmap} --output not_sorted_cavs.bed
+    python3 $moduleDir/bin/add_cavs.py \
+        -n ${new_badmap} \
+        -o ${old_badmap} \
+        --output not_sorted_cavs.bed
+
     head -1 not_sorted_cavs.bed > ${name}
     sort-bed not_sorted_cavs.bed >> ${name}
     """
@@ -118,7 +126,7 @@ workflow callCavsFromVcfsBinom {
         prefix
     main:
         pval_files = calcPvalBinom(bad_annotations, prefix)
-        agg_files = aggregate_pvals(pval_files, 'binom', prefix)
+        agg_files = aggregate_pvals(pval_files, prefix)
         agg_file_cavs = bad_annotations.join(agg_files)
         no_cavs_snps = exclude_cavs(agg_file_cavs)
     emit:
