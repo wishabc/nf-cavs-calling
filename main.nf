@@ -15,9 +15,8 @@ def check_var(var) {
         if (file(var).exists()) {
             return file(var)
         }
-    } else {
-        return ""
-    }
+    } 
+    return ""  
 }
 
 
