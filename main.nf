@@ -190,14 +190,14 @@ workflow aggregation {
         merged = merge_files(pvals)
         out = aggregate_pvals(merged, iter2_prefix)
         
-        if (agg_key != "all") {
+        if (params.aggregation_key != "all") {
             out.collectFile(
                 storeDir: params.outdir,
-                name: "aggregated.${agg_key}.bed",
+                name: "aggregated.${params.aggregation_key}.bed",
             )
             non_aggregated_merge = merged.collectFile(
                 storeDir: params.outdir,
-                name: "non_aggregated.${agg_key}.bed",
+                name: "non_aggregated.${params.aggregation_key}.bed",
             )
         } else {
             non_aggregated_merge = merged
