@@ -12,7 +12,7 @@ def set_key_for_group_tuple(ch) {
 
 def check_var(var) {
     if (var) {
-        if (file(var).exists) {
+        if (file(var).exists()) {
             return file(var)
         }
     } else {
