@@ -184,7 +184,8 @@ workflow estimateBADByIndiv {
         babachi_files = Channel.fromPath(params.samples_file)
             | splitCsv(header:true, sep:'\t')
             | map(row -> tuple("${row.indiv_id}.${row.ontology_term_id}", file(row.snps_file)))
-            | collectFile() { it -> [ "${it[0]}.bed", it[1].text ] }
+            | groupTuple
+            | collect_files
 
         out = estimateBAD(babachi_files, prefix) 
     emit:
