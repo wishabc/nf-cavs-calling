@@ -163,13 +163,14 @@ workflow estimateBADByIndiv {
     take:
         prefix
     main:
-        filtered_vcfs = Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.indiv_id, file(row.snps_file)))
-            .unique()
-        out = estimateBAD(filtered_vcfs, prefix) 
+        babachi_files = Channel.fromPath(params.samples_file)
+            | splitCsv(header:true, sep:'\t')
+            | map(row -> tuple("${row.indiv_id}.${row.ontology_term_id}", file(row.snps_file)))
+            | collectFile() { it -> [ "${it[0]}.txt", it[1].text ] }
+
+        out = estimateBAD(babachi_files, prefix) 
     emit:
-        filtered_vcfs
+        babachi_files
         out
 }
 
@@ -201,14 +202,18 @@ workflow aggregation {
         out = aggregate_pvals(merged, iter2_prefix)
         
         if (params.aggregation_key != "all") {
-            out.collectFile(
-                storeDir: params.outdir,
-                name: "aggregated.${params.aggregation_key}.bed",
-            )
-            non_aggregated_merge = merged.collectFile(
-                storeDir: params.outdir,
-                name: "non_aggregated.${params.aggregation_key}.bed",
-            )
+            out
+                | map(it -> it[1])
+                | collectFile(
+                    storeDir: params.outdir,
+                    name: "aggregated.${params.aggregation_key}.bed",
+                )
+            non_aggregated_merge = merged
+                | map(it -> it[1])
+                | collectFile(
+                    storeDir: params.outdir,
+                    name: "non_aggregated.${params.aggregation_key}.bed",
+                )
         } else {
             non_aggregated_merge = merged
         }
