@@ -159,6 +159,24 @@ workflow estimateBAD {
         out
 }
 
+process collect_files {
+    conda params.conda
+    tag "${badmap_id}"
+
+    input:
+        tuple val(badmap_id), path(babachi_files)
+
+    output:
+        tuple val(badmap_id), path(name)
+    
+    script:
+    name = "${badmap_id}.bed"
+    """
+    head -n 1 ${babachi_files[0]} > ${name}
+    tail -n +2 -q ${babachi_files} | sort-bed - >> ${name}
+    """
+}
+
 workflow estimateBADByIndiv {
     take:
         prefix
@@ -166,7 +184,7 @@ workflow estimateBADByIndiv {
         babachi_files = Channel.fromPath(params.samples_file)
             | splitCsv(header:true, sep:'\t')
             | map(row -> tuple("${row.indiv_id}.${row.ontology_term_id}", file(row.snps_file)))
-            | collectFile() { it -> [ "${it[0]}.txt", it[1].text ] }
+            | collectFile() { it -> [ "${it[0]}.bed", it[1].text ] }
 
         out = estimateBAD(babachi_files, prefix) 
     emit:
