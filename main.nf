@@ -81,7 +81,7 @@ process merge_files {
     script:
     name = "${group_key}.sorted.bed"
     """
-    echo `head -n1 ${files[0]}`\tgroup_id > ${name}
+    echo "`head -n 1 ${files[0]}`\tgroup_id" > ${name}
     tail -n +2 -q ${files} | sed "s/\$/\t${group_key}/" | sort-bed - >> ${name}
     """
 }
