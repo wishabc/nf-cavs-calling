@@ -172,7 +172,7 @@ process collect_files {
     """
     head -n 1 ${babachi_files[0]} > ${name}
     tail -n +2 -q ${babachi_files} \
-        | awk '((\$7 >= ${params.allele_tr}) & (\$8 >= ${params.allele_tr})) {print;}' \
+        | awk '((\$7 >= ${params.allele_tr}) && (\$8 >= ${params.allele_tr})) {print;}' \
         | sort-bed - >> ${name}
     """
 }
