@@ -182,8 +182,8 @@ workflow estimateBADByIndiv {
         prefix
     main:
         babachi_files = Channel.fromPath(params.samples_file)
-            | splitCsv(header:true, sep:'\t')
-            | map(row -> tuple("${row.indiv_id}@${row.ontology_term_id}", file(row.snps_file)))
+            | splitCsv(header: true, sep: '\t')
+            | map(row -> tuple(row.indiv_id, file(row.snps_file)))
             | groupTuple
             | collect_files
 
@@ -200,7 +200,7 @@ workflow aggregation {
         params.aggregation_key = params.aggregation_key ?: "all"
         if (params.aggregation_key != 'all') {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                    | splitCsv(header:true, sep:'\t')
+                    | splitCsv(header: true, sep: '\t')
                     | map(row -> tuple(row.ag_id, row[params.aggregation_key]))
     
             pvals = sample_split_pvals
@@ -247,7 +247,7 @@ workflow annotateWithFootprints {
         pval_files
     main:
         annotations = Channel.fromPath(params.samples_file)
-            | splitCsv(header:true, sep:'\t')
+            | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(row.ag_id,
                     check_var(row?.hotspots_file), 
                     check_var(row?.footprints_file)
