@@ -290,7 +290,7 @@ workflow {
 
 // Aggregation only workflow
 workflow aggregatePvals {
-    Channel.fromPath("$launchDir/${params.outdir}/by_sample/*.bed")
+    Channel.fromPath("${params.raw_pvals_dir}/*.bed")
         | map(it -> tuple(it.simpleName, it))
         | aggregation
 }
