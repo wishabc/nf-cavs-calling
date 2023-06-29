@@ -228,7 +228,7 @@ workflow aggregation {
                 storeDir: params.outdir,
                 name: "aggregated.${params.aggregation_key}.bed",
             )
-        non_aggregated_merge = merged
+        non_aggregated_merged = merged
             | map(it -> it[1])
             | collectFile(
                 storeDir: params.outdir,
