@@ -11,17 +11,17 @@ def set_index(df):
 def main(new_badmap, old_badmap, output):
     old_df = set_index(pd.read_table(old_badmap))
     if new_badmap is None:
-        old_badmap.to_csv(output, sep='\t', index=False)
+        old_df.to_csv(output, sep='\t', index=False)
         return
     new_df = set_index(pd.read_table(new_badmap))
     if new_df.empty:
         new_df.to_csv(output, sep='\t', index=False)
         return
-    imputed_cavs = old_df.loc[old_df.index.difference(new_df.index)]
-    df = pd.concat([new_df, imputed_cavs])
+    updated_cavs = old_df.loc[old_df.index.difference(new_df.index)]
+    df = pd.concat([new_df, updated_cavs])
     if len(df.index) != len(old_df.index):
         print(len(df.index), len(old_df.index), len(old_df.index.difference(new_df.index)),
-         len(new_df.index), len(imputed_cavs.index))
+         len(new_df.index), len(updated_cavs.index))
         raise AssertionError
     df.to_csv(output, sep='\t', index=False)
 
