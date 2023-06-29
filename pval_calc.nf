@@ -3,7 +3,6 @@ params.conda = "$moduleDir/environment.yml"
 
 process calc_pval_binom {
     tag "${indiv_id}"
-    publishDir "${params.outdir}/${prefix}.pval_files"
     conda params.conda
 
     input:
@@ -25,7 +24,6 @@ process calc_pval_binom {
 
 
 process aggregate_pvals {
-    publishDir "${params.outdir}/${prefix}.ag_files.${params.aggregation_key}"
     conda params.conda
     tag "${indiv_id}"
 

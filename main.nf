@@ -68,7 +68,6 @@ process apply_babachi {
 
 process merge_files {
     conda params.conda
-    publishDir "${params.outdir}/nonaggregated.${params.aggregation_key}", pattern: "${name}"
     scratch true
     tag "${group_key}"
 
