@@ -89,7 +89,7 @@ process add_cavs {
 
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
-    n_badmap = new_badmap ? "-n ${new_badmap}" : ""
+    n_badmap = new_badmap.name != 'empty' ? "-n ${new_badmap}" : ""
     """
     python3 $moduleDir/bin/add_cavs.py \
         -o ${old_badmap} \
