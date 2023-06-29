@@ -223,24 +223,20 @@ workflow aggregation {
         merged = merge_files(pvals)
         out = aggregate_pvals(merged, iter2_prefix)
         
-        if (params.aggregation_key != "all") {
-            out | map(it -> it[1])
-                | collectFile(
-                    storeDir: params.outdir,
-                    name: "aggregated.${params.aggregation_key}.bed",
-                )
-            non_aggregated_merge = merged
-                | map(it -> it[1])
-                | collectFile(
-                    storeDir: params.outdir,
-                    name: "non_aggregated.${params.aggregation_key}.bed",
-                )
-        } else {
-            non_aggregated_merged = merged
-        }
+        out.map(it -> it[1])
+            | collectFile(
+                storeDir: params.outdir,
+                name: "aggregated.${params.aggregation_key}.bed",
+            )
+        non_aggregated_merge = merged
+            | map(it -> it[1])
+            | collectFile(
+                storeDir: params.outdir,
+                name: "non_aggregated.${params.aggregation_key}.bed",
+            )
     emit:
         out
-        non_aggregated_merge
+        non_aggregated_merged
 }
 
 
