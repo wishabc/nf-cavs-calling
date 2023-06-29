@@ -91,7 +91,7 @@ process add_cavs {
     name = "${indiv_id}.added_cavs.intersect.bed"
     """
     python3 $moduleDir/bin/add_cavs.py \
-        -n ${new_badmap} \
+        -n ${new_badmap ?: } \
         -o ${old_badmap} \
         --output not_sorted_cavs.bed
 

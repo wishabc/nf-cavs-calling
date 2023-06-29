@@ -144,18 +144,6 @@ process annotate_variants {
     """
 }
 
-workflow estimateBAD {
-    take:
-        snv_files
-        prefix
-    main:
-        non_empty = snv_files
-            | filter { it[1].countLines() >= params.min_snps_count }
-        out = apply_babachi(non_empty, prefix).intersect
-            | filter { it[1].countLines() > 1 } // At least one line except header
-    emit:
-        out
-}
 
 process collect_files {
     conda params.conda
@@ -175,6 +163,21 @@ process collect_files {
         | awk '((\$7 >= ${params.allele_tr}) && (\$8 >= ${params.allele_tr})) {print;}' \
         | sort-bed - >> ${name}
     """
+}
+
+workflow estimateBAD {
+    take:
+        snv_files
+        prefix
+    main:
+        non_empty = snv_files
+            | filter { it[1].countLines() >= params.min_snps_count }
+        
+        // At least one line except header
+        out = apply_babachi(non_empty, prefix).intersect
+            | filter { it[1].countLines() > 1 }
+    emit:
+        out
 }
 
 workflow estimateBADByIndiv {
@@ -221,8 +224,7 @@ workflow aggregation {
         out = aggregate_pvals(merged, iter2_prefix)
         
         if (params.aggregation_key != "all") {
-            out
-                | map(it -> it[1])
+            out | map(it -> it[1])
                 | collectFile(
                     storeDir: params.outdir,
                     name: "aggregated.${params.aggregation_key}.bed",
@@ -234,7 +236,7 @@ workflow aggregation {
                     name: "non_aggregated.${params.aggregation_key}.bed",
                 )
         } else {
-            non_aggregated_merge = merged
+            non_aggregated_merged = merged
         }
     emit:
         out
@@ -266,16 +268,16 @@ workflow {
     iter1_prefix = 'iter1'
 
     bads = Channel.of(params.states.tokenize(','))
-    filtered_vcfs_and_intersect = estimateBADByIndiv(iter1_prefix)
-    filtered_vcfs = filtered_vcfs_and_intersect[0]
-    intersect_files = filtered_vcfs_and_intersect[1]
+    babachi_files = estimateBADByIndiv(iter1_prefix)
+    filtered_vcfs = babachi_files[0]
+    intersect_files = babachi_files[1]
     // Calculate P-value + exclude 1-st round CAVs 
     no_cavs_snps = callCavsFromVcfsBinom(intersect_files, iter1_prefix)
 
     iter2_prefix = 'final'
     // Reestimate BAD, and add excluded SNVs
     all_snps = estimateBAD(no_cavs_snps, iter2_prefix)
-        | join(intersect_files)
+        | join(intersect_files, remainder: true)
         | addExcludedCavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key

@@ -18,19 +18,14 @@ result_columns = keep_columns + ['mean_BAD',
 
 
 def calc_sum_if_exists(snp_df, column):
-    return sum([int(x) for x in snp_df[column].tolist() if x != '-']) if column in snp_df.columns else 0
+    return sum([int(x) for x in snp_df[column].tolist() if x != '-']) if column in snp_df.columns else '-'
 
 def aggregate_snp(snp_df):
-    pvals = {}
-    effect_sizes = {}
-    for allele in alleles:
-        pvals[allele] = logit_aggregate_pvalues(snp_df[f'pval_{allele}'])
-
+    pvals = {allele: logit_aggregate_pvalues(snp_df[f'pval_{allele}']) for allele in alleles}
     effect_sizes = aggregate_es(snp_df['es'],
                                 snp_df[['pval_ref', 'pval_alt']].min(axis=1),
                                 snp_df['coverage'])
-    mean_BAD = snp_df['BAD'].mean()
-    return mean_BAD, pvals, effect_sizes, calc_sum_if_exists(snp_df, 'hotspots'), calc_sum_if_exists(snp_df, 'footprints')
+    return snp_df['BAD'].mean(), pvals, effect_sizes, calc_sum_if_exists(snp_df, 'hotspots'), calc_sum_if_exists(snp_df, 'footprints')
 
 
 def expit(x):                                        
@@ -101,8 +96,10 @@ def aggregate_pvalues_df(pval_df, jobs, cover_tr):
 
     groups = df_to_group(pval_df)
     groups_list = list(groups.groups)
-    j = min(jobs,
-        max(1, mp.cpu_count()))
+    j = min(
+            jobs,
+            mp.cpu_count()
+        )
     n = math.ceil(len(groups_list) / j)
     subgroups = [[groups.get_group(x) for x in groups_list[i: i+n]] for i in range(0, len(groups_list), n)]
     snps = []
