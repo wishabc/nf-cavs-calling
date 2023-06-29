@@ -30,9 +30,9 @@ nextflow run main.nf -profile Altius
 
 To run just the last aggregation step (expected to run previous command first):
 ```
-nextflow run main.nf -profile Altius -entry aggregatePvals --sample_pvals_dir <path to annotations dir in output folder of main script>
+nextflow run main.nf -profile Altius -entry aggregatePvals --raw_pvals_dir <path to by_sample directory in the output folder of main.nf script>
 ```
-The `--sample_pvals_dir` param can be omitted if you are running the pipeline in the same folder as `nextflow run main.nf -profile Altius`
+The `--raw_pvals_dir` param can be omitted if you are running the pipeline in the same folder as `nextflow run main.nf -profile Altius`
 
 ## Config
 There are two config files in the repository.
@@ -46,7 +46,7 @@ Following parameters should be present in ```params.config```. Each option can b
 - ```samples_file``` - tab-delimited file with metadata for samples. The file must contain a header and the following columns (other columns are permitted and ignored)
     - ```indiv_id``` - unique individual ID; many samples can refer to one individual. Samples with the same individual ID are merged for BADmaps calculation.
     - ```ag_number``` - unique identifier of the sample.<br><br>
-    - `snps_file` - path to the bed-formatted file with SNVs and their readcounts. See [babachi](https://github.com/autosome-ru/BABACHI) for more details.
+    - `snps_file` - (not required for aggregation workflow) path to the bed-formatted file with SNVs and their readcounts. See [babachi](https://github.com/autosome-ru/BABACHI) for more details.
     - `footprints_path` - (optional) Path to bed-formatted footprints calls
     - `hotspots_path` - (optional) Path to bed-formatted peak calls
 
