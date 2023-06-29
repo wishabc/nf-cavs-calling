@@ -89,10 +89,11 @@ process add_cavs {
 
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
+    n_badmap = new_badmap ? "-n ${new_badmap}" : ""
     """
     python3 $moduleDir/bin/add_cavs.py \
-        -n ${new_badmap ?: } \
         -o ${old_badmap} \
+        ${n_badmap} \
         --output not_sorted_cavs.bed
 
     head -1 not_sorted_cavs.bed > ${name}
