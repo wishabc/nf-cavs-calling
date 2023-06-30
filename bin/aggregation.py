@@ -91,8 +91,8 @@ def aggregate_pvalues_df(pval_df):
         ).join(
             snp_stats
         ).reset_index()
-    t.columns = [x[0] if x != 'coverage' else f"{x[0]}_{x[1]}" for x in t.columns]
-    print(t)
+    t.columns = [x[0] if x[0] != 'coverage' else f"{x[0]}_{x[1]}" for x in t.columns]
+    print(['_'.join(col) for col in t.columns.values])
     return t.rename(columns={
             'coverage_max': 'max_cover',
             'coverage_mean': 'mean_cover'
