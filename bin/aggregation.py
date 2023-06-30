@@ -49,7 +49,7 @@ def aggregate_es(df):
         es_weighted_mean = np.average(df['es'], weights=-np.log10(df['min_pval']))
         es_mean = logit(np.average(expit(df['es']), weights=df['coverage']))
     
-    return pd.Series({'es_mean': es_mean, 'es_weighted_mean': es_weighted_mean})
+    return pd.Series([es_mean, es_weighted_mean], ['es_mean', 'es_weighted_mean'])
 
 def logit_aggregate_pvalues(pval_list):
     pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
@@ -86,8 +86,8 @@ def aggregate_pvalues_df(pval_df):
             'pval_alt': 'logit_pval_alt'
         }
     )
-    t = groups.reset_index()[[*keep_columns, 'min_pval', 'es', 'coverage']].progress_apply(
-            aggregate_es
+    t = groups.progress_apply(
+            aggregate_es, ['min_pval', 'es', 'coverage']
         )
     print(groups[['min_pval', 'es', 'coverage']])
     print(t)
