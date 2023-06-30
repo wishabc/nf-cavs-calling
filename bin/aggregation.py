@@ -27,7 +27,7 @@ def calc_min_cover_by_BAD(BAD, es=1, pvalue_tr=0.05, allele_tr=5, cmax=1000):
 
 
 def calc_sum_if_not_minus(df_column):
-    non_null_vals = [int(x) for x in df_column.tolist() if x != '-']
+    non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
 
 def aggregate_snp(snp_df):
