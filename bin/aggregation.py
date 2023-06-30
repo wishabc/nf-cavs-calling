@@ -73,7 +73,7 @@ def aggregate_pvalues_df(pval_df):
     snp_stats = groups.agg(
         {
             'ref_counts': 'count',
-            'group_id': lambda x: x.iloc[0],
+            'group_id': 'first',
             'BAD': np.mean,
             'coverage': ["max", "mean"],
             'footprints': calc_sum_if_not_minus,
