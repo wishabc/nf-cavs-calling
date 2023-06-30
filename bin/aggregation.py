@@ -30,12 +30,6 @@ def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
 
-def aggregate_snp(snp_df):
-    pvals = {allele: logit_aggregate_pvalues(snp_df[f'pval_{allele}']) for allele in alleles}
-    effect_sizes = aggregate_es(snp_df['es'],
-                                snp_df[['pval_ref', 'pval_alt']].min(axis=1),
-                                snp_df['coverage'])
-    return pvals, effect_sizes
 
 def expit(x):                                        
    return 1 / (1 + np.exp(-x))
@@ -50,7 +44,7 @@ def aggregate_es(df):
         es_mean = [np.nan]
         es_weighted_mean = [np.nan]
     else:
-        es_weighted_mean = np.average(df['es'], weights=-np.log10(df['pval']))
+        es_weighted_mean = np.average(df['es'], weights=-np.log10(df['min_pval']))
         es_mean = logit(np.average(expit(np.array(df['es'])), weights=df['coverage']))
     
     return pd.DataFrame({'es_mean': es_mean, 'es_weighted_mean': es_weighted_mean}, index=df.name)
