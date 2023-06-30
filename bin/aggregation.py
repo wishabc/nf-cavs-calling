@@ -90,6 +90,7 @@ def aggregate_pvalues_df(pval_df):
     t = groups[['min_pval', 'es', 'coverage']].apply(
             aggregate_es
         )
+    print(groups[['min_pval', 'es', 'coverage']])
     print(t)
     print(snp_stats)
     g = t.join(
