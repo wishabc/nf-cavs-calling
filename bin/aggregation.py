@@ -96,7 +96,7 @@ def aggregate_pvalues_df(pval_df):
         ).join(
             snp_stats
         ).reset_index()
-    print(['_'.join(col) for col in t.columns.values])
+    print([flatten(col) for col in t.columns.values])
     t.columns = [x[0] if x[0] != 'coverage' else f"{x[0]}_{x[1]}" for x in t.columns]
     
     return t.rename(columns={
