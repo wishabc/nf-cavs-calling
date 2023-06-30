@@ -40,6 +40,7 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(df):
+    print(df)
     df = df[~pd.isna(df['min_pval']) & (df['min_pval'] != 1) & (df['min_pval'] != 0)]
 
     if df.empty:
@@ -67,7 +68,7 @@ def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
         {
-            'ref_counts': len,
+            'ref_counts': lambda x: len(x.index),
             'group_id': lambda x: x.iloc[0],
             'BAD': np.mean,
             'coverage': ["max", "mean"],
