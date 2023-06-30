@@ -86,9 +86,11 @@ def aggregate_pvalues_df(pval_df):
             'pval_alt': 'logit_pval_alt'
         }
     )
-    g = groups[['min_pval', 'es', 'coverage']].progress_apply(
+    t = groups[['min_pval', 'es', 'coverage']].progress_apply(
             aggregate_es
-        ).join(
+        )
+    print(t)
+    g = t.join(
             snp_stats
         ).reset_index()
     g.columns = ["_".join(x) for x in g.columns.ravel()]
