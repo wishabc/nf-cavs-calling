@@ -40,7 +40,6 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(df):
-    print(df)
     df = df[~pd.isna(df['min_pval']) & (df['min_pval'] != 1) & (df['min_pval'] != 0)]
 
     if df.empty:
