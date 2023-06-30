@@ -87,7 +87,7 @@ def aggregate_pvalues_df(pval_df):
             'pval_alt': 'logit_pval_alt'
         }
     )
-    t = groups[['min_pval', 'es', 'coverage']].progress_apply(
+    t = groups[['min_pval', 'es', 'coverage']].apply(
             aggregate_es
         )
     print(t)
