@@ -5,7 +5,9 @@ from scipy.stats import combine_pvalues
 from statsmodels.stats.multitest import multipletests
 from calc_pval_binom import calc_pval
 import numpy as np
+from tqdm import tqdm
 
+tqdm.pandas()
 
 keep_columns = [*starting_columns, 'AAF', 'RAF']
 result_columns = keep_columns + [
@@ -85,7 +87,7 @@ def aggregate_pvalues_df(pval_df):
         }
     )
     nSNPs = groups.size()
-    g = groups[['min_pval', 'es', 'coverage']].apply(
+    g = groups[['min_pval', 'es', 'coverage']].progress_apply(
             aggregate_es
         ).join(
             nSNPs
