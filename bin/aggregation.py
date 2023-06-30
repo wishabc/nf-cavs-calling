@@ -64,7 +64,6 @@ def df_to_group(df):
 
 
 def aggregate_pvalues_df(pval_df):
-    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
         {
@@ -135,6 +134,7 @@ def main(input_path, coverage_tr):
     else:    
         pval_df = pval_df[pval_df.eval(f'coverage >= {coverage_tr}')]
 
+    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
     aggr_df = aggregate_pvalues_df(pval_df)
     return calc_fdr(aggr_df)
 
