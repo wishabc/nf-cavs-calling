@@ -117,7 +117,7 @@ def calc_fdr(aggr_df):
 
 def main(input_path, coverage_tr):
     pval_df = pd.read_table(input_path)
-    pval_df['coverage'] = pval_df.eval('ref_counts + alt_counts')
+    
     
     if pval_df.empty:
         for column in result_columns:
@@ -128,13 +128,16 @@ def main(input_path, coverage_tr):
         if column not in pval_df.columns:
             pval_df[column] = pd.NA
 
+    pval_df['coverage'] = pval_df.eval('ref_counts + alt_counts')
+    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
+
     if coverage_tr == 'auto':
         by_BAD_coverage_tr = {x: calc_min_cover_by_BAD(x) for x in pval_df['BAD'].unique()}
         pval_df = pval_df[pval_df['coverage'] >= pval_df['BAD'].apply(lambda x: by_BAD_coverage_tr[x])]
     else:    
         pval_df = pval_df[pval_df.eval(f'coverage >= {coverage_tr}')]
 
-    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
+    
     aggr_df = aggregate_pvalues_df(pval_df)
     return calc_fdr(aggr_df)
 
