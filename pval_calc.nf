@@ -26,6 +26,7 @@ process calc_pval_binom {
 process aggregate_pvals {
     conda params.conda
     tag "${indiv_id}"
+    publishDir "${params.outdir}/aggregated"
 
     input:
         tuple val(indiv_id), path(pval_file)
@@ -37,13 +38,9 @@ process aggregate_pvals {
     script:
     name = "${indiv_id}.aggregation.bed"
     """
-    export OPENBLAS_NUM_THREADS=${task.cpus}
-    export GOTO_NUM_THREADS=${task.cpus}
-    export OMP_NUM_THREADS=${task.cpus}
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
         -O ${name} \
-        --jobs ${task.cpus} \
         --ct ${params.coverage_tr}
     """
 }
