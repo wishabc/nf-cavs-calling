@@ -90,6 +90,7 @@ def aggregate_pvalues_df(pval_df):
             aggregate_es
         )
     print(groups[['min_pval', 'es', 'coverage']])
+    print(t)
     g = t.join(
             snp_stats
         ).reset_index()
@@ -117,8 +118,6 @@ def calc_fdr(aggr_df):
 
 def main(input_path, coverage_tr):
     pval_df = pd.read_table(input_path)
-    
-    
     if pval_df.empty:
         for column in result_columns:
             if column not in pval_df.columns:
