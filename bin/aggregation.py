@@ -62,7 +62,7 @@ def logit_aggregate_pvalues(pval_list):
 def df_to_group(df):
     return df.groupby(keep_columns)
 
-def flatten(data):
+def flatten_colname(data):
     if isinstance(data, tuple):
             return '_'.join(flatten(val) for val in data)
     else:
@@ -81,27 +81,24 @@ def aggregate_pvalues_df(pval_df):
             'pval_ref': logit_aggregate_pvalues,
             'pval_alt': logit_aggregate_pvalues
         }
-    ).rename(
-        columns={
-            'ref_counts': 'nSNPs',
-            'BAD': 'mean_BAD',
-            'footprints': 'footrpints_n',
-            'hotspots': 'hotspots_n',
-            'pval_ref': 'logit_pval_ref',
-            'pval_alt': 'logit_pval_alt'
-        }
     )
     t = groups.progress_apply(
             aggregate_es, ['min_pval', 'es', 'coverage']
         ).join(
             snp_stats
         ).reset_index()
-    print([flatten(col) for col in t.columns.values])
-    t.columns = [x[0] if x[0] != 'coverage' else f"{x[0]}_{x[1]}" for x in t.columns]
-    
+    t.columns = [flatten_colname(col) for col in t.columns.values]
+
+    print(t.columns)
     return t.rename(columns={
             'coverage_max': 'max_cover',
-            'coverage_mean': 'mean_cover'
+            'coverage_mean': 'mean_cover',
+            'ref_counts': 'nSNPs',
+            'BAD': 'mean_BAD',
+            'footprints': 'footrpints_n',
+            'hotspots': 'hotspots_n',
+            'pval_ref': 'logit_pval_ref',
+            'pval_alt': 'logit_pval_alt'
         }
     )
     
