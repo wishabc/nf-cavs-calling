@@ -39,7 +39,9 @@ def expit(x):
 def logit(x):
     return np.log(x) - np.log(1 - x)
 
-def aggregate_es(df):
+def aggregate_es(df, pval_df):
+    print(df.index)
+    es = pval_df[df.index]
     df = df[~pd.isna(df['min_pval']) & (df['min_pval'] != 1) & (df['min_pval'] != 0)]
 
     if df.empty:
@@ -71,24 +73,23 @@ def flatten_colname(data):
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
-        {
-            'ref_counts': 'count',
-            'group_id': 'first',
-            'BAD': np.mean,
-            'coverage': ["max", "mean"],
-            'footprints': calc_sum_if_not_minus,
-            'hotspots': calc_sum_if_not_minus,
-            'pval_ref': logit_aggregate_pvalues,
-            'pval_alt': logit_aggregate_pvalues
-        }
+        max_cover=('coverage', 'max'),
+        logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
+        logit_pval_ref=('pval_ref', logit_aggregate_pvalues),
+        hotspots_n=('hotspots', calc_sum_if_not_minus),
+        footprints_n=('footprints', calc_sum_if_not_minus),
+        mean_cover=('coverage', 'mean'),
+        mean_BAD=('BAD', 'mean'),
+        group_id=('group_id', 'first'),
+        es=('es', lambda x: aggregate_es(x, pval_df))
     )
     t = groups.apply(
-            aggregate_es, ['min_pval', 'es', 'coverage']
+            aggregate_es, pval_df
         ).join(
             snp_stats
         ).reset_index()
     t.columns = [flatten_colname(col) for col in t.columns.values]
-
+    print(t.columns)
     return t.rename(columns={
             'coverage_max': 'max_cover',
             'coverage_mean': 'mean_cover',
