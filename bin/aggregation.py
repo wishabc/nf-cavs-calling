@@ -18,7 +18,7 @@ result_columns = keep_columns + [
 def calc_min_cover_by_BAD(BAD, es=1, pvalue_tr=0.05, allele_tr=5, cmax=1000):
     covs = np.arange(allele_tr * 2, cmax + 1)
     x = covs / (1 + np.power(2.0, -es) / BAD)
-    mask = allele_tr <= x <= covs - allele_tr
+    mask = (allele_tr <= x) & (x <= covs - allele_tr)
     x = x[mask]
     covs = covs[mask]
     BADs = np.full(x.shape, BAD)
