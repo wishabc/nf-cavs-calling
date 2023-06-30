@@ -88,13 +88,12 @@ def aggregate_pvalues_df(pval_df):
     )
     t = groups.progress_apply(
             aggregate_es, ['min_pval', 'es', 'coverage']
-        )
-    print(groups[['min_pval', 'es', 'coverage']])
-    print(t)
-    g = t.join(
+        ).join(
             snp_stats
         ).reset_index()
-    return g.rename(columns={
+    
+    print(t.columns)
+    return t.rename(columns={
             'coverage_max': 'max_cover',
             'coverage_mean': 'mean_cover'
         }
