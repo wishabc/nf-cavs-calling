@@ -43,13 +43,13 @@ def aggregate_es(df):
     df = df[~pd.isna(df['min_pval']) & (df['min_pval'] != 1) & (df['min_pval'] != 0)]
 
     if df.empty:
-        es_mean = [np.nan]
-        es_weighted_mean = [np.nan]
+        es_mean = np.nan
+        es_weighted_mean = np.nan
     else:
         es_weighted_mean = np.average(df['es'], weights=-np.log10(df['min_pval']))
-        es_mean = logit(np.average(expit(np.array(df['es'])), weights=df['coverage']))
+        es_mean = logit(np.average(expit(df['es']), weights=df['coverage']))
     
-    return pd.DataFrame({'es_mean': es_mean, 'es_weighted_mean': es_weighted_mean}, index=df.index)
+    return pd.Series({'es_mean': es_mean, 'es_weighted_mean': es_weighted_mean})
 
 def logit_aggregate_pvalues(pval_list):
     pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
@@ -67,7 +67,7 @@ def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
         {
-            'ref_counts': lambda x: len(x.index),
+            'ref_counts': 'count',
             'group_id': lambda x: x.iloc[0],
             'BAD': np.mean,
             'coverage': ["max", "mean"],
@@ -86,7 +86,7 @@ def aggregate_pvalues_df(pval_df):
             'pval_alt': 'logit_pval_alt'
         }
     )
-    t = groups[['min_pval', 'es', 'coverage']].apply(
+    t = groups.reset_index()[[*keep_columns, 'min_pval', 'es', 'coverage']].progress_apply(
             aggregate_es
         )
     print(groups[['min_pval', 'es', 'coverage']])
