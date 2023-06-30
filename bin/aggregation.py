@@ -90,6 +90,7 @@ def aggregate_pvalues_df(pval_df):
             aggregate_es
         )
     print(t)
+    print(snp_stats)
     g = t.join(
             snp_stats
         ).reset_index()
