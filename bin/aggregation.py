@@ -89,16 +89,16 @@ def aggregate_pvalues_df(pval_df):
         ).reset_index()
     t.columns = [flatten_colname(col) for col in t.columns.values]
 
-    print(t.columns)
     return t.rename(columns={
             'coverage_max': 'max_cover',
             'coverage_mean': 'mean_cover',
-            'ref_counts': 'nSNPs',
-            'BAD': 'mean_BAD',
-            'footprints': 'footrpints_n',
-            'hotspots': 'hotspots_n',
-            'pval_ref': 'logit_pval_ref',
-            'pval_alt': 'logit_pval_alt'
+            'ref_counts_count': 'nSNPs',
+            'BAD_mean': 'mean_BAD',
+            'footprints_calc_sum_if_not_minus': 'footrpints_n',
+            'hotspots_calc_sum_if_not_minus': 'hotspots_n',
+            'pval_ref_logit_aggregate_pvalues': 'logit_pval_ref',
+            'pval_alt_logit_aggregate_pvalues': 'logit_pval_alt',
+            'group_id_first': 'group_id'
         }
     )
     
