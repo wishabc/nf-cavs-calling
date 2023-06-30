@@ -64,7 +64,7 @@ def df_to_group(df):
 
 def flatten_colname(data):
     if isinstance(data, tuple):
-            return '_'.join(flatten(val) for val in data)
+            return '_'.join(flatten_colname(val) for val in data)
     else:
         return data
 
