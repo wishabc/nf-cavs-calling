@@ -67,6 +67,7 @@ def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
         {
+            'ref_counts': len,
             'group_id': lambda x: x.iloc[0],
             'BAD': np.mean,
             'coverage': ["max", "mean"],
@@ -77,19 +78,16 @@ def aggregate_pvalues_df(pval_df):
         }
     ).rename(
         columns={
+            'ref_counts': 'nSNPs',
             'BAD': 'mean_BAD',
-            'coverage': 'coverage',
             'footprints': 'footrpints_n',
             'hotspots': 'hotspots_n',
             'pval_ref': 'logit_pval_ref',
             'pval_alt': 'logit_pval_alt'
         }
     )
-    nSNPs = groups.size()
     g = groups[['min_pval', 'es', 'coverage']].progress_apply(
             aggregate_es
-        ).join(
-            nSNPs
         ).join(
             snp_stats
         ).reset_index()
