@@ -129,6 +129,9 @@ def main(input_path, coverage_tr):
             if column not in pval_df.columns:
                 pval_df[column] = None
         return pval_df[result_columns]
+    for column in ('variant_id', 'group_id', 'hotspots', 'footprints'):
+        if column not in pval_df.columns:
+            pval_df[column] = pd.NA
 
     if coverage_tr == 'auto':
         by_BAD_coverage_tr = {x: calc_min_cover_by_BAD(x) for x in pval_df['BAD'].unique()}
