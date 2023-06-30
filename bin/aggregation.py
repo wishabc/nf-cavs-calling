@@ -62,6 +62,11 @@ def logit_aggregate_pvalues(pval_list):
 def df_to_group(df):
     return df.groupby(keep_columns)
 
+def flatten(data):
+    if isinstance(data, tuple):
+            return '_'.join(flatten(val) for val in data)
+    else:
+        return data
 
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
