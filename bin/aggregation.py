@@ -82,7 +82,7 @@ def aggregate_pvalues_df(pval_df):
             'pval_alt': logit_aggregate_pvalues
         }
     )
-    t = groups.progress_apply(
+    t = groups.apply(
             aggregate_es, ['min_pval', 'es', 'coverage']
         ).join(
             snp_stats
