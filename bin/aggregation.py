@@ -72,7 +72,7 @@ def flatten_colname(data):
 
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
-
+    print(pval_df)
     snp_stats = groups.agg(
         max_cover=('coverage', 'max'),
         logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
