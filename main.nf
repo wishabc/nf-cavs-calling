@@ -55,6 +55,7 @@ process apply_babachi {
         -s ${params.states} \
         -a ${params.allele_tr}
 
+
     head -1 ${badmap_file} | xargs -I % echo "`cat header.txt`\t%" > ${name}
     
     # Avoid intersecting with empty file
