@@ -39,19 +39,18 @@ def expit(x):
 def logit(x):
     return np.log(x) - np.log(1 - x)
 
-def aggregate_es(df, pval_df):
-    print(df.index)
-    stat = pval_df.loc[df.index, ['min_pval', 'coverage']]
+def aggregate_es(es_column, pval_df):
+    stat = pval_df.loc[es_column.index, ['min_pval', 'coverage']]
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
-    df = df[valid_index]
+    es_column = es_column[valid_index]
     stat = stat[~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)]
 
-    if df.empty:
+    if es_column.empty:
         es_mean = np.nan
         es_weighted_mean = np.nan
     else:
-        es_weighted_mean = np.average(df['es'], weights=-np.log10(stat['min_pval']))
-        es_mean = logit(np.average(expit(df['es']), weights=stat['coverage']))
+        es_weighted_mean = np.average(es_column, weights=-np.log10(stat['min_pval']))
+        es_mean = logit(np.average(expit(es_column['es']), weights=stat['coverage']))
     
     return pd.Series([es_mean, es_weighted_mean], ['es_mean', 'es_weighted_mean'])
 
