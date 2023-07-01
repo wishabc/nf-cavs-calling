@@ -40,7 +40,6 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(stat):
-    print(stat.index)
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     stat = stat[valid_index]
     es_column = stat['es']
@@ -89,7 +88,6 @@ def aggregate_pvalues_df(pval_df):
             snp_stats
         ).reset_index()
     t.columns = [flatten_colname(col) for col in t.columns.values]
-    print(t.columns)
     return t
     
 def calc_fdr(aggr_df):
@@ -126,7 +124,6 @@ def main(input_path, coverage_tr):
     else:    
         pval_df = pval_df[pval_df.eval(f'coverage >= {coverage_tr}')]
 
-    
     aggr_df = aggregate_pvalues_df(pval_df)
     return calc_fdr(aggr_df)
 
