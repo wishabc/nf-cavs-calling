@@ -43,14 +43,14 @@ def aggregate_es(es_column, stat):
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     es_column = es_column[valid_index]
     stat = stat[valid_index]
-    
+
     print(stat.shape, es_column.shape)
     if es_column.empty:
         es_mean = np.nan
         es_weighted_mean = np.nan
     else:
-        es_weighted_mean = np.average(es_column, weights=-np.log10(stat['min_pval']))
-        es_mean = logit(np.average(expit(es_column), weights=stat['coverage']))
+        es_weighted_mean = np.average(es_column.to_numpy(), weights=-np.log10(stat['min_pval']))
+        es_mean = logit(np.average(expit(es_column.to_numpy()), weights=stat['coverage']))
     
     return [es_mean, es_weighted_mean]
 
