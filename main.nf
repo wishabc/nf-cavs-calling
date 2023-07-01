@@ -16,7 +16,7 @@ def check_var(var) {
             return file(var)
         }
     } 
-    return ""  
+    return "empty"  
 }
 
 
@@ -111,7 +111,7 @@ process annotate_variants {
     scratch true
 
     input:
-        tuple val(sample_id), path(pval_file), val(hotspots_file), val(footprint_file)
+        tuple val(sample_id), path(pval_file), path(hotspots_file), path(footprint_file)
 
     output:
         tuple val(sample_id), path(name)
@@ -122,7 +122,7 @@ process annotate_variants {
     sort-bed ${pval_file} > pval_f.bed
 
     # Add footprints
-    if [[ "${footprint_file}" == "" ]]; then
+    if [[ "${footprint_file.name}" == "empty" ]]; then
         cat pval_f.bed | awk '{ print "-" }' > footprints.txt
     else
         bedmap --header \
@@ -130,7 +130,7 @@ process annotate_variants {
             ${footprint_file} > footprints.txt
     fi
 
-    if [[ "${hotspots_file}" == "" ]]; then
+    if [[ "${hotspots_file.name}" == "empty" ]]; then
         cat pval_f.bed | awk '{ print "-" }' > hotspots.txt
     else
         bedmap --header \

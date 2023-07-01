@@ -50,7 +50,7 @@ process exclude_cavs {
     tag "${indiv_id}"
     
     input:
-        tuple val(indiv_id), path(bad_annotations), path(agg_vcf)
+        tuple val(indiv_id), path(bad_annotations), path(aggregated_snps)
 
     output:
         tuple val(indiv_id), path(name)
@@ -58,12 +58,8 @@ process exclude_cavs {
     script:
     name = "${indiv_id}.snps.bed"
     """
-    export OPENBLAS_NUM_THREADS=${task.cpus}
-    export GOTO_NUM_THREADS=${task.cpus}
-    export OMP_NUM_THREADS=${task.cpus}
-
     python3 $moduleDir/bin/filter_cavs.py \
-        -a ${agg_vcf} \
+        -a ${aggregated_snps} \
         -b ${bad_annotations} \
         -O ${name} \
         --fdr ${params.exclude_fdr_tr}
