@@ -10,7 +10,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-class NoDataError(Exception):
+class NoDataError(BaseException):
     pass
 
 
