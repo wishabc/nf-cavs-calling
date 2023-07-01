@@ -84,8 +84,6 @@ def aggregate_pvalues_df(pval_df):
     )
     print(groups.apply(
             aggregate_es
-        ).join(
-            snp_stats
         ))
     return groups.apply(aggregate_es).join(snp_stats).reset_index()
     
