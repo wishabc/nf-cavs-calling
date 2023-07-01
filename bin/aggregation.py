@@ -77,6 +77,7 @@ def flatten_colname(data):
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
+        ref_counts=('ref_counts', 'count'),
         max_cover=('coverage', 'max'),
         logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
         logit_pval_ref=('pval_ref', logit_aggregate_pvalues),
