@@ -62,7 +62,7 @@ def logit_aggregate_pvalues(pval_list):
     return combine_pvalues(pvalues, method='mudholkar_george')[1]
 
 def df_to_group(df):
-    return df.groupby(keep_columns)
+    return df.groupby(keep_columns, group_keys=True)
 
 def flatten_colname(data):
     if isinstance(data, tuple):
