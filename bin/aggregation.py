@@ -19,7 +19,7 @@ result_columns = keep_columns + [
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
-    'logit_pval_ref', 'logit_pval_alt', 'group_id'
+    'logit_pval_ref', 'logit_pval_alt', 'group_id',
     'fdrp_bh_ref', 'fdrp_bh_alt', 'min_fdr'
     ]
 
