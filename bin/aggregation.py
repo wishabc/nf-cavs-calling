@@ -10,7 +10,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-class NoDataError(BaseException):
+class NoDataError(Exception):
     pass
 
 
@@ -104,7 +104,7 @@ def calc_fdr(aggr_df):
 
 def main(pval_df, coverage_tr):
     if pval_df.empty:
-        raise NoDataError
+        raise NoDataError()
     for column in ('variant_id', 'group_id', 'hotspots', 'footprints'):
         if column not in pval_df.columns:
             pval_df[column] = pd.NA
@@ -119,7 +119,7 @@ def main(pval_df, coverage_tr):
         pval_df = pval_df[pval_df.eval(f'coverage >= {coverage_tr}')]
     
     if pval_df.empty:
-        raise NoDataError
+        raise NoDataError()
 
     aggr_df = aggregate_pvalues_df(pval_df)
     return calc_fdr(aggr_df)
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     pval_df = pd.read_table(args.I)
     try:
         final_df = main(pval_df, coverage_tr)
-    except NoDataError():
+    except NoDataError:
         if pval_df.empty:
             for column in result_columns:
                 if column not in pval_df.columns:
