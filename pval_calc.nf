@@ -26,7 +26,6 @@ process calc_pval_binom {
 process aggregate_pvals {
     conda params.conda
     tag "${indiv_id}"
-    publishDir "${params.outdir}/aggregated"
 
     input:
         tuple val(indiv_id), path(pval_file)
