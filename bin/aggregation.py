@@ -39,15 +39,11 @@ def expit(x):
 def logit(x):
     return np.log(x) - np.log(1 - x)
 
-def aggregate_es(es_column, stat):
-    if len(es_column.index) != len(stat.index):
-        print(es_column.index, stat.index)
-        raise AssertionError
+def aggregate_es(stat):
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
-    es_column = es_column[valid_index]
     stat = stat[valid_index]
-
-    print(stat.shape, es_column.shape)
+    es_column = stat['es']
+    print(stat)
     if es_column.empty:
         es_mean = np.nan
         es_weighted_mean = np.nan
@@ -77,7 +73,6 @@ def flatten_colname(data):
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
 
-    func = lambda x: aggregate_es(x, pval_df.loc[x.index])
     snp_stats = groups.agg(
         max_cover=('coverage', 'max'),
         logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
@@ -89,8 +84,10 @@ def aggregate_pvalues_df(pval_df):
         group_id=('group_id', 'first'),
         es=('es', func)
     )
-    t = groups.apply(
-            aggregate_es, pval_df
+    agg = np.vectorize(aggregate_es)
+    agg(groups, )
+    groups.apply(
+            t
         ).join(
             snp_stats
         ).reset_index()
