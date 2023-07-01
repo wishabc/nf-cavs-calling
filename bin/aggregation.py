@@ -40,6 +40,7 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(stat):
+    print(stat)
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     stat = stat[valid_index]
     es_column = stat['es']
@@ -82,9 +83,7 @@ def aggregate_pvalues_df(pval_df):
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
     )
-    print(groups.apply(
-            aggregate_es
-        ))
+    print(groups.apply(aggregate_es))
     return groups.apply(aggregate_es).join(snp_stats).reset_index()
     
 def calc_fdr(aggr_df):
