@@ -141,9 +141,6 @@ if __name__ == '__main__':
     try:
         final_df = main(pval_df, coverage_tr)
     except NoDataError:
-        if pval_df.empty:
-            for column in result_columns:
-                if column not in pval_df.columns:
-                    pval_df[column] = None
-        final_df = pval_df[result_columns]
+        final_df = pd.DataFrame([], columns=result_columns)
+
     final_df.to_csv(args.O, sep='\t', index=False)
