@@ -39,11 +39,11 @@ def expit(x):
 def logit(x):
     return np.log(x) - np.log(1 - x)
 
-def aggregate_es(es_column, pval_df):
-    stat = pval_df.loc[es_column.index, ['min_pval', 'coverage']]
+def aggregate_es(es_column, stat):
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     es_column = es_column[valid_index]
-    stat = stat[~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)]
+    stat = stat[valid_index]
+    
     print(stat.shape, es_column.shape)
     if es_column.empty:
         es_mean = np.nan
@@ -73,6 +73,8 @@ def flatten_colname(data):
 
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
+
+    func = lambda x: aggregate_es(x, pval_df.loc[x.index])
     snp_stats = groups.agg(
         max_cover=('coverage', 'max'),
         logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
@@ -82,7 +84,7 @@ def aggregate_pvalues_df(pval_df):
         mean_cover=('coverage', 'mean'),
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
-        es=('es', lambda x: aggregate_es(x, pval_df))
+        es=('es', func)
     )
     t = groups.apply(
             aggregate_es, pval_df
@@ -91,18 +93,7 @@ def aggregate_pvalues_df(pval_df):
         ).reset_index()
     t.columns = [flatten_colname(col) for col in t.columns.values]
     print(t.columns)
-    return t.rename(columns={
-            'coverage_max': 'max_cover',
-            'coverage_mean': 'mean_cover',
-            'ref_counts_count': 'nSNPs',
-            'BAD_mean': 'mean_BAD',
-            'footprints_calc_sum_if_not_minus': 'footrpints_n',
-            'hotspots_calc_sum_if_not_minus': 'hotspots_n',
-            'pval_ref_logit_aggregate_pvalues': 'logit_pval_ref',
-            'pval_alt_logit_aggregate_pvalues': 'logit_pval_alt',
-            'group_id_first': 'group_id'
-        }
-    )
+    return t
     
 def calc_fdr(aggr_df):
     for allele in alleles:
