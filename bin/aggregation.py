@@ -40,10 +40,10 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(stat):
+    print(stat)
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     stat = stat[valid_index]
     es_column = stat['es']
-    print(stat)
     if es_column.empty:
         es_mean = np.nan
         es_weighted_mean = np.nan
@@ -86,7 +86,7 @@ def aggregate_pvalues_df(pval_df):
     agg = np.vectorize(aggregate_es)
     print(agg(groups, ))
     t = groups.apply(
-            agg
+            aggregate_es
         ).join(
             snp_stats
         ).reset_index()
