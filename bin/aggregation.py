@@ -82,12 +82,11 @@ def aggregate_pvalues_df(pval_df):
         mean_cover=('coverage', 'mean'),
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
-        es=('es', func)
     )
     agg = np.vectorize(aggregate_es)
-    agg(groups, )
-    groups.apply(
-            t
+    print(agg(groups, ))
+    t = groups.apply(
+            agg
         ).join(
             snp_stats
         ).reset_index()
