@@ -55,7 +55,6 @@ process apply_babachi {
         -s ${params.states} \
         -a ${params.allele_tr}
 
-
     head -1 ${badmap_file} | xargs -I % echo "`cat header.txt`\t%" > ${name}
     
     # Avoid intersecting with empty file
@@ -273,7 +272,7 @@ workflow {
     // Reestimate BAD, and add excluded SNVs
     all_snps = estimateBAD(no_cavs_snps, iter2_prefix)
         | join(intersect_files, remainder: true)
-        | map(it -> tuple(it[0], (it[1] != null) & it[1].exists() ? it[1] : file('empty'), it[2]))
+        | map(it -> tuple(it[0], it[1] != null ? it[1] : file('empty'), it[2]))
         | addExcludedCavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key

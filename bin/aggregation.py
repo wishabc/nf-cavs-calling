@@ -92,15 +92,11 @@ def aggregate_pvalues_df(pval_df):
     
 def calc_fdr(aggr_df):
     for allele in alleles:
-        if aggr_df.empty:
-            fdr_arr = None
-        else:
-            _, fdr_arr, _, _ = multipletests(
-                aggr_df[f'logit_pval_{allele}'],
-                alpha=0.05,
-                method='fdr_bh'
-            )
-        aggr_df[f"fdrp_bh_{allele}"] = fdr_arr
+        aggr_df[f"fdrp_bh_{allele}"] = multipletests(
+                    aggr_df[f'logit_pval_{allele}'],
+                    alpha=0.05,
+                    method='fdr_bh'
+                )[1]
     aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
     return aggr_df
 
