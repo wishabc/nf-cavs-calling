@@ -50,7 +50,7 @@ def aggregate_es(es_column, pval_df):
         es_weighted_mean = np.nan
     else:
         es_weighted_mean = np.average(es_column, weights=-np.log10(stat['min_pval']))
-        es_mean = logit(np.average(expit(es_column['es']), weights=stat['coverage']))
+        es_mean = logit(np.average(expit(es_column), weights=stat['coverage']))
     
     return pd.Series([es_mean, es_weighted_mean], ['es_mean', 'es_weighted_mean'])
 
