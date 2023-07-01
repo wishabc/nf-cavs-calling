@@ -9,6 +9,11 @@ from tqdm import tqdm
 
 tqdm.pandas()
 
+
+class NoDataError(Exception):
+    pass
+
+
 keep_columns = [*starting_columns, 'AAF', 'RAF']
 result_columns = keep_columns + [
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
@@ -40,7 +45,6 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(stat):
-    print(stat)
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     stat = stat[valid_index]
     es_column = stat['es']
@@ -72,7 +76,6 @@ def flatten_colname(data):
 
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
-    print(pval_df)
     snp_stats = groups.agg(
         max_cover=('coverage', 'max'),
         logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
@@ -83,7 +86,6 @@ def aggregate_pvalues_df(pval_df):
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
     )
-    print(df_to_group(pval_df).apply(print))
     return groups.apply(aggregate_es).join(snp_stats).reset_index()
     
 def calc_fdr(aggr_df):
@@ -100,13 +102,9 @@ def calc_fdr(aggr_df):
     aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
     return aggr_df
 
-def main(input_path, coverage_tr):
-    pval_df = pd.read_table(input_path)
+def main(pval_df, coverage_tr):
     if pval_df.empty:
-        for column in result_columns:
-            if column not in pval_df.columns:
-                pval_df[column] = None
-        return pval_df[result_columns]
+        raise NoDataError
     for column in ('variant_id', 'group_id', 'hotspots', 'footprints'):
         if column not in pval_df.columns:
             pval_df[column] = pd.NA
@@ -119,6 +117,9 @@ def main(input_path, coverage_tr):
         pval_df = pval_df[pval_df['coverage'] >= pval_df['BAD'].apply(lambda x: by_BAD_coverage_tr[x])]
     else:    
         pval_df = pval_df[pval_df.eval(f'coverage >= {coverage_tr}')]
+    
+    if pval_df.empty:
+        raise NoDataError
 
     aggr_df = aggregate_pvalues_df(pval_df)
     return calc_fdr(aggr_df)
@@ -136,5 +137,13 @@ if __name__ == '__main__':
     except ValueError:
         print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
         raise
-    final_df = main(args.I, coverage_tr)
+    pval_df = pd.read_table(args.I)
+    try:
+        final_df = main(pval_df, coverage_tr)
+    except NoDataError():
+        if pval_df.empty:
+            for column in result_columns:
+                if column not in pval_df.columns:
+                    pval_df[column] = None
+        final_df = pval_df[result_columns]
     final_df.to_csv(args.O, sep='\t', index=False)
