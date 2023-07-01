@@ -44,7 +44,7 @@ def aggregate_es(es_column, pval_df):
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     es_column = es_column[valid_index]
     stat = stat[~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)]
-
+    print(stat.shape, es_column.shape)
     if es_column.empty:
         es_mean = np.nan
         es_weighted_mean = np.nan
