@@ -83,7 +83,7 @@ def aggregate_pvalues_df(pval_df):
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
     )
-    print(groups.apply(aggregate_es))
+    print(df_to_group(pval_df).apply(aggregate_es))
     return groups.apply(aggregate_es).join(snp_stats).reset_index()
     
 def calc_fdr(aggr_df):
