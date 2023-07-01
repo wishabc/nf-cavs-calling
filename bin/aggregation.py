@@ -40,6 +40,7 @@ def logit(x):
     return np.log(x) - np.log(1 - x)
 
 def aggregate_es(es_column, stat):
+    assert len(es_column.index) == len(stat.index)
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     es_column = es_column[valid_index]
     stat = stat[valid_index]
