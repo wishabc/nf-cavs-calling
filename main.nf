@@ -16,7 +16,7 @@ def check_var(var) {
             return file(var)
         }
     } 
-    return "empty"  
+    return file("empty") 
 }
 
 
