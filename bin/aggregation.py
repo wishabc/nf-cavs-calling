@@ -20,6 +20,7 @@ result_columns = keep_columns + [
     'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
     'logit_pval_ref', 'logit_pval_alt', 'group_id'
+    'fdrp_bh_ref', 'fdrp_bh_alt', 'min_fdr'
     ]
 
 def calc_min_cover_by_BAD(BAD, es=1, pvalue_tr=0.05, allele_tr=5, cmax=1000):
@@ -77,7 +78,7 @@ def flatten_colname(data):
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
-        ref_counts=('ref_counts', 'count'),
+        nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
         logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
         logit_pval_ref=('pval_ref', logit_aggregate_pvalues),
@@ -144,4 +145,4 @@ if __name__ == '__main__':
     except NoDataError:
         final_df = pd.DataFrame([], columns=result_columns)
 
-    final_df.to_csv(args.O, sep='\t', index=False)
+    final_df[result_columns].to_csv(args.O, sep='\t', index=False)
