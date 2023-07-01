@@ -83,6 +83,7 @@ def aggregate_pvalues_df(pval_df):
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
     )
+    print(groups.index)
     agg = np.vectorize(aggregate_es)
     print(agg(groups, ))
     t = groups.apply(
