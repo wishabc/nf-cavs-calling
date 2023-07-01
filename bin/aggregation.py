@@ -82,13 +82,11 @@ def aggregate_pvalues_df(pval_df):
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
     )
-    t = groups.apply(
+    return groups.apply(
             aggregate_es
         ).join(
             snp_stats
         ).reset_index()
-    t.columns = [flatten_colname(col) for col in t.columns.values]
-    return t
     
 def calc_fdr(aggr_df):
     for allele in alleles:
