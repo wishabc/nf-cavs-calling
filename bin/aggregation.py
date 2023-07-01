@@ -41,15 +41,17 @@ def logit(x):
 
 def aggregate_es(df, pval_df):
     print(df.index)
-    es = pval_df[df.index]
-    df = df[~pd.isna(df['min_pval']) & (df['min_pval'] != 1) & (df['min_pval'] != 0)]
+    stat = pval_df.loc[df.index, ['min_pval', 'coverage']]
+    valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
+    df = df[valid_index]
+    stat = stat[~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)]
 
     if df.empty:
         es_mean = np.nan
         es_weighted_mean = np.nan
     else:
-        es_weighted_mean = np.average(df['es'], weights=-np.log10(df['min_pval']))
-        es_mean = logit(np.average(expit(df['es']), weights=df['coverage']))
+        es_weighted_mean = np.average(df['es'], weights=-np.log10(stat['min_pval']))
+        es_mean = logit(np.average(expit(df['es']), weights=stat['coverage']))
     
     return pd.Series([es_mean, es_weighted_mean], ['es_mean', 'es_weighted_mean'])
 
