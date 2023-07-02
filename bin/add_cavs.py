@@ -17,6 +17,7 @@ def main(new_badmap, old_badmap, output):
     if new_df.empty:
         new_df.to_csv(output, sep='\t', index=False)
         return
+    print(new_df.index.difference(old_df.index))
     old_df_index = old_df.index.difference(new_df.index)
     old_df.loc[old_df_index] = new_df.loc[old_df_index]
     old_df.to_csv(output, sep='\t', index=False)
