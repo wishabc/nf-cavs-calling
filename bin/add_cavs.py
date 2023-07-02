@@ -9,11 +9,11 @@ def set_index(df):
     return df
 
 def main(new_badmap, old_badmap, output):
-    old_df = set_index(pd.read_table(old_badmap))
+    old_df = set_index(pd.read_table(old_badmap, low_memory=False))
     if new_badmap is None:
         old_df.to_csv(output, sep='\t', index=False)
         return
-    new_df = set_index(pd.read_table(new_badmap))
+    new_df = set_index(pd.read_table(new_badmap, low_memory=False))
     if new_df.empty:
         new_df.to_csv(output, sep='\t', index=False)
         return
