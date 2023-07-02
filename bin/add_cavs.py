@@ -18,7 +18,7 @@ def main(new_badmap, old_badmap, output):
         new_df.to_csv(output, sep='\t', index=False)
         return
     updated_cavs = old_df.loc[old_df.index.difference(new_df.index)]
-    print(new_df[new_df.index.difference(old_df.index)])
+    print(new_df.loc[new_df.index.difference(old_df.index)])
     df = pd.concat([new_df, updated_cavs])
     if len(df.index) != len(old_df.index):
         print(
