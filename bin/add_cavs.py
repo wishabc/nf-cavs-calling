@@ -5,7 +5,7 @@ from helpers import starting_columns
 
 def set_index(df):
     if not df.empty:
-        df.index = df.apply(lambda row: "@".join(map(str, [row[x] for x in starting_columns + ['sample_id']])), axis=1)
+        df.index = df.apply(lambda row: "@".join(map(str, [row[x] for x in [*starting_columns, 'sample_id']])), axis=1)
     return df
 
 def main(new_badmap, old_badmap, output):
@@ -18,10 +18,14 @@ def main(new_badmap, old_badmap, output):
         new_df.to_csv(output, sep='\t', index=False)
         return
     updated_cavs = old_df.loc[old_df.index.difference(new_df.index)]
+    print(new_df[new_df.index.difference(old_df.index)])
     df = pd.concat([new_df, updated_cavs])
     if len(df.index) != len(old_df.index):
-        print(len(df.index), len(old_df.index), len(old_df.index.difference(new_df.index)),
-         len(new_df.index), len(updated_cavs.index))
+        print(
+            len(df.index), len(old_df.index),
+            len(old_df.index.difference(new_df.index)),
+            len(new_df.index), len(updated_cavs.index)
+        )
         raise AssertionError
     df.to_csv(output, sep='\t', index=False)
 
