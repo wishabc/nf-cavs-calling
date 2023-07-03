@@ -10,13 +10,13 @@ def set_key_for_group_tuple(ch) {
   | transpose()
 }
 
-def check_var(var) {
+def check_var(var, prefix) {
     if (var) {
         if (file(var).exists()) {
             return file(var)
         }
     } 
-    return file("empty") 
+    return file("${prefix}.empty") 
 }
 
 
@@ -122,7 +122,7 @@ process annotate_variants {
     sort-bed ${pval_file} > pval_f.bed
 
     # Add footprints
-    if [[ "${footprint_file.name}" == "empty" ]]; then
+    if [[ "${footprint_file.name}" == "fp.empty" ]]; then
         cat pval_f.bed | awk '{ print "-" }' > footprints.txt
     else
         bedmap --header \
@@ -130,7 +130,7 @@ process annotate_variants {
             ${footprint_file} > footprints.txt
     fi
 
-    if [[ "${hotspots_file.name}" == "empty" ]]; then
+    if [[ "${hotspots_file.name}" == "hp.empty" ]]; then
         cat pval_f.bed | awk '{ print "-" }' > hotspots.txt
     else
         bedmap --header \
@@ -246,8 +246,8 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(row.ag_id,
-                    check_var(row?.hotspots_file), 
-                    check_var(row?.footprints_file)
+                    check_var(row?.hotspots_file, 'hp'), 
+                    check_var(row?.footprints_file, 'fp')
                     )
                 )
         out = pval_files
