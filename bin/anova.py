@@ -1,12 +1,10 @@
-import os
 import pandas as pd
 import argparse
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import binom, chi2
 from statsmodels.stats.multitest import multipletests
-from aggregation import aggregate_pvalues_df, calc_fdr
-from helpers import starting_columns
+from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
 
 
 def test_each_group(df):

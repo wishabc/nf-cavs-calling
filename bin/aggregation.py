@@ -1,13 +1,16 @@
 import argparse
 import pandas as pd
-from helpers import alleles, starting_columns
-from scipy.stats import combine_pvalues
+import scipy.stats as st
 from statsmodels.stats.multitest import multipletests
 from calc_pval_binom import calc_pval
 import numpy as np
+from scipy.special import logit, expit
 from tqdm import tqdm
 
 tqdm.pandas()
+
+alleles = {'ref': 'alt', 'alt': 'ref'}
+starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 
 class NoDataError(Exception):
@@ -39,12 +42,6 @@ def calc_sum_if_not_minus(df_column):
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
 
 
-def expit(x):                                        
-   return 1 / (1 + np.exp(-x))
-
-def logit(x):
-    return np.log(x) - np.log(1 - x)
-
 def aggregate_es(stat):
     valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
     stat = stat[valid_index]
@@ -64,16 +61,11 @@ def logit_aggregate_pvalues(pval_list):
         return 1
     elif len(pvalues) == 1:
         return pvalues[0]
-    return combine_pvalues(pvalues, method='mudholkar_george')[1]
+    return st.combine_pvalues(pvalues, method='mudholkar_george')[1]
 
 def df_to_group(df):
     return df.groupby(keep_columns)
 
-def flatten_colname(data):
-    if isinstance(data, tuple):
-            return '_'.join(flatten_colname(val) for val in data)
-    else:
-        return data
 
 def aggregate_pvalues_df(pval_df):
     groups = df_to_group(pval_df)

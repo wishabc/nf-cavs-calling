@@ -1,6 +1,6 @@
 import argparse
 import pandas as pd
-from helpers import starting_columns
+from aggregation import starting_columns
 
 def main(agg_file, snps_file, output_file, fdr_tr):
     df = pd.read_table(agg_file)

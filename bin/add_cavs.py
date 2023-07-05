@@ -1,6 +1,6 @@
 import pandas as pd
 import argparse
-from helpers import starting_columns
+from aggregation import starting_columns
 
 
 def set_index(df):
