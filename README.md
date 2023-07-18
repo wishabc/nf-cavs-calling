@@ -45,7 +45,7 @@ Following parameters should be present in ```params.config```. Each option can b
 - ```conda``` - path to installed conda (from environment.yml)
 - ```samples_file``` - tab-delimited file with metadata for samples. The file must contain a header and the following columns (other columns are permitted and ignored)
     - ```indiv_id``` - unique individual ID; many samples can refer to one individual. Samples with the same individual ID are merged for BADmaps calculation.
-    - ```ag_number``` - unique identifier of the sample.<br><br>
+    - ```ag_id``` - unique identifier of the sample.<br><br>
     - `snps_file` - (not required for aggregation workflow) path to the bed-formatted file with SNVs and their readcounts. See [babachi](https://github.com/autosome-ru/BABACHI) for more details.
     - `footprints_path` - (optional) Path to bed-formatted footprints calls
     - `hotspots_path` - (optional) Path to bed-formatted peak calls
