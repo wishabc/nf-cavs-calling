@@ -5,6 +5,19 @@ import argparse
 import numpy as np
 
 
+updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested']
+
+def calc_min_cover_by_BAD(BAD, es=1, pvalue_tr=0.05, allele_tr=5, cmax=1000):
+    covs = np.arange(allele_tr * 2, cmax + 1)
+    x = covs / (1 + np.power(2.0, -es) / BAD)
+    mask = (allele_tr <= x) & (x <= covs - allele_tr)
+    x = x[mask]
+    covs = covs[mask]
+    BADs = np.full(x.shape, BAD)
+    _, _, sigs, _ = calc_pval(covs, x, BADs, allele_tr=allele_tr, modify_w=True, smooth=True)
+    return np.min(covs[sigs < pvalue_tr])
+
+
 def cdf(x, n, p, smooth):
     if smooth:
         return betainc(n - x, x + 1, 1 - p)
@@ -65,39 +78,42 @@ def calc_pval(n, k, BADs, allele_tr, modify_w, smooth=False):
     es = odds_es(k, n, BADs, ws)
     pval_ref = censored_binom_pvalue(k, n, p, ws, allele_tr, smooth=smooth)
     pval_alt = censored_binom_pvalue(n - k, n, p, 1 - ws, allele_tr, smooth=smooth)
-    return ws, es, pval_ref, pval_alt
-
+    return [ws, es, pval_ref, pval_alt]
     
 def calc_pval_for_df(df, allele_tr, modify_w):
     n = df.eval('alt_counts + ref_counts').to_numpy()
     ref_counts = df['ref_counts'].to_numpy()
     BADs = df['BAD'].to_numpy()
 
-    ws, es, pval_ref, pval_alt = calc_pval(
-        n, ref_counts, BADs,
-        allele_tr=allele_tr,
-        modify_w=modify_w,
-        smooth=False
+    df[updated_columns]  = pd.DataFrame(
+        calc_pval(
+            n, ref_counts,
+            BADs=BADs,
+            allele_tr=allele_tr,
+            modify_w=modify_w,
+            smooth=False
+        ), index=df.index
     )
-    df['w'] = ws
-    df['es'] = es
-    df['pval_ref'] = pval_ref
-    df['pval_alt'] = pval_alt
     return df
 
 
-def main(df, allele_tr=5, modify_w=False):
+def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
     # Remove already present columns
-    df = df[[x for x in df.columns if x not in ['w', 'es', 'pval_ref', 'pval_alt']]]
+    df = df[[x for x in df.columns if x not in updated_columns]]
     # Check if empty
+    result_columns = [*df.columns, *updated_columns]
     if df.empty:
-        cols = ['w', 'es', 'pval_ref', 'pval_alt']
-        for col in cols:  
-            df[col] = np.nan
-    else:
-        df = calc_pval_for_df(df, allele_tr=allele_tr, modify_w=modify_w)
-    return df
+        return pd.DataFrame([], columns=result_columns)
+
+    df['coverage'] = df.eval('ref_counts + alt_counts')
+    if coverage_tr == 'auto':
+        by_BAD_coverage_tr = {x: calc_min_cover_by_BAD(x) for x in df['BAD'].unique()}
+        df['is_tested'] = df['coverage'] >= df['BAD'].apply(lambda x: by_BAD_coverage_tr[x])
+    else:    
+        df['is_tested'] = df.eval(f'coverage >= {coverage_tr}')
+
+    return calc_pval_for_df(df, allele_tr=allele_tr, modify_w=modify_w)[result_columns]
 
 
 if __name__ == '__main__':
@@ -107,12 +123,19 @@ if __name__ == '__main__':
     parser.add_argument('-a', type=int, help='Allelic reads threshold', default=5)
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
+    parser.add_argument('--ct', type=str, help="""Coverage threshold for individual variants to be considered tested.
+                                        Expected to be "auto" or a positive integer""", default='auto')
     args = parser.parse_args()
-
+    try:
+        coverage_tr = int(args.ct) if args.ct != 'auto' else 'auto'
+    except ValueError:
+        print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
+        raise
     input_df = pd.read_table(args.I)
     modified_df = main(
         input_df,
         allele_tr=args.a,
-        modify_w=args.recalc_w
+        modify_w=args.recalc_w,
+        coverage_tr=coverage_tr
     )
     modified_df.to_csv(args.O, sep='\t', index=None)

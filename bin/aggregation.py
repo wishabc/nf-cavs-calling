@@ -2,7 +2,6 @@ import argparse
 import pandas as pd
 import scipy.stats as st
 from statsmodels.stats.multitest import multipletests
-from calc_pval_binom import calc_pval
 import numpy as np
 from scipy.special import logit, expit
 from tqdm import tqdm
@@ -13,10 +12,6 @@ alleles = {'ref': 'alt', 'alt': 'ref'}
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 
-class NoDataError(Exception):
-    pass
-
-
 keep_columns = [*starting_columns, 'AAF', 'RAF']
 result_columns = keep_columns + [
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
@@ -25,16 +20,6 @@ result_columns = keep_columns + [
     'logit_pval_ref', 'logit_pval_alt', 'group_id',
     'fdrp_bh_ref', 'fdrp_bh_alt', 'min_fdr'
     ]
-
-def calc_min_cover_by_BAD(BAD, es=1, pvalue_tr=0.05, allele_tr=5, cmax=1000):
-    covs = np.arange(allele_tr * 2, cmax + 1)
-    x = covs / (1 + np.power(2.0, -es) / BAD)
-    mask = (allele_tr <= x) & (x <= covs - allele_tr)
-    x = x[mask]
-    covs = covs[mask]
-    BADs = np.full(x.shape, BAD)
-    _, _, sigs, _ = calc_pval(covs, x, BADs, allele_tr=allele_tr, modify_w=True, smooth=True)
-    return np.min(covs[sigs < pvalue_tr])
 
 
 def calc_sum_if_not_minus(df_column):
@@ -92,45 +77,22 @@ def calc_fdr(aggr_df):
     aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
     return aggr_df
 
-def main(pval_df, coverage_tr):
+def main(pval_df):
     if pval_df.empty:
-        raise NoDataError()
-    for column in ('variant_id', 'group_id', 'hotspots', 'footprints'):
-        if column not in pval_df.columns:
-            pval_df[column] = pd.NA
-
-    pval_df['coverage'] = pval_df.eval('ref_counts + alt_counts')
-    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
-
-    if coverage_tr == 'auto':
-        by_BAD_coverage_tr = {x: calc_min_cover_by_BAD(x) for x in pval_df['BAD'].unique()}
-        pval_df = pval_df[pval_df['coverage'] >= pval_df['BAD'].apply(lambda x: by_BAD_coverage_tr[x])]
-    else:    
-        pval_df = pval_df[pval_df.eval(f'coverage >= {coverage_tr}')]
+        return pd.DataFrame([], columns=result_columns)
+    pval_df = pval_df[pval_df['is_tested']]
     
     if pval_df.empty:
-        raise NoDataError()
-
+        return pd.DataFrame([], columns=result_columns)
+    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
     aggr_df = aggregate_pvalues_df(pval_df)
-    return calc_fdr(aggr_df)
+    return calc_fdr(aggr_df)[result_columns]
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('--ct', type=str, help="""Coverage threshold for individual variants to be aggregated.
-                                                Should be "auto" or positive integer""", default='auto')
     args = parser.parse_args()
-    try:
-        coverage_tr = int(args.ct) if args.ct != 'auto' else 'auto'
-    except ValueError:
-        print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
-        raise
     pval_df = pd.read_table(args.I)
-    try:
-        final_df = main(pval_df, coverage_tr)
-    except NoDataError:
-        final_df = pd.DataFrame([], columns=result_columns)
-
-    final_df[result_columns].to_csv(args.O, sep='\t', index=False)
+    main(pval_df).to_csv(args.O, sep='\t', index=False)
