@@ -91,7 +91,7 @@ def main(pval_df):
     aggr_df = aggregate_pvalues_df(
         pval_df.assign(
             **{col: pd.NA for col in 
-            ['coverage', 'footprints', 'group_id', 'hotspots'] 
+            ['footprints', 'group_id', 'hotspots'] 
             if col not in pval_df.columns}
         )
     )

@@ -104,7 +104,7 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     # Remove already present columns
     df = df[[x for x in df.columns if x not in updated_columns]]
     # Check if empty
-    result_columns = [*df.columns, *updated_columns]
+    result_columns = [*df.columns, 'coverage', *updated_columns]
     if df.empty:
         return pd.DataFrame([], columns=result_columns)
 
