@@ -280,7 +280,7 @@ workflow {
     agg_files = calcPvalBinom(all_snps, iter2_prefix)
         | split_into_samples
         | flatten()
-        | map(it -> tuple(it.simpleName, it))
+        | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
         | aggregation
 
@@ -294,4 +294,8 @@ workflow aggregatePvals {
     Channel.fromPath("${params.raw_pvals_dir}/*.bed")
         | map(it -> tuple(it.simpleName, it))
         | aggregation
+}
+
+workflow tmp {
+    annotateWithFootprints()
 }
