@@ -86,7 +86,8 @@ def main(pval_df):
         return pd.DataFrame([], columns=result_columns)
     pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
     aggr_df = aggregate_pvalues_df(pval_df)
-    return calc_fdr(aggr_df)[result_columns]
+    res_df = calc_fdr(aggr_df)
+    return res_df.assign(**{col: pd.NA for col in result_columns if col not in res_df.columns})
 
 
 if __name__ == '__main__':
