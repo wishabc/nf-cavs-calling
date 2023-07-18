@@ -284,8 +284,8 @@ workflow {
         | annotateWithFootprints
         | aggregation
 
-    agg_files[1]
-        | differentialCavs
+    // agg_files[1]
+    //     | differentialCavs
 }   
 
 
