@@ -66,7 +66,9 @@ def aggregate_pvalues_df(pval_df):
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
     )
-    return df_to_group(pval_df[[*keep_columns, 'es', 'min_pval', 'coverage']]).progress_apply(aggregate_es).join(snp_stats).reset_index()
+    return df_to_group(
+            pval_df[[*keep_columns, 'es', 'min_pval', 'coverage']]
+        ).progress_apply(aggregate_es).join(snp_stats).reset_index()
 
 
 def calc_fdr(aggr_df):

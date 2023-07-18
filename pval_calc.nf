@@ -49,7 +49,7 @@ process exclude_cavs {
     tag "${indiv_id}"
     
     input:
-        tuple val(indiv_id), path(bad_annotations), path(aggregated_snps)
+        tuple val(indiv_id), path(aggregated_snps), path(bad_annotations)
 
     output:
         tuple val(indiv_id), path(name)
@@ -117,24 +117,20 @@ workflow callCavsFromVcfsBinom {
         prefix
     main:
         pval_files = calcPvalBinom(bad_annotations, prefix)
-        agg_files = aggregate_pvals(pval_files, prefix)
-        agg_file_cavs = bad_annotations.join(agg_files)
-        no_cavs_snps = exclude_cavs(agg_file_cavs)
+        no_cavs_snps = aggregate_pvals(pval_files, prefix)
+            | join(bad_annotations)
+            | exclude_cavs
     emit:
         no_cavs_snps
 }
 
-workflow callCavs {
-    extracted_vcfs = Channel.fromPath(params.samples_file)
-        .splitCsv(header:true, sep:'\t')
-        .map(row -> row.indiv_id)
-        .unique()
-        .map(indiv_id -> tuple(indiv_id, "${params.outdir}/snp_annotation/${indiv_id}*"))
-        
-    callCavsFromVcfsBinom(extracted_vcfs)
-}
-
-
+// DEFUNC, test workflow
 workflow {
-    callCavs()
+    extracted_vcfs = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> row.indiv_id)
+        | unique()
+        | map(indiv_id -> tuple(indiv_id, "${params.outdir}/snp_annotation/${indiv_id}*"))
+        
+    callCavsFromVcfsBinom(extracted_vcfs, "")
 }

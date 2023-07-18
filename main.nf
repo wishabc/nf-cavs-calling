@@ -6,8 +6,8 @@ params.conda = "$moduleDir/environment.yml"
 
 def set_key_for_group_tuple(ch) {
   ch.groupTuple()
-  | map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
-  | transpose()
+    | map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
+    | transpose()
 }
 
 def check_var(var, prefix) {
@@ -265,7 +265,6 @@ workflow {
 
     bads = Channel.of(params.states.tokenize(','))
     babachi_files = estimateBADByIndiv(iter1_prefix)
-    filtered_vcfs = babachi_files[0]
     intersect_files = babachi_files[1]
     // Calculate P-value + exclude 1-st round CAVs 
     no_cavs_snps = callCavsFromVcfsBinom(intersect_files, iter1_prefix)
@@ -284,6 +283,9 @@ workflow {
         | map(it -> tuple(it.simpleName, it))
         | annotateWithFootprints
         | aggregation
+
+    agg_files[1]
+        | differentialCavs
 }   
 
 

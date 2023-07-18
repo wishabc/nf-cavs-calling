@@ -75,11 +75,11 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
     ]
 
 
-def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
-    melt = pd.read_table(melt_path)
+def main(melt, min_samples=3, min_groups=2):
+    melt = melt[melt['is_tested']]
     melt['variant_id'] = melt['#chr'] + '_' + melt['end'].astype(str) + '_' + melt['alt']
     melt['n'] = melt.eval('ref_counts + alt_counts')
-    melt = melt[melt.eval(f'n >= {cover_tr}')]
+
     melt['x'] = np.round(
         np.where(
             melt['BAD'] == 1, 
@@ -97,7 +97,7 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     print(f'Testing {len(tested_melt.variant_id.unique())} variants')
     # Total aggregation (find constitutive CAVs)
     constitutive_df = calc_fdr(
-        aggregate_pvalues_df(tested_melt, jobs=1, cover_tr=cover_tr)
+        aggregate_pvalues_df(tested_melt, jobs=1)
     ).rename(
         columns={'min_fdr': 'min_fdr_overall'}
     )
@@ -108,7 +108,6 @@ def main(melt_path, min_samples=3, min_groups=2, cover_tr=20):
     # LRT (ANOVA-like)
     gb = tested_melt.groupby('variant_id')
     rows = []
-    print(len(list(gb.groups)))
     ### TODO: make in parallel
     for g_id in list(gb.groups):
         rows.append(test_snp(gb.get_group(g_id)))
@@ -175,18 +174,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
     parser.add_argument('input_data', help='Non-aggregated file with tested CAVs')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
-    parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=20)
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     args = parser.parse_args()
-    min_samples = args.min_samples # of samples
-    min_groups_per_variant = args.min_groups
-    fdr_cov_tr = args.ct
+
+    input_df = pd.read_table(args.input_data)
     df, result = main(
-        args.input_data,
-        cover_tr=fdr_cov_tr,
-        min_samples=min_samples,
-        min_groups=min_groups_per_variant)
+        input_df,
+        min_samples=args.min_samples,
+        min_groups=args.min_groups)
     
     df.to_csv(f"{args.prefix}.differential_tested.bed", sep='\t', index=False)
     result.to_csv(f"{args.prefix}.differential_pvals.bed", sep='\t', index=False)

@@ -47,13 +47,13 @@ Following parameters should be present in ```params.config```. Each option can b
     - ```indiv_id``` - unique individual ID; many samples can refer to one individual. Samples with the same individual ID are merged for BADmaps calculation.
     - ```ag_id``` - unique identifier of the sample.<br><br>
     - `snps_file` - (not required for aggregation workflow) path to the bed-formatted file with SNVs and their readcounts. See [babachi](https://github.com/autosome-ru/BABACHI) for more details.
-    - `footprints_path` - (optional) Path to bed-formatted footprints calls
-    - `hotspots_path` - (optional) Path to bed-formatted peak calls
+    - `footprints_path` - (optional, not required for aggregation workflow) Path to bed-formatted footprint calls
+    - `hotspots_path` - (optional, not required for aggregation workflow) Path to bed-formatted peak calls
 
 - `aggregation_key` - column name in `samples_file`. Samples are grouped according to values in that columns and aggregated. Use `"all"` to aggregate all the data;
 - ```allele_tr``` - allelic reads threshold, SNVs with less than ```allele_tr``` reads on one of the alleles are filtered out;
 
-- ```coverage_tr``` - coverage threshold. SNPs with less than `coverage_tr` are not considered to be CAV candidates and excluded from aggregation. Use `"auto"` for automatic threshold choosing for each BAD
+- ```coverage_tr``` - coverage threshold. SNPs with less than `coverage_tr` are not considered to be CAV candidates and excluded from aggregation. Use `"auto"` to choose threshold automaticly for each BAD.
 
 - ```exclude_fdr_tr``` - FDR threshold below which SNVs are called CAVs and excluded from the set of SNVs used for badmaps re-estimation
 
