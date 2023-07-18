@@ -85,14 +85,17 @@ def calc_pval_for_df(df, allele_tr, modify_w):
     ref_counts = df['ref_counts'].to_numpy()
     BADs = df['BAD'].to_numpy()
 
-    df[updated_columns]  = pd.DataFrame(
-        calc_pval(
-            n, ref_counts,
-            BADs=BADs,
-            allele_tr=allele_tr,
-            modify_w=modify_w,
-            smooth=False
-        ), index=df.index
+    df.assign(
+        **dict(zip(
+            updated_columns,
+            calc_pval(
+                n, ref_counts,
+                BADs=BADs,
+                allele_tr=allele_tr,
+                modify_w=modify_w,
+                smooth=False
+            )
+        ))
     )
     return df
 
