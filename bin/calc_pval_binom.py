@@ -85,7 +85,7 @@ def calc_pval_for_df(df, allele_tr, modify_w):
     ref_counts = df['ref_counts'].to_numpy()
     BADs = df['BAD'].to_numpy()
 
-    df.assign(
+    return df.assign(
         **dict(zip(
             updated_columns,
             calc_pval(
@@ -97,7 +97,6 @@ def calc_pval_for_df(df, allele_tr, modify_w):
             )
         ))
     )
-    return df
 
 
 def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
