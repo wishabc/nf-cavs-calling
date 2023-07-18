@@ -11,7 +11,6 @@ tqdm.pandas()
 alleles = {'ref': 'alt', 'alt': 'ref'}
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
-
 keep_columns = [*starting_columns, 'AAF', 'RAF']
 result_columns = keep_columns + [
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
@@ -40,6 +39,7 @@ def aggregate_es(stat):
     
     return pd.Series([es_mean, es_weighted_mean], ["es_mean", "es_weighted_mean"])
 
+
 def logit_aggregate_pvalues(pval_list):
     pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
     if len(pvalues) == 0:
@@ -47,6 +47,7 @@ def logit_aggregate_pvalues(pval_list):
     elif len(pvalues) == 1:
         return pvalues[0]
     return st.combine_pvalues(pvalues, method='mudholkar_george')[1]
+
 
 def df_to_group(df):
     return df.groupby(keep_columns)
@@ -66,7 +67,8 @@ def aggregate_pvalues_df(pval_df):
         group_id=('group_id', 'first'),
     )
     return df_to_group(pval_df[[*keep_columns, 'es', 'min_pval', 'coverage']]).progress_apply(aggregate_es).join(snp_stats).reset_index()
-    
+
+
 def calc_fdr(aggr_df):
     for allele in alleles:
         aggr_df[f"fdrp_bh_{allele}"] = multipletests(
@@ -77,6 +79,7 @@ def calc_fdr(aggr_df):
     aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
     return aggr_df
 
+
 def main(pval_df):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
@@ -85,11 +88,15 @@ def main(pval_df):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
-    aggr_df = aggregate_pvalues_df(pval_df)
+    aggr_df = aggregate_pvalues_df(
+        pval_df.assign(
+            **{col: pd.NA for col in 
+            ['coverage', 'footprints', 'group_id', 'hotspots'] 
+            if col not in pval_df.columns}
+        )
+    )
     res_df = calc_fdr(aggr_df)
-    return res_df.assign(
-        **{col: pd.NA for col in result_columns if col not in res_df.columns}
-    )[result_columns]
+    return res_df[result_columns]
 
 
 if __name__ == '__main__':
