@@ -292,10 +292,6 @@ workflow {
 // Aggregation only workflow
 workflow aggregatePvals {
     Channel.fromPath("${params.raw_pvals_dir}/*.bed")
-        | map(it -> tuple(it.simpleName, it))
+        | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | aggregation
-}
-
-workflow tmp {
-    annotateWithFootprints()
 }
