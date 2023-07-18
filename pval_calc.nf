@@ -18,6 +18,7 @@ process calc_pval_binom {
     python3 $moduleDir/bin/calc_pval_binom.py \
         -I ${badmap_intersect_file} \
         -O ${name} \
+        --ct ${params.coverage_tr} \
         --recalc-w
     """
 }
@@ -39,8 +40,7 @@ process aggregate_pvals {
     """
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
-        -O ${name} \
-        --ct ${params.coverage_tr}
+        -O ${name}
     """
 }
 
