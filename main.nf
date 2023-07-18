@@ -186,7 +186,7 @@ workflow estimateBADByIndiv {
         babachi_files = Channel.fromPath(params.samples_file)
             | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(row.indiv_id, file(row.snps_file)))
-            | groupTuple
+            | groupTuple()
             | collect_files
 
         out = estimateBAD(babachi_files, prefix) 
@@ -202,9 +202,9 @@ workflow aggregation {
         params.aggregation_key = params.aggregation_key ?: "all"
         if (params.aggregation_key != 'all') {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                    | splitCsv(header: true, sep: '\t')
-                    | map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-    
+                | splitCsv(header: true, sep: '\t')
+                | map(row -> tuple(row.ag_id, row[params.aggregation_key]))
+
             pvals = sample_split_pvals
                 | join(sample_cl_correspondence)
                 | filter(it -> !it[2].isEmpty())
@@ -222,7 +222,8 @@ workflow aggregation {
         merged = merge_files(pvals)
         out = aggregate_pvals(merged, iter2_prefix)
         
-        out.map(it -> it[1])
+        out 
+            | map(it -> it[1])
             | collectFile(
                 storeDir: params.outdir,
                 name: "aggregated.${params.aggregation_key}.bed",
