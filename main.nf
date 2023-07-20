@@ -226,12 +226,18 @@ workflow aggregation {
             | map(it -> it[1])
             | collectFile(
                 storeDir: params.outdir,
+                skip: 1,
+                keepHeader: true,
+                sort: true,
                 name: "aggregated.${params.aggregation_key}.bed",
             )
         non_aggregated_merged = merged
             | map(it -> it[1])
             | collectFile(
                 storeDir: params.outdir,
+                skip: 1,
+                keepHeader: true,
+                sort: true,
                 name: "non_aggregated.${params.aggregation_key}.bed",
             )
     emit:
