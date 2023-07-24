@@ -105,16 +105,15 @@ def main(melt, min_samples=3, min_groups=2):
 
     testable_pairs = find_testable_pairs(melt, min_samples=min_samples,
         min_groups_per_variant=min_groups)
-    print(testable_pairs)
     # filter only testable variants + cell_types
     tested_melt = melt.merge(
         testable_pairs, on=['variant_id', 'group_id']
     )
     print(f'Testing {tested_melt["variant_id"].nunique()} variants')
+    if tested_melt["variant_id"].nunique() == 0:
+        raise ValueError
     # Total aggregation (find constitutive CAVs)
-    print(tested_melt)
-    p = aggregate_pvalues_df(tested_melt)
-    print(p)
+
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested_melt)
     ).rename(
