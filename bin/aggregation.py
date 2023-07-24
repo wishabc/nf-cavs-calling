@@ -54,6 +54,12 @@ def df_to_group(df):
 
 
 def aggregate_pvalues_df(pval_df):
+    pval_df = pval_df.assign(
+            **{col: pd.NA for col in 
+            ['footprints', 'group_id', 'hotspots'] 
+            if col not in pval_df.columns}
+        )
+    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
     groups = df_to_group(pval_df)
     snp_stats = groups.agg(
         nSNPs=('coverage', 'count'),
@@ -89,14 +95,7 @@ def main(pval_df):
     
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
-    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
-    aggr_df = aggregate_pvalues_df(
-        pval_df.assign(
-            **{col: pd.NA for col in 
-            ['footprints', 'group_id', 'hotspots'] 
-            if col not in pval_df.columns}
-        )
-    )
+    aggr_df = aggregate_pvalues_df(pval_df)
     res_df = calc_fdr(aggr_df)
     return res_df[result_columns]
 
