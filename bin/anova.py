@@ -30,17 +30,31 @@ def test_each_group(df):
     return grps, ess, stds, deltals, pvals, np.sum(liks)
 
 def test_snp(df):
-    variant_id = df['variant_id'].iloc[0]
-    m = len(df['group_id'].unique())
+    variant_id = df.name
+    m = df['group_id'].nunique()
     x = df['x'].to_numpy()
     n = df['n'].to_numpy()
     L0 = censored_binomial_likelihood(x, n, 0.5).sum()
     e1, L1 = get_ml_es_estimation(x, n)
+    ## rewrite, too slow
     groups, ess2, stds, DLs, ps_individual, L2 = test_each_group(df)
     p_overall = chi2.logsf(L1 - L0, 1)
     p_differential = chi2.logsf(L2 - L1, m - 1)
     p_zero_int = chi2.logsf(L2 - L0, m)
-    return [variant_id, groups, m, e1, ess2, stds, L0, L1 - L0, L2 - L1, ps_individual, p_overall, p_differential, p_zero_int]
+    return pd.DataFrame(
+        data=[
+            variant_id, groups, m, e1, 
+            ess2, stds, 
+            L0, L1 - L0, L2 - L1, ps_individual,
+            p_overall, p_differential, p_zero_int
+        ],
+        columns=[
+            'variant_id', 'group_id', 'm', 'e1',
+            'group_es', 'group_es_std',
+            'L0', 'DL1', 'DL2', 'group_pval',
+            'p_overall', 'p_differential', 'p_zero_int'
+        ]
+    )
     
 
 def censored_binomial_likelihood(xs, ns, p, tr=5):
@@ -77,6 +91,7 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
 
 def main(melt, min_samples=3, min_groups=2):
     melt = melt[melt['is_tested']]
+    # FIXME
     melt['variant_id'] = melt['#chr'] + '_' + melt['end'].astype(str) + '_' + melt['alt']
     melt['n'] = melt.eval('ref_counts + alt_counts')
 
@@ -97,36 +112,21 @@ def main(melt, min_samples=3, min_groups=2):
     print(f'Testing {len(tested_melt.variant_id.unique())} variants')
     # Total aggregation (find constitutive CAVs)
     constitutive_df = calc_fdr(
-        aggregate_pvalues_df(tested_melt, jobs=1)
+        aggregate_pvalues_df(tested_melt)
     ).rename(
         columns={'min_fdr': 'min_fdr_overall'}
     )
     # merge with tested variants
-    tested_melt = tested_melt.merge(constitutive_df[['variant_id', 'min_fdr_overall']], how='left')
+    tested_melt = tested_melt.merge(
+        constitutive_df[['variant_id', 'min_fdr_overall']], 
+        how='left'
+    )
     print(len(tested_melt.index))
 
     # LRT (ANOVA-like)
-    gb = tested_melt.groupby('variant_id')
-    rows = []
-    ### TODO: make in parallel
-    for g_id in list(gb.groups):
-        rows.append(test_snp(gb.get_group(g_id)))
+    rows = tested_melt.groupby('variant_id').progress_apply(test_snp)
     result = pd.DataFrame(rows,
-                     columns=[
-                         'variant_id',
-                         'group_id',
-                         'm',
-                         'e1',
-                         'group_es',
-                         'group_es_std',
-                         'L0',
-                         'DL1',
-                         'DL2',
-                         'group_pval',
-                         'p_overall',
-                         'p_differential',
-                         'p_zero_int'
-                     ])
+                     )
     result['differential_FDR'] = multipletests(
         np.exp(result['p_differential']),
         method='fdr_bh'
@@ -146,8 +146,12 @@ def main(melt, min_samples=3, min_groups=2):
     # Group-wise aggregation
     group_wise_aggregation = calc_fdr(
         result[differential_idxs].groupby('group_id').progress_apply(
-            lambda x: aggregate_pvalues_df(x, jobs=1, cover_tr=cover_tr)
-        )).rename(columns={'min_fdr': 'min_fdr_group'}).reset_index()[['variant_id', 'group_id', 'min_fdr_group']]
+            aggregate_pvalues_df
+        )
+    ).rename(
+        columns={'min_fdr': 'min_fdr_group'}
+    ).reset_index()[['variant_id', 'group_id', 'min_fdr_group']]
+
     result = result.merge(group_wise_aggregation, how='left')[
         [*starting_columns,
             'group_id', 
@@ -182,7 +186,8 @@ if __name__ == '__main__':
     df, result = main(
         input_df,
         min_samples=args.min_samples,
-        min_groups=args.min_groups)
+        min_groups=args.min_groups
+    )
     
     df.to_csv(f"{args.prefix}.differential_tested.bed", sep='\t', index=False)
     result.to_csv(f"{args.prefix}.differential_pvals.bed", sep='\t', index=False)
