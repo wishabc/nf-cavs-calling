@@ -42,18 +42,17 @@ def test_snp(df):
     p_differential = chi2.logsf(L2 - L1, m - 1)
     p_zero_int = chi2.logsf(L2 - L0, m)
     return pd.DataFrame(
-        data=[
-            variant_id, groups, m, e1, 
-            ess2, stds, 
-            L0, L1 - L0, L2 - L1, ps_individual,
-            p_overall, p_differential, p_zero_int
-        ],
-        columns=[
+        dict(zip([
             'variant_id', 'group_id', 'm', 'e1',
             'group_es', 'group_es_std',
             'L0', 'DL1', 'DL2', 'group_pval',
             'p_overall', 'p_differential', 'p_zero_int'
-        ]
+        ], [
+            variant_id, groups, m, e1, 
+            ess2, stds, 
+            L0, L1 - L0, L2 - L1, ps_individual,
+            p_overall, p_differential, p_zero_int
+        ]))
     )
     
 
