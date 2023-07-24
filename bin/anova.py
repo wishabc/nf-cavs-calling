@@ -6,54 +6,36 @@ from scipy.stats import binom, chi2
 from statsmodels.stats.multitest import multipletests
 from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
 
-
-def test_each_group(df):
-    g = df.groupby('group_id')
-    ess = []
-    stds = []
-    liks = []
-    deltals = []
-    pvals = []
-    grps = []
+# Likelihoods
+# L0 <- 'es = 0' model
+# L1 <- 'es = mean' model
+# L2 <- 'es = mean|group' model
+def test_group(df):
     alpha = np.log(2)/2
-    for g_id in g.groups:
-        t = g.get_group(g_id)
-        es, lhd =  get_ml_es_estimation(t['x'], t['n'])
-        lhd0 = censored_binomial_likelihood(t['x'], t['n'], 0.5).sum()
-        std = np.cosh(alpha * es) / (alpha * np.sqrt(t['n'].sum()))
-        ess.append(es)
-        liks.append(lhd)
-        stds.append(std)
-        deltals.append(lhd - lhd0)
-        pvals.append(chi2.logsf(lhd - lhd0, 1))
-        grps.append(t['group_id'].iloc[0])
-    return grps, ess, stds, deltals, pvals, np.sum(liks)
+    es2, per_group_L2 =  get_ml_es_estimation(df['x'], df['n'])
+    es2_std = np.cosh(alpha * es2) / (alpha * np.sqrt(df['n'].sum()))
+    return pd.Series(
+        [df.name, es2, es2_std, per_group_L2],
+        ['group_id', 'es2', 'es2_std', 'per_group_L2']
+    )
 
 def test_snp(df):
-    variant_id = df.name
+    res = df.groupby('group_id').apply(test_group)
+
     m = df['group_id'].nunique()
     x = df['x'].to_numpy()
     n = df['n'].to_numpy()
     L0 = censored_binomial_likelihood(x, n, 0.5).sum()
-    e1, L1 = get_ml_es_estimation(x, n)
-    ## rewrite, too slow
-    groups, ess2, stds, DLs, ps_individual, L2 = test_each_group(df)
-    p_overall = chi2.logsf(L1 - L0, 1)
-    p_differential = chi2.logsf(L2 - L1, m - 1)
-    p_zero_int = chi2.logsf(L2 - L0, m)
-    return pd.DataFrame(
-        dict(zip([
-            'variant_id', 'group_id', 'm', 'e1',
-            'group_es', 'group_es_std',
-            'L0', 'DL1', 'DL2', 'group_pval',
-            'p_overall', 'p_differential', 'p_zero_int'
-        ], [
-            variant_id, groups, m, e1, 
-            ess2, stds, 
-            L0, L1 - L0, L2 - L1, ps_individual,
-            p_overall, p_differential, p_zero_int
-        ]))
+    L2 = res['per_group_L2'].sum()
+    es1, L1 = get_ml_es_estimation(x, n)[0]
+    res = res.assign(
+        variant_id=df.name,
+        es1=es1,
+        DL1=L1-L0,
+        DL2=L2-L1,
+        n_groups=m
     )
+    return res
     
 
 def censored_binomial_likelihood(xs, ns, p, tr=5):
@@ -125,19 +107,22 @@ def main(melt, min_samples=3, min_groups=2):
     )
 
     # LRT (ANOVA-like)
-    result = tested_melt.groupby('variant_id').progress_apply(test_snp)
+    result = tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
+        'variant_id'
+    ).progress_apply(test_snp)
+
+    result = tested_melt.merge(result)
+    result['p_overall'] = chi2.logsf(result['DL1'], 1)
+    result['p_differential'] = chi2.logsf(
+        result['DL2'],
+        result['n_groups'] - 1
+    )
+
     result['differential_FDR'] = multipletests(
         np.exp(result['p_differential']),
         method='fdr_bh'
     )[1]
     print(len(result.index))
-    
-    ## Check and remove 
-    # explode result to get by group significance and merge with tested_melt
-    result = tested_melt.merge(
-        result.explode(['group_id', 'group_es', 'group_es_std', 'group_pval'],
-        ignore_index=True), how='left')
-    print(len(result.index), result.columns)
 
     # set default inividual fdr and find differential snps
     differential_idxs = result['differential_FDR'] <= 0.05
@@ -151,25 +136,7 @@ def main(melt, min_samples=3, min_groups=2):
         columns={'min_fdr': 'min_fdr_group'}
     ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']]
 
-    result = result.merge(group_wise_aggregation, how='left')[
-        [*starting_columns,
-            'group_id', 
-            'min_fdr_group',
-            'min_fdr_overall',
-            'differential_FDR',
-            'm',
-            'e1',
-            'group_es',
-            'group_es_std',
-            'L0',
-            'DL1',
-            'DL2',
-            'group_pval',
-            'p_overall',
-            'p_differential',
-            'p_zero_int'
-         ]
-    ].drop_duplicates()
+    result = result.merge(group_wise_aggregation, how='left').drop_duplicates()
     return tested_melt, result
 
 
