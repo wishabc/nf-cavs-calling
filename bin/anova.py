@@ -111,6 +111,8 @@ def main(melt, min_samples=3, min_groups=2):
     )
     print(f'Testing {len(tested_melt.variant_id.unique())} variants')
     # Total aggregation (find constitutive CAVs)
+    p = aggregate_pvalues_df(tested_melt)
+    print(p)
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested_melt)
     ).rename(
