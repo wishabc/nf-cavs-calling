@@ -121,15 +121,12 @@ def main(melt, min_samples=3, min_groups=2):
     )
     # merge with tested variants
     tested_melt = tested_melt.merge(
-        constitutive_df[['variant_id', 'min_fdr_overall']], 
+        constitutive_df[[*starting_columns, 'min_fdr_overall']], 
         how='left'
     )
-    print(len(tested_melt.index))
 
     # LRT (ANOVA-like)
-    rows = tested_melt.groupby('variant_id').progress_apply(test_snp)
-    result = pd.DataFrame(rows,
-                     )
+    result = tested_melt.groupby('variant_id').progress_apply(test_snp)
     result['differential_FDR'] = multipletests(
         np.exp(result['p_differential']),
         method='fdr_bh'
@@ -153,7 +150,7 @@ def main(melt, min_samples=3, min_groups=2):
         )
     ).rename(
         columns={'min_fdr': 'min_fdr_group'}
-    ).reset_index()[['variant_id', 'group_id', 'min_fdr_group']]
+    ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']]
 
     result = result.merge(group_wise_aggregation, how='left')[
         [*starting_columns,
