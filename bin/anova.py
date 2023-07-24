@@ -27,7 +27,7 @@ def test_snp(df):
     n = df['n'].to_numpy()
     L0 = censored_binomial_likelihood(x, n, 0.5).sum()
     L2 = res['per_group_L2'].sum()
-    es1, L1 = get_ml_es_estimation(x, n)[0]
+    es1, L1 = get_ml_es_estimation(x, n)
     res = res.assign(
         variant_id=df.name,
         es1=es1,
