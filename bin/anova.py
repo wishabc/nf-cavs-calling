@@ -113,13 +113,13 @@ class LRT:
         #     constitutive_df[[*starting_columns, 'min_fdr_overall']], 
         #     how='left'
         # )
-        res = self.tested_melt[['variant_id', 'group_id', 'x', 'n']].groupby(
+        res = self.tested_melt.copy()[['variant_id', 'group_id', 'x', 'n']].groupby(
             ['variant_id', 'group_id']
         ).progress_apply(
             self.test_group
         ).reset_index()
 
-        result = self.tested_melt[['variant_id', 'group_id', 'x', 'n']].groupby(
+        result = self.tested_melt.copy()[['variant_id', 'group_id', 'x', 'n']].groupby(
             'variant_id'
         ).progress_apply(
             self.test_snp
