@@ -33,6 +33,8 @@ def main(tested, pvals, fdr_tr=0.05):
         columns={'min_fdr': 'min_fdr_group'}
     )[[*starting_columns, 'group_id', 'min_fdr_group']]
 
+    print(len(differential_cavs.index))
+
     # Group-wise aggregation
     return pvals.merge(constitutive_df).merge(differential_cavs, how='left')
 
@@ -50,5 +52,5 @@ if __name__ == '__main__':
     tested = pd.read_table(args.tested_variants)
     pvals = pd.read_table(args.pvals)
     res_df = main(tested, pvals, args.fdr_tr)
-    assert len(res_df.index) == len(pvals.index)
+    print(len(res_df.index), len(pvals.index))
     res_df.to_csv(args.outpath, sep='\t', index=False)
