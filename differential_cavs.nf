@@ -43,7 +43,8 @@ process differential_cavs {
     """
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
-        ${pvals} 
+        ${pvals} \
+        ${name}
     """
 
 }
