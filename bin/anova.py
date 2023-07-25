@@ -3,8 +3,11 @@ import argparse
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import binom, chi2
-from statsmodels.stats.multitest import multipletests
-from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
+
+from aggregation import starting_columns
+
+# aggregate_pvalues_df, calc_fdr, 
+# from statsmodels.stats.multitest import multipletests
 
 # Likelihoods
 # L0 <- 'es = 0' model
@@ -15,8 +18,8 @@ from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
 result_columns = [
     *starting_columns,
     'group_id',
-    'p_overall'
-    'p_differential'
+    'p_overall',
+    'p_differential',
     'es1', 'es2', 'es2_std',
     'DL1', 'DL2'
 ]
