@@ -69,7 +69,6 @@ class LRT:
         L2 = res['per_group_L2'].sum()
         es1, L1 = self.get_ml_es_estimation(x, n)
         res = res.assign(
-            variant_id=df.name,
             es1=es1,
             DL1=L1-L0,
             DL2=L2-L1,
@@ -156,7 +155,7 @@ class LRT:
             columns={'min_fdr': 'min_fdr_group'}
         ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']]
 
-        return result.merge(group_wise_aggregation, how='left')
+        return result.merge(group_wise_aggregation, how='left')[result_columns]
 
 
 if __name__ == '__main__':
