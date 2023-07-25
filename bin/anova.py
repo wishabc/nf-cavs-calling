@@ -60,7 +60,7 @@ class LRT:
         )
 
     def test_snp(self, df):
-        res = df.groupby('group_id').apply(self.test_group)
+        res = df.groupby('group_id').apply(self.test_group).reset_index()
 
         m = df['group_id'].nunique()
         x = df['x'].to_numpy()
