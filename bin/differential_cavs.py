@@ -11,6 +11,8 @@ def main(tested, pvals, fdr_tr=0.05):
         columns={'min_fdr': 'min_fdr_overall'}
     )[[*starting_columns, 'min_fdr_overall']]
 
+    print(len(constitutive_df.index))
+
     print(len(pvals), len(pvals.merge(constitutive_df)))
     pvals['differential_FDR'] = multipletests(
         np.exp(pvals['log_p_differential']),
