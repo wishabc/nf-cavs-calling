@@ -46,6 +46,7 @@ process differential_cavs {
         ${pvals} \
         tmp.bed \
         --fdr ${params.fdr_tr}
+
     head -1 tmp.bed > ${name}
     sort-bed tmp.bed >> ${name}
     """
@@ -73,8 +74,7 @@ workflow differentialCavs {
         tested = out 
             | map(it -> it[1]) 
             | collectFile(
-                name: "differential_tested.${params.aggregation_key}.bed",
-                storeDir: params.outdir,
+                name: "${params.aggregation_key}.tested.bed",
                 sort: true,
                 keepHeader: true,
                 skip: 1

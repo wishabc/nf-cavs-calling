@@ -11,19 +11,19 @@ def main(tested, pvals, fdr_tr=0.05):
         columns={'min_fdr': 'min_fdr_overall'}
     )[[*starting_columns, 'min_fdr_overall']]
 
-    pvals['differential_FDR'] = multipletests(
+    pvals['differential_fdr'] = multipletests(
         np.exp(pvals['log_p_differential']),
         method='fdr_bh'
     )[1]
     tested_length = len(tested.index)
     tested = tested.merge(
-        pvals[[*starting_columns, 'group_id', 'differential_FDR']]
+        pvals[[*starting_columns, 'group_id', 'differential_fdr']]
     )
     assert len(tested.index) == tested_length
 
     # set default inividual fdr and find differential snps
     differential_cavs = calc_fdr(
-        tested[tested['differential_FDR'] <= fdr_tr].groupby(
+        tested[tested['differential_fdr'] <= fdr_tr].groupby(
             'group_id',
             as_index=False
         ).apply(
