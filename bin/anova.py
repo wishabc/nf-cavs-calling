@@ -112,23 +112,20 @@ class LRT:
     def run_anova(self):
         # Total aggregation (find constitutive CAVs)
 
-        constitutive_df = calc_fdr(
-            aggregate_pvalues_df(self.tested_melt)
-        ).rename(
-            columns={'min_fdr': 'min_fdr_overall'}
-        )
-        # merge with tested variants
-        result = self.tested_melt.merge(
-            constitutive_df[[*starting_columns, 'min_fdr_overall']], 
-            how='left'
-        )
-
-        # LRT (ANOVA-like)
-        lrt = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
+        # constitutive_df = calc_fdr(
+        #     aggregate_pvalues_df(self.tested_melt)
+        # ).rename(
+        #     columns={'min_fdr': 'min_fdr_overall'}
+        # )
+        # # merge with tested variants
+        # result = self.tested_melt.merge(
+        #     constitutive_df[[*starting_columns, 'min_fdr_overall']], 
+        #     how='left'
+        # )
+        print(self.tested_melt)
+        result = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
             'variant_id', as_index=False
-        ).progress_apply(self.test_snp)
-        
-        result = lrt.merge(result)
+        ).progress_apply(self.test_snp).merge(self.tested_melt)
 
         print(f"Coeffs {len(result.index)}")
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
@@ -136,27 +133,21 @@ class LRT:
             result['DL2'],
             result['n_groups'] - 1
         )
-
-        result['differential_FDR'] = multipletests(
-            np.exp(result['p_differential']),
-            method='fdr_bh'
-        )[1]
-        print(len(result.index))
-
-        # set default inividual fdr and find differential snps
-        differential_idxs = result['differential_FDR'] <= 0.05
+        return result
+        # # set default inividual fdr and find differential snps
+        # differential_idxs = result['differential_FDR'] <= 0.05
         
-        # Group-wise aggregation
-        return result.merge(
-            calc_fdr(
-                result[differential_idxs].groupby('group_id', as_index=False).apply(
-                    aggregate_pvalues_df
-                )
-            ).rename(
-                columns={'min_fdr': 'min_fdr_group'}
-            ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']],
-            how='left'
-        )[result_columns]
+        # # Group-wise aggregation
+        # return result.merge(
+        #     calc_fdr(
+        #         result[differential_idxs].groupby('group_id', as_index=False).apply(
+        #             aggregate_pvalues_df
+        #         )
+        #     ).rename(
+        #         columns={'min_fdr': 'min_fdr_group'}
+        #     ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']],
+        #     how='left'
+        # )[result_columns]
 
 
 if __name__ == '__main__':
