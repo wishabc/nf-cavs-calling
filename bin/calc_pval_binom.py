@@ -101,6 +101,7 @@ def calc_pval_for_df(df, allele_tr, modify_w):
 
 def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
+    df[['RAF', 'AAF']] = df[['RAF', 'AAF']].replace('None', pd.NA).apply(pd.to_numeric, errors='coerce')
     # Remove already present columns
     df = df[[x for x in df.columns if x not in updated_columns]]
     # Check if empty
@@ -133,7 +134,7 @@ if __name__ == '__main__':
     except ValueError:
         print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
         raise
-    input_df = pd.read_table(args.I)
+    input_df = pd.read_table(args.I, low_memory=False)
     modified_df = main(
         input_df,
         allele_tr=args.a,
