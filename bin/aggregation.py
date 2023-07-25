@@ -12,8 +12,7 @@ alleles = {'ref': 'alt', 'alt': 'ref'}
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 
-result_columns = starting_columns + [
-    'AAF', 'RAF',
+result_columns = [*starting_columns, 'AAF', 'RAF',
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
