@@ -26,7 +26,7 @@ class LRT:
         self.min_groups_per_variant = min_groups_per_variant
         self.allele_tr = allele_tr
 
-        melt['variant_id'] = melt[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).apply('@'.join, axis=1)
+        melt['variant_id'] = melt[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).apply(lambda row: '@'.join(row.values), axis=1)
         
         melt['n'] = melt['coverage']
         melt['x'] = np.round(
