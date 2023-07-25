@@ -5,16 +5,12 @@ import numpy as np
 import pandas as pd
 
 def main(tested, pvals, fdr_tr=0.05):
-    print(len(aggregate_pvalues_df(tested).index))
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested)
     ).rename(
         columns={'min_fdr': 'min_fdr_overall'}
     )[[*starting_columns, 'min_fdr_overall']]
 
-    print(len(constitutive_df.index))
-
-    print(len(pvals), len(pvals.merge(constitutive_df)), len(pvals.merge(constitutive_df, on=starting_columns)))
     pvals['differential_FDR'] = multipletests(
         np.exp(pvals['log_p_differential']),
         method='fdr_bh'
@@ -36,12 +32,6 @@ def main(tested, pvals, fdr_tr=0.05):
     ).rename(
         columns={'min_fdr': 'min_fdr_group'}
     )[[*starting_columns, 'group_id', 'min_fdr_group']]
-
-    print(len(differential_cavs.index))
-    print(len(pvals),
-        len(pvals.merge(constitutive_df)),
-        len(pvals.merge(constitutive_df).merge(differential_cavs, how='left'))
-    )
 
     # Group-wise aggregation
     return pvals.merge(constitutive_df).merge(differential_cavs, how='left')
