@@ -11,6 +11,7 @@ def main(tested, pvals, fdr_tr=0.05):
         columns={'min_fdr': 'min_fdr_overall'}
     )[[*starting_columns, 'min_fdr_overall']]
 
+    print(len(pvals), len(pvals.merge(constitutive_df)))
     pvals['differential_FDR'] = multipletests(
         np.exp(pvals['log_p_differential']),
         method='fdr_bh'
@@ -34,6 +35,10 @@ def main(tested, pvals, fdr_tr=0.05):
     )[[*starting_columns, 'group_id', 'min_fdr_group']]
 
     print(len(differential_cavs.index))
+    print(len(pvals),
+        len(pvals.merge(constitutive_df)),
+        len(pvals.merge(constitutive_df).merge(differential_cavs, how='left'))
+    )
 
     # Group-wise aggregation
     return pvals.merge(constitutive_df).merge(differential_cavs, how='left')
