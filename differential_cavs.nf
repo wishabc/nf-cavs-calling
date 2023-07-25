@@ -44,8 +44,10 @@ process differential_cavs {
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
         ${pvals} \
-        ${name} \
+        tmp.bed \
         --fdr ${params.fdr_tr}
+    head -1 tmp.bed > ${name}
+    sort-bed tmp.bed >> ${name}
     """
 
 }
