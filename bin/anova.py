@@ -60,12 +60,12 @@ class LRT:
         )
 
     def test_snp(self, df):
-        m = df['group_id'].nunique()
+        n_groups = df['group_id'].nunique()
         x = df['x'].to_numpy()
         n = df['n'].to_numpy()
         L0 = self.censored_binomial_likelihood(x, n, 0.5).sum()
         es1, L1 = self.get_ml_es_estimation(x, n)
-        return pd.Series([es1, L1-L0, m], ['es1', 'DL1', 'n_groups'])
+        return pd.Series([es1, L1-L0, n_groups], ['es1', 'DL1', 'n_groups'])
     
 
     def censored_binomial_likelihood(self, xs, ns, p):
@@ -102,17 +102,6 @@ class LRT:
 
     def run_anova(self):
         # Total aggregation (find constitutive CAVs)
-
-        # constitutive_df = calc_fdr(
-        #     aggregate_pvalues_df(self.tested_melt)
-        # ).rename(
-        #     columns={'min_fdr': 'min_fdr_overall'}
-        # )
-        # # merge with tested variants
-        # result = self.tested_melt.merge(
-        #     constitutive_df[[*starting_columns, 'min_fdr_overall']], 
-        #     how='left'
-        # )
         res = self.tested_melt.groupby(
             ['variant_id', 'group_id']
         ).progress_apply(
@@ -125,7 +114,7 @@ class LRT:
             res.groupby('variant_id').agg(DL2=('per_group_L2', 'sum'))
         ).reset_index().merge(
             self.tested_melt
-        )
+        ).merge(res)
 
         print(f"Coeffs {len(result.index)}")
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
@@ -172,7 +161,10 @@ if __name__ == '__main__':
     if data_wrapper.get_testable_snps().empty:
         result = pd.DataFrame([], columns=result_columns)
     else:
-        result = data_wrapper.run_anova()
+        result = data_wrapper.run_anova()[result_columns]
     
-    data_wrapper.get_testable_snps().to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+    data_wrapper.get_testable_snps()[
+        [*starting_columns, 'group_id']
+    ].to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+
     result.to_csv(f"{args.prefix}.pvals.bed", sep='\t', index=False)
