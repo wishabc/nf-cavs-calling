@@ -110,8 +110,6 @@ class LRT:
 
 
     def run_anova(self):
-        # FIXME
-
         # Total aggregation (find constitutive CAVs)
 
         constitutive_df = calc_fdr(
@@ -127,8 +125,8 @@ class LRT:
 
         # LRT (ANOVA-like)
         result = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
-            'variant_id'
-        ).progress_apply(self.test_snp).reset_index()
+            'variant_id', as_index=False
+        ).progress_apply(self.test_snp)
 
         result = tested_melt.merge(result)
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
@@ -148,7 +146,7 @@ class LRT:
         
         # Group-wise aggregation
         group_wise_aggregation = calc_fdr(
-            result[differential_idxs].groupby('group_id').apply(
+            result[differential_idxs].groupby('group_id', as_index=False).apply(
                 aggregate_pvalues_df
             )
         ).rename(
