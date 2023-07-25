@@ -42,6 +42,7 @@ class LRT:
         print(f'Testing {self.tested_melt["variant_id"].nunique()} variants')
         if self.tested_melt["variant_id"].nunique() == 0:
             print('No variants for LRT')
+        self.tested_melt.drop(columns='variant_id', inplace=True)
         
     def get_testable_snps(self):
         return self.tested_melt
@@ -113,8 +114,6 @@ class LRT:
         assert len(result) == len(res)
 
         result['DL2'] = result.eval('L2 -L1')
-
-        print(f"Coeffs {len(result.index)}")
         result['log_p_overall'] = chi2.logsf(result['DL1'], 1)
         result['log_p_differential'] = chi2.logsf(
             result['DL2'],
@@ -149,7 +148,11 @@ if __name__ == '__main__':
         assert len(result) == len(result.drop_duplicates())
     
     data_wrapper.get_testable_snps().drop(
-        columns=['x', 'n', 'variant_id']
-    ).to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+        columns=['x', 'n']
+    ).to_csv(
+        f"{args.prefix}.tested.bed",
+        sep='\t',
+        index=False
+    )
 
     result.to_csv(f"{args.prefix}.pvals.bed", sep='\t', index=False)
