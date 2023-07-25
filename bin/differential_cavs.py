@@ -9,30 +9,30 @@ def main(tested, pvals):
         aggregate_pvalues_df(tested)
     ).rename(
         columns={'min_fdr': 'min_fdr_overall'}
-    )
+    )[[*starting_columns, 'min_fdr_overall']]
+
     pvals['differential_FDR'] = multipletests(
         np.exp(pvals['log_p_differential']),
         method='fdr_bh'
     )[1]
-    # set default inividual fdr and find differential snps
-    differential_idxs = pvals['differential_FDR'] <= 0.05
-    
-    # Group-wise aggregation
-    return pvals.merge(
-        calc_fdr(
-            pvals[differential_idxs].groupby(
-                'group_id',
-                as_index=False
-            ).apply(
-                aggregate_pvalues_df
-            )
-        ).rename(
-            columns={'min_fdr': 'min_fdr_group'}
-        ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']],
-        how='left'
-    ).merge(
-        constitutive_df[[*starting_columns, 'min_fdr_overall']]
+    tested = tested.merge(
+        pvals[[*starting_columns, 'differential_FDR']]
     )
+
+    # set default inividual fdr and find differential snps
+    differential_cavs = calc_fdr(
+        tested[tested['differential_FDR'] <= 0.05].groupby(
+            'group_id',
+            as_index=False
+        ).apply(
+            aggregate_pvalues_df
+        )
+    ).rename(
+        columns={'min_fdr': 'min_fdr_group'}
+    )[[*starting_columns, 'min_fdr_group']]
+
+    # Group-wise aggregation
+    return pvals.merge(constitutive_df).merge(differential_cavs, how='left')
 
 
 if __name__ == '__main__':
