@@ -113,20 +113,18 @@ class LRT:
         #     constitutive_df[[*starting_columns, 'min_fdr_overall']], 
         #     how='left'
         # )
-        res = self.tested_melt.copy()[['variant_id', 'group_id', 'x', 'n']].groupby(
+        res = self.tested_melt.groupby(
             ['variant_id', 'group_id']
         ).progress_apply(
             self.test_group
         ).reset_index()
 
-        result = self.tested_melt.copy()[['variant_id', 'group_id', 'x', 'n']].groupby(
-            'variant_id'
-        ).progress_apply(
+        result = self.tested_melt.groupby('variant_id').progress_apply(
             self.test_snp
         ).join(
             res.groupby('variant_id').agg(DL2=('per_group_L2', 'sum'))
         ).reset_index().merge(
-            self.tested_melt, on=['variant_id', 'group_id']
+            self.tested_melt
         )
 
         print(f"Coeffs {len(result.index)}")
