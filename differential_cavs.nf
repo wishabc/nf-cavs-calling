@@ -5,6 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 process differential_cavs {
     conda params.conda
     tag "${chromosome}"
+    memory 64.GB
 
     input:
         tuple val(chromosome), path(input_data)
@@ -13,7 +14,7 @@ process differential_cavs {
         tuple path(pvals), path(tested)
 
     script:
-    pvals = "${chromosome}.pvals.tsv"
+    pvals = "${chromosome}.pvals.bed"
     tested = "${chromosome}.tested.bed"
     """
     python3 $moduleDir/bin/anova.py \
@@ -38,7 +39,7 @@ workflow differentialCavs {
         pvals = out 
             | map(it -> it[0]) 
             | collectFile(
-                name: "${params.aggregation_key}.pvals.tsv",
+                name: "${params.aggregation_key}.pvals.bed",
                 storeDir: params.outdir,
                 sort: true,
                 keepHeader: true,

@@ -11,6 +11,16 @@ from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
 # L1 <- 'es = mean' model
 # L2 <- 'es = mean|group' model
 
+
+result_columns = [
+    *starting_columns,
+    'group_id',
+    'p_overall', 'min_fdr_overall',
+    'p_differential', 'differential_FDR',
+    'min_fdr_group',
+    'es1', 'es2', 'es2_std',
+    'DL1', 'DL2'
+]
 class LRT:
     def __init__(self, melt, allele_tr=5, min_samples=3, min_groups_per_variant=2):
         self.min_samples = min_samples
@@ -35,7 +45,7 @@ class LRT:
         )
         print(f'Testing {self.tested_melt["variant_id"].nunique()} variants')
         if self.tested_melt["variant_id"].nunique() == 0:
-            raise ValueError
+            print('No variants for LRT')
         
     def get_testable_snps(self):
         return self.tested_melt
@@ -168,7 +178,10 @@ if __name__ == '__main__':
         min_groups_per_variant=args.min_groups,
         allele_tr=args.allele_tr
     )
-    result = data_wrapper.run_anova()
+    if LRT.get_testable_snps().empty:
+        result = pd.DataFrame([], columns=result_columns)
+    else:
+        result = data_wrapper.run_anova()
     
     LRT.get_testable_snps().to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
-    result.to_csv(f"{args.prefix}.pvals.tsv", sep='\t', index=False)
+    result.to_csv(f"{args.prefix}.pvals.bed", sep='\t', index=False)
