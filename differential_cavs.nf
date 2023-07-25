@@ -5,7 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 process differential_cavs {
     conda params.conda
     tag "${chromosome}"
-    memory 64.GB
+    memory 100.GB
 
     input:
         tuple val(chromosome), path(input_data)
