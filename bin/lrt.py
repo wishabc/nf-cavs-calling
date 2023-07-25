@@ -6,9 +6,6 @@ from scipy.stats import binom, chi2
 
 from aggregation import starting_columns
 
-# aggregate_pvalues_df, calc_fdr, 
-# from statsmodels.stats.multitest import multipletests
-
 # Likelihoods
 # L0 <- 'es = 0' model
 # L1 <- 'es = mean' model
@@ -18,8 +15,8 @@ from aggregation import starting_columns
 result_columns = [
     *starting_columns,
     'group_id', 'n_groups',
-    'p_overall',
-    'p_differential',
+    'log_p_overall',
+    'log_p_differential',
     'es1', 'es2', 'es2_std',
     'DL1', 'DL2'
 ]
@@ -42,9 +39,7 @@ class LRT:
 
         testable_pairs = self.find_testable_pairs(melt)
         # filter only testable variants + cell_types
-        self.tested_melt = melt.merge(testable_pairs)[
-            [*starting_columns, 'n', 'x', 'variant_id', 'group_id']
-        ]
+        self.tested_melt = melt.merge(testable_pairs)
         print(f'Testing {self.tested_melt["variant_id"].nunique()} variants')
         if self.tested_melt["variant_id"].nunique() == 0:
             print('No variants for LRT')
@@ -121,26 +116,12 @@ class LRT:
         res['DL2'] = res['L2'] - res['L1']
 
         print(f"Coeffs {len(result.index)}")
-        result['p_overall'] = chi2.logsf(result['DL1'], 1)
-        result['p_differential'] = chi2.logsf(
+        result['log_p_overall'] = chi2.logsf(result['DL1'], 1)
+        result['log_p_differential'] = chi2.logsf(
             result['DL2'],
             result['n_groups'] - 1
         )
         return result
-        # # set default inividual fdr and find differential snps
-        # differential_idxs = result['differential_FDR'] <= 0.05
-        
-        # # Group-wise aggregation
-        # return result.merge(
-        #     calc_fdr(
-        #         result[differential_idxs].groupby('group_id', as_index=False).apply(
-        #             aggregate_pvalues_df
-        #         )
-        #     ).rename(
-        #         columns={'min_fdr': 'min_fdr_group'}
-        #     ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']],
-        #     how='left'
-        # )[result_columns]
 
 
 if __name__ == '__main__':
@@ -165,10 +146,10 @@ if __name__ == '__main__':
     if data_wrapper.get_testable_snps().empty:
         result = pd.DataFrame([], columns=result_columns)
     else:
-        result = data_wrapper.run_anova()[result_columns]
+        result = data_wrapper.run_anova()[result_columns].drop_duplicates()
     
-    data_wrapper.get_testable_snps()[
-        [*starting_columns, 'group_id']
-    ].to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+    data_wrapper.get_testable_snps().drop(
+        columns=['x', 'n', 'variant_id']
+    ).to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
 
     result.to_csv(f"{args.prefix}.pvals.bed", sep='\t', index=False)

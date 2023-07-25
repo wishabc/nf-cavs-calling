@@ -41,13 +41,9 @@ process differential_cavs {
     script:
     name = "differential_pvals.${params.aggregation_key}.bed"
     """
-    python3 $moduleDir/bin/lrt.py \
-        ${input_data} \
-        ${chromosome} \
-        --min_samples ${params.min_samples} \
-        --min_groups ${params.min_groups} \
-        --allele_tr ${params.allele_tr} \
-        --chrom ${chromosome}
+    python3 $moduleDir/bin/differential_cavs.py \
+        ${tested_snps} \
+        ${pvals} 
     """
 
 }
