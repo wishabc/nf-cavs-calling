@@ -41,7 +41,7 @@ class LRT:
         testable_pairs = self.find_testable_pairs(melt)
         # filter only testable variants + cell_types
         self.tested_melt = melt.merge(testable_pairs)[
-            [*starting_columns, 'n', 'x', 'variant_id']
+            [*starting_columns, 'n', 'x', 'variant_id', 'group_id']
         ]
         print(f'Testing {self.tested_melt["variant_id"].nunique()} variants')
         if self.tested_melt["variant_id"].nunique() == 0:
