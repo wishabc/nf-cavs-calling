@@ -17,7 +17,7 @@ from aggregation import starting_columns
 
 result_columns = [
     *starting_columns,
-    'group_id',
+    'group_id', 'n_groups',
     'p_overall',
     'p_differential',
     'es1', 'es2', 'es2_std',
@@ -67,7 +67,7 @@ class LRT:
         n = df['n'].to_numpy()
         L0 = self.censored_binomial_likelihood(x, n, 0.5).sum()
         es1, L1 = self.get_ml_es_estimation(x, n)
-        return pd.Series([es1, L1-L0, n_groups], ['es1', 'DL1', 'n_groups'])
+        return pd.Series([es1, L1, L1-L0, n_groups], ['es1', 'L1', 'DL1', 'n_groups'])
     
 
     def censored_binomial_likelihood(self, xs, ns, p):
@@ -113,10 +113,12 @@ class LRT:
         result = self.tested_melt.groupby('variant_id').progress_apply(
             self.test_snp
         ).join(
-            res.groupby('variant_id').agg(DL2=('per_group_L2', 'sum'))
+            res.groupby('variant_id').agg(L2=('per_group_L2', 'sum'))
         ).reset_index().merge(
             self.tested_melt
         ).merge(res)
+
+        res['DL2'] = res['L2'] - res['L1']
 
         print(f"Coeffs {len(result.index)}")
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
