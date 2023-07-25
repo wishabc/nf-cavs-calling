@@ -10,45 +10,50 @@ from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
 # L0 <- 'es = 0' model
 # L1 <- 'es = mean' model
 # L2 <- 'es = mean|group' model
-def test_group(df):
-    alpha = np.log(2)/2
-    es2, per_group_L2 =  get_ml_es_estimation(df['x'], df['n'])
-    es2_std = np.cosh(alpha * es2) / (alpha * np.sqrt(df['n'].sum()))
-    return pd.Series(
-        [df.name, es2, es2_std, per_group_L2],
-        ['group_id', 'es2', 'es2_std', 'per_group_L2']
-    )
 
-def test_snp(df):
-    res = df.groupby('group_id').apply(test_group)
+class LRT:
+    def __init__():
+        pass
 
-    m = df['group_id'].nunique()
-    x = df['x'].to_numpy()
-    n = df['n'].to_numpy()
-    L0 = censored_binomial_likelihood(x, n, 0.5).sum()
-    L2 = res['per_group_L2'].sum()
-    es1, L1 = get_ml_es_estimation(x, n)
-    res = res.assign(
-        variant_id=df.name,
-        es1=es1,
-        DL1=L1-L0,
-        DL2=L2-L1,
-        n_groups=m
-    )
-    return res
+    def test_group(self, df):
+        alpha = np.log(2)/2
+        es2, per_group_L2 =  get_ml_es_estimation(df['x'], df['n'])
+        es2_std = np.cosh(alpha * es2) / (alpha * np.sqrt(df['n'].sum()))
+        return pd.Series(
+            [df.name, es2, es2_std, per_group_L2],
+            ['group_id', 'es2', 'es2_std', 'per_group_L2']
+        )
+
+    def test_snp(self, df):
+        res = df.groupby('group_id').apply(self.test_group)
+
+        m = df['group_id'].nunique()
+        x = df['x'].to_numpy()
+        n = df['n'].to_numpy()
+        L0 = censored_binomial_likelihood(x, n, 0.5).sum()
+        L2 = res['per_group_L2'].sum()
+        es1, L1 = get_ml_es_estimation(x, n)
+        res = res.assign(
+            variant_id=df.name,
+            es1=es1,
+            DL1=L1-L0,
+            DL2=L2-L1,
+            n_groups=m
+        )
+        return res
     
 
-def censored_binomial_likelihood(xs, ns, p, tr=5):
-    b = binom(ns, p)
-    return b.logpmf(xs) - np.log(b.cdf(ns - tr) - b.cdf(tr - 1))
+    def censored_binomial_likelihood(self, xs, ns, p):
+        b = binom(ns, p)
+        return b.logpmf(xs) - np.log(b.cdf(ns - self.allele_tr) - b.cdf(self.allele_tr - 1))
 
 
-def get_ml_es_estimation(x, n):
-    def target(p):
-        return -censored_binomial_likelihood(x, n, p).sum()
-    p = minimize(target, 0.5, bounds=((0.001, 0.999),)).x[0]
-    e = np.log2(p) - np.log2(1 - p)
-    return e, -target(p)
+    def get_ml_es_estimation(self, x, n):
+        def target(p):
+            return -self.censored_binomial_likelihood(x, n, p).sum()
+        p = minimize(target, 0.5, bounds=((0.001, 0.999),)).x[0]
+        e = np.log2(p) - np.log2(1 - p)
+        return e, -target(p)
 
 
 def find_testable_pairs(df, min_samples, min_groups_per_variant):
@@ -71,7 +76,6 @@ def find_testable_pairs(df, min_samples, min_groups_per_variant):
 
 
 def main(melt, min_samples=3, min_groups=2):
-    melt = melt[melt['is_tested']]
     # FIXME
     melt['variant_id'] = melt['#chr'] + '_' + melt['end'].astype(str) + '_' + melt['alt']
     melt['n'] = melt.eval('ref_counts + alt_counts')
@@ -146,14 +150,18 @@ if __name__ == '__main__':
     parser.add_argument('prefix', help='Prefix to files to save output files into')
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
+    parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5)
+    parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
+
     args = parser.parse_args()
 
     input_df = pd.read_table(args.input_data)
+    input_df = input_df[(input_df['is_tested']) & (True if args.chrom is None else input_df['#chr'] == args.chrom)].copy()
     df, result = main(
         input_df,
         min_samples=args.min_samples,
         min_groups=args.min_groups
     )
     
-    df.to_csv(f"{args.prefix}.differential_tested.bed", sep='\t', index=False)
-    result.to_csv(f"{args.prefix}.differential_pvals.bed", sep='\t', index=False)
+    df.to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+    result.to_csv(f"{args.prefix}.pvals.tsv", sep='\t', index=False)
