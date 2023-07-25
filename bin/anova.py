@@ -118,17 +118,19 @@ class LRT:
             columns={'min_fdr': 'min_fdr_overall'}
         )
         # merge with tested variants
-        tested_melt = self.tested_melt.merge(
+        result = self.tested_melt.merge(
             constitutive_df[[*starting_columns, 'min_fdr_overall']], 
             how='left'
         )
 
         # LRT (ANOVA-like)
-        result = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
+        lrt = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
             'variant_id', as_index=False
         ).progress_apply(self.test_snp)
+        
+        result = lrt.merge(result)
 
-        result = tested_melt.merge(result)
+        print(f"Coeffs {len(result.index)}")
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
         result['p_differential'] = chi2.logsf(
             result['DL2'],
@@ -145,15 +147,16 @@ class LRT:
         differential_idxs = result['differential_FDR'] <= 0.05
         
         # Group-wise aggregation
-        group_wise_aggregation = calc_fdr(
-            result[differential_idxs].groupby('group_id', as_index=False).apply(
-                aggregate_pvalues_df
-            )
-        ).rename(
-            columns={'min_fdr': 'min_fdr_group'}
-        ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']]
-
-        return result.merge(group_wise_aggregation, how='left')[result_columns]
+        return result.merge(
+            calc_fdr(
+                result[differential_idxs].groupby('group_id', as_index=False).apply(
+                    aggregate_pvalues_df
+                )
+            ).rename(
+                columns={'min_fdr': 'min_fdr_group'}
+            ).reset_index()[[*starting_columns, 'group_id', 'min_fdr_group']],
+            how='left'
+        )[result_columns]
 
 
 if __name__ == '__main__':
