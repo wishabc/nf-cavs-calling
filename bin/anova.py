@@ -15,9 +15,8 @@ from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
 result_columns = [
     *starting_columns,
     'group_id',
-    'p_overall', 'min_fdr_overall',
-    'p_differential', 'differential_FDR',
-    'min_fdr_group',
+    'p_overall'
+    'p_differential'
     'es1', 'es2', 'es2_std',
     'DL1', 'DL2'
 ]
