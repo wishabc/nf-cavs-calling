@@ -27,8 +27,7 @@ class LRT:
         self.min_groups_per_variant = min_groups_per_variant
         self.allele_tr = allele_tr
 
-        melt['variant_id'] = melt['#chr'] + '_' + melt['end'].astype(str) + '_' + melt['alt']
-        melt['n'] = melt.eval('ref_counts + alt_counts')
+        melt['n'] = melt['coverage']
 
         melt['x'] = np.round(
             np.where(
@@ -41,7 +40,7 @@ class LRT:
         testable_pairs = self.find_testable_pairs(melt)
         # filter only testable variants + cell_types
         self.tested_melt = melt.merge(
-            testable_pairs, on=['variant_id', 'group_id']
+            testable_pairs
         )
         print(f'Testing {self.tested_melt["variant_id"].nunique()} variants')
         if self.tested_melt["variant_id"].nunique() == 0:
@@ -123,9 +122,9 @@ class LRT:
         #     how='left'
         # )
         print(self.tested_melt)
-        result = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
-            'variant_id', as_index=False
-        ).progress_apply(self.test_snp).merge(self.tested_melt)
+        result = self.tested_melt[[*starting_columns, 'group_id', 'x', 'n']].groupby(
+            starting_columns
+        ).progress_apply(self.test_snp).reset_index().merge(self.tested_melt)
 
         print(f"Coeffs {len(result.index)}")
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
