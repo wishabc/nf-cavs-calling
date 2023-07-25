@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 def main(tested, pvals, fdr_tr=0.05):
+    print(len(aggregate_pvalues_df(tested).index))
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested)
     ).rename(
@@ -13,7 +14,7 @@ def main(tested, pvals, fdr_tr=0.05):
 
     print(len(constitutive_df.index))
 
-    print(len(pvals), len(pvals.merge(constitutive_df)))
+    print(len(pvals), len(pvals.merge(constitutive_df)), len(pvals.merge(constitutive_df, on=starting_columns)))
     pvals['differential_FDR'] = multipletests(
         np.exp(pvals['log_p_differential']),
         method='fdr_bh'
@@ -52,9 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('pvals', help='File with pvals after LRT')
     parser.add_argument('outpath', help='Outpath to save output to')
     parser.add_argument('--fdr_tr', type=float, help='FDR threshold for differential CAVs', default=0.05)
-    # parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
-    # parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5)
-    # parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
+    
     args = parser.parse_args()
     tested = pd.read_table(args.tested_variants)
     pvals = pd.read_table(args.pvals)
