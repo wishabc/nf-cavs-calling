@@ -129,7 +129,7 @@ class LRT:
         # LRT (ANOVA-like)
         result = self.tested_melt[['x', 'n', 'variant_id', 'group_id']].groupby(
             'variant_id'
-        ).progress_apply(self.test_snp)
+        ).progress_apply(self.test_snp).reset_index()
 
         result = tested_melt.merge(result)
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
