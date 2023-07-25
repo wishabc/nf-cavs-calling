@@ -105,5 +105,5 @@ if __name__ == '__main__':
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
     args = parser.parse_args()
-    pval_df = pd.read_table(args.I)
+    pval_df = pd.read_table(args.I, low_memory=False)
     main(pval_df).to_csv(args.O, sep='\t', index=False)
