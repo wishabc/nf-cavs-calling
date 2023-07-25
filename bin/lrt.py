@@ -108,9 +108,9 @@ class LRT:
             self.test_snp
         ).join(
             res.groupby('variant_id').agg(L2=('per_group_L2', 'sum'))
-        ).reset_index().merge(
-            self.tested_melt
-        ).merge(res)
+        ).reset_index().merge(res)
+    
+        assert len(result) == len(res)
 
         result['DL2'] = result.eval('L2 -L1')
 
@@ -145,7 +145,8 @@ if __name__ == '__main__':
     if data_wrapper.get_testable_snps().empty:
         result = pd.DataFrame([], columns=result_columns)
     else:
-        result = data_wrapper.run_anova()[result_columns].drop_duplicates()
+        result = data_wrapper.run_anova()[result_columns]
+        assert len(result) == len(result.drop_duplicates())
     
     data_wrapper.get_testable_snps().drop(
         columns=['x', 'n', 'variant_id']
