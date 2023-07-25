@@ -28,7 +28,6 @@ process LRT {
 
 process differential_cavs {
     conda params.conda
-    tag "${chromosome}"
     publishDir "${params.outdir}"
 
     input:
@@ -55,7 +54,7 @@ workflow differentialCavs {
         out = Channel.of(1..22, 'X', 'Y')
             | map(it -> "chr${it}")
             | combine(data)
-            | differential_cavs
+            | LRT
 
         pvals = out 
             | map(it -> it[0]) 
