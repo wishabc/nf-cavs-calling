@@ -40,7 +40,7 @@ def main(tested, pvals, fdr_tr=0.05):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
     parser.add_argument('tested_variants', help='Tested variants')
-    parser.add_argument('pvals', help='File with pvals after LRT')
+    parser.add_argument('pvals', help='File with pvals calculated in LRT script')
     parser.add_argument('outpath', help='Outpath to save output to')
     parser.add_argument('--fdr_tr', type=float, help='FDR threshold for differential CAVs', default=0.05)
     

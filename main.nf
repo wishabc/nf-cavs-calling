@@ -164,6 +164,38 @@ process collect_files {
     """
 }
 
+process pack_data {
+    conda params.conda
+    publishDir params.outdir
+    scratch true
+
+    input:
+        path aggregated_variants
+        path non_aggregated_variants
+    
+    output:
+        path sorted_aggregated, emit: aggregated
+        tuple path(sorted_non_aggregated), path("${sorted_non_aggregated}.tbi"), emit: non_aggregated
+        path name, emit: stats
+    
+    script:
+    sorted_aggregated = "aggregated.${params.aggregation_key}.sorted.bed"
+    sorted_non_aggregated = "non_aggregated.${params.aggregation_key}.sorted.bed.gz"
+    name = "cav_stats.${params.aggregation_key}.tsv"
+    """
+    head -1 ${aggregated_variants} > ${sorted_aggregated}
+    sort-bed ${aggregated_variants} >> ${sorted_aggregated}
+
+    head -1 ${non_aggregated_variants} > tmp.txt
+    sort-bed ${non_aggregated_variants} >> tmp.txt
+    bgzip -c tmp.txt > ${sorted_non_aggregated}
+    tabix ${sorted_non_aggregated}
+
+    python3 $moduleDir/bin/collect_stats.py ${sorted_aggregated} ${name}
+    """
+
+}
+
 workflow estimateBAD {
     take:
         snv_files
@@ -222,14 +254,13 @@ workflow aggregation {
         merged = merge_files(pvals)
         out = aggregate_pvals(merged, iter2_prefix)
         
-        out 
+        aggregated_merged = out 
             | map(it -> it[1])
             | collectFile(
                 storeDir: params.outdir,
                 skip: 1,
                 keepHeader: true,
-                sort: true,
-                name: "aggregated.${params.aggregation_key}.bed",
+                name: "aggregated.bed",
             )
         non_aggregated_merged = merged
             | map(it -> it[1])
@@ -237,12 +268,12 @@ workflow aggregation {
                 storeDir: params.outdir,
                 skip: 1,
                 keepHeader: true,
-                sort: true,
-                name: "non_aggregated.${params.aggregation_key}.bed",
+                name: "non_aggregated.bed",
             )
+        packed = pack_data(aggregated_merged, non_aggregated_merged)
     emit:
-        out
-        non_aggregated_merged
+        packed.aggregated
+        packed.non_aggregated
 }
 
 
@@ -289,9 +320,6 @@ workflow {
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
         | aggregation
-
-    // agg_files[1]
-    //     | differentialCavs
 }   
 
 
