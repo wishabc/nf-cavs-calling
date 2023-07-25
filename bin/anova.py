@@ -148,7 +148,7 @@ class LRT:
         
         # Group-wise aggregation
         group_wise_aggregation = calc_fdr(
-            result[differential_idxs].groupby('group_id').progress_apply(
+            result[differential_idxs].groupby('group_id').apply(
                 aggregate_pvalues_df
             )
         ).rename(
