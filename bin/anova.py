@@ -55,8 +55,8 @@ class LRT:
         es2, per_group_L2 = self.get_ml_es_estimation(df['x'], df['n'])
         es2_std = np.cosh(alpha * es2) / (alpha * np.sqrt(df['n'].sum()))
         return pd.Series(
-            [df.name, es2, es2_std, per_group_L2],
-            ['group_id', 'es2', 'es2_std', 'per_group_L2']
+            [es2, es2_std, per_group_L2],
+            ['es2', 'es2_std', 'per_group_L2']
         )
 
     def test_snp(self, df):
