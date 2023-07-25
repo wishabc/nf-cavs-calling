@@ -99,15 +99,15 @@ class LRT:
     def run_anova(self):
         # Total aggregation (find constitutive CAVs)
         res = self.tested_melt.groupby(
-            ['variant_id', 'group_id']
+            [*starting_columns, 'group_id']
         ).progress_apply(
             self.test_group
         ).reset_index()
 
-        result = self.tested_melt.groupby('variant_id').progress_apply(
+        result = self.tested_melt.groupby(starting_columns).progress_apply(
             self.test_snp
         ).join(
-            res.groupby('variant_id').agg(L2=('per_group_L2', 'sum'))
+            res.groupby(starting_columns).agg(L2=('per_group_L2', 'sum'))
         ).reset_index().merge(res)
     
         assert len(result) == len(res)
