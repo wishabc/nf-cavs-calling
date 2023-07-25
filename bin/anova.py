@@ -178,10 +178,10 @@ if __name__ == '__main__':
         min_groups_per_variant=args.min_groups,
         allele_tr=args.allele_tr
     )
-    if LRT.get_testable_snps().empty:
+    if data_wrapper.get_testable_snps().empty:
         result = pd.DataFrame([], columns=result_columns)
     else:
         result = data_wrapper.run_anova()
     
-    LRT.get_testable_snps().to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
+    data_wrapper.get_testable_snps().to_csv(f"{args.prefix}.tested.bed", sep='\t', index=False)
     result.to_csv(f"{args.prefix}.pvals.bed", sep='\t', index=False)
