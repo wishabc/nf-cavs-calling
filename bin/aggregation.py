@@ -11,8 +11,9 @@ tqdm.pandas()
 alleles = {'ref': 'alt', 'alt': 'ref'}
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
-keep_columns = [*starting_columns, 'AAF', 'RAF']
-result_columns = keep_columns + [
+
+result_columns = starting_columns + [
+    'AAF', 'RAF',
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
     'es_weighted_mean', 'es_mean', 
@@ -50,7 +51,7 @@ def logit_aggregate_pvalues(pval_list):
 
 
 def df_to_group(df):
-    return df.groupby(keep_columns)
+    return df.groupby(starting_columns)
 
 
 def aggregate_pvalues_df(pval_df):
@@ -71,9 +72,11 @@ def aggregate_pvalues_df(pval_df):
         mean_cover=('coverage', 'mean'),
         mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
+        AAF=('AAF', 'first'),
+        RAF=('RAF', 'first')
     )
     return df_to_group(
-            pval_df[[*keep_columns, 'es', 'min_pval', 'coverage']]
+            pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']]
         ).progress_apply(aggregate_es).join(snp_stats).reset_index()
 
 
