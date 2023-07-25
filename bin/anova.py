@@ -27,8 +27,9 @@ class LRT:
         self.min_groups_per_variant = min_groups_per_variant
         self.allele_tr = allele_tr
 
+        melt['variant_id'] = melt[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).agg('@'.join, axis=1)
+        
         melt['n'] = melt['coverage']
-
         melt['x'] = np.round(
             np.where(
                 melt['BAD'] == 1, 
@@ -39,9 +40,9 @@ class LRT:
 
         testable_pairs = self.find_testable_pairs(melt)
         # filter only testable variants + cell_types
-        self.tested_melt = melt.merge(
-            testable_pairs
-        )
+        self.tested_melt = melt.merge(testable_pairs)[
+            [*starting_columns, 'n', 'x', 'variant_id']
+        ]
         print(f'Testing {self.tested_melt["variant_id"].nunique()} variants')
         if self.tested_melt["variant_id"].nunique() == 0:
             print('No variants for LRT')
@@ -59,21 +60,12 @@ class LRT:
         )
 
     def test_snp(self, df):
-        res = df.groupby('group_id').apply(self.test_group).reset_index()
-
         m = df['group_id'].nunique()
         x = df['x'].to_numpy()
         n = df['n'].to_numpy()
         L0 = self.censored_binomial_likelihood(x, n, 0.5).sum()
-        L2 = res['per_group_L2'].sum()
         es1, L1 = self.get_ml_es_estimation(x, n)
-        res = res.assign(
-            es1=es1,
-            DL1=L1-L0,
-            DL2=L2-L1,
-            n_groups=m
-        )
-        return res
+        return pd.Series([es1, L1-L0, m], ['es1', 'DL1', 'n_groups'])
     
 
     def censored_binomial_likelihood(self, xs, ns, p):
@@ -121,10 +113,19 @@ class LRT:
         #     constitutive_df[[*starting_columns, 'min_fdr_overall']], 
         #     how='left'
         # )
-        print(self.tested_melt)
-        result = self.tested_melt[[*starting_columns, 'group_id', 'x', 'n']].groupby(
-            starting_columns
-        ).progress_apply(self.test_snp).reset_index().merge(self.tested_melt)
+        res = self.tested_melt[['variant_id', 'group_id', 'x', 'n']].groupby(
+            ['variant_id', 'group_id']
+        ).apply(self.test_group).reset_index()
+
+        result = self.tested_melt[['variant_id', 'group_id', 'x', 'n']].groupby(
+            'variant_id'
+        ).progress_apply(
+            self.test_snp
+        ).join(
+            res.groupby('variant_id').agg(DL2=('per_group_L2', 'sum'))
+        ).reset_index().merge(
+            self.tested_melt, on=['variant_id', 'group_id']
+        )
 
         print(f"Coeffs {len(result.index)}")
         result['p_overall'] = chi2.logsf(result['DL1'], 1)
