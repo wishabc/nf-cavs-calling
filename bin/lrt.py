@@ -112,7 +112,7 @@ class LRT:
             self.tested_melt
         ).merge(res)
 
-        res['DL2'] = res['L2'] - res['L1']
+        result['DL2'] = result.eval('L2 -L1')
 
         print(f"Coeffs {len(result.index)}")
         result['log_p_overall'] = chi2.logsf(result['DL1'], 1)
