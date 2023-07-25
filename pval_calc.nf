@@ -61,7 +61,7 @@ process exclude_cavs {
         -a ${aggregated_snps} \
         -b ${bad_annotations} \
         -O ${name} \
-        --fdr ${params.exclude_fdr_tr}
+        --fdr ${params.fdr_tr}
     """
 }
 

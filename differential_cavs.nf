@@ -44,7 +44,8 @@ process differential_cavs {
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
         ${pvals} \
-        ${name}
+        ${name} \
+        --fdr ${params.fdr_tr}
     """
 
 }
