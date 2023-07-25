@@ -50,10 +50,6 @@ def logit_aggregate_pvalues(pval_list):
     return st.combine_pvalues(pvalues, method='mudholkar_george')[1]
 
 
-def df_to_group(df):
-    return df.groupby(starting_columns)
-
-
 def aggregate_pvalues_df(pval_df):
     pval_df = pval_df.assign(
             **{col: pd.NA for col in 
@@ -61,7 +57,7 @@ def aggregate_pvalues_df(pval_df):
             if col not in pval_df.columns}
         )
     pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
-    groups = df_to_group(pval_df)
+    groups = pval_df.groupby(starting_columns)
     snp_stats = groups.agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
@@ -75,9 +71,11 @@ def aggregate_pvalues_df(pval_df):
         AAF=('AAF', 'first'),
         RAF=('RAF', 'first')
     )
-    return df_to_group(
-            pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']]
-        ).progress_apply(aggregate_es).join(snp_stats).reset_index()
+    return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
+        starting_columns
+    ).progress_apply(
+        aggregate_es
+    ).join(snp_stats).reset_index()
 
 
 def calc_fdr(aggr_df):

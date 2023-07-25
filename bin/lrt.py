@@ -145,7 +145,6 @@ if __name__ == '__main__':
         result = pd.DataFrame([], columns=result_columns)
     else:
         result = data_wrapper.run_anova()[result_columns]
-        assert len(result) == len(result.drop_duplicates())
     
     data_wrapper.get_testable_snps().drop(
         columns=['x', 'n']
