@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--fdr_tr', type=float, help='FDR threshold for differential CAVs', default=0.05)
     
     args = parser.parse_args()
-    tested = pd.read_table(args.tested_variants)
+    tested = pd.read_table(args.tested_variants, low_memory=False)
     pvals = pd.read_table(args.pvals)
     res_df = main(tested, pvals, args.fdr_tr)
     print(len(res_df.index), len(pvals.index))
