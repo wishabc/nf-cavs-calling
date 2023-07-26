@@ -157,11 +157,10 @@ workflow scanWithMoods {
 workflow cavsMotifEnrichment {
     take:
         data
-        aggregated_file
     main:
         out = data 
             | motifCounts // motif_hits, motif_hits_index
-            | combine(aggregated_file)
+            | combine(Channel.fromPath(params.result_file))
             | calc_enrichment
             | map(it -> it[2])
             | collectFile(
@@ -178,7 +177,6 @@ workflow {
     data = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
         | collect(sort: true)
         | filter_tested_variants
-    aggregated_file = Channel.fromPath(params.result_file)
-    cavsMotifEnrichment(data, aggregated_file)
+        | cavsMotifEnrichment
 
 }

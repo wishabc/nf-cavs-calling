@@ -116,10 +116,10 @@ workflow {
     sample_wise_pvals
         | annotateLD
 
-    sample_wise_pvals
+    data = sample_wise_pvals
         | collect(sort: true)
         | filter_tested_variants
-        | (extract_context & mutationRates & annotate_with_phenotypes & cavsMotifEnrichment)
+        | (extract_context & mutationRates & annotate_with_phenotypes)
         | flatten()
         | view()
         // | merge_results
