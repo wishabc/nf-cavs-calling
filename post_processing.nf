@@ -81,7 +81,7 @@ process extract_context {
 // Annotates with pheWAS, clinvar, finemapping, grasp, ebi-gwas phenotypes
 process annotate_with_phenotypes {
     conda params.conda
-    publishDir "${params.outdir}"
+    publishDir params.outdir
 
     input:
         path pval_file
@@ -96,6 +96,28 @@ process annotate_with_phenotypes {
     """
 }
 
+process merge_results {
+    conda params.conda
+    publishDir params.outdir
+
+    input:
+        context
+        mutation_rates
+        phenotypes
+    
+    output:
+        name
+    
+    script:
+    name = "cavs.annotations.bed"
+    """
+    python3 $moduleDir/bin/merge_annotations.py \
+        ${context} \
+        ${mutation_rates} \
+        ${phenotypes} \
+        ${name}
+    """
+}
 
 workflow mutationRates {
     take:
