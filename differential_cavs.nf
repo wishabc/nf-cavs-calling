@@ -5,7 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 process LRT {
     conda params.conda
     tag "${chromosome}"
-    memory 40.GB
+    label "high_mem"
 
     input:
         tuple val(chromosome), path(input_data)

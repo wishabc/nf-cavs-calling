@@ -14,7 +14,7 @@ process process_mutation_rates {
     tag "${vcf.simpleName}"
     scratch true
     conda params.conda
-    label "highmem"
+    label "med_mem"
 
     input:
         tuple  path(vcf), path(variants_file)
@@ -111,6 +111,9 @@ workflow mutationRates {
 }
 
 workflow {
+    Channel.fromPath(params.nonagr_pvals)
+        differentialCavs
+
     sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
 
     data = sample_wise_pvals
@@ -119,16 +122,12 @@ workflow {
     
     annotateLD(sample_wise_pvals, data)
     
-    
+    cavsMotifEnrichment()
 
     // merge_results(
         extract_context(data)
         mutationRates(data)
         annotate_with_phenotypes(data)
     // )
-    
-    Channel.fromPath(params.nonagr_pvals)
-        differentialCavs
-
 
 }

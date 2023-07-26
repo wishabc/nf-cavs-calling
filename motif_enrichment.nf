@@ -5,6 +5,29 @@ include { filter_tested_variants } from "./main"
 params.conda = "$moduleDir/environment.yml"
 
 
+process make_iupac_genome {
+	conda "${params.conda}"
+    tag "${prefix}"
+	publishDir "${params.outdir}/alt_genome"
+
+	input:
+		val sample_id
+
+	output:
+		tuple path(name), path("${name}.fai")
+
+	script:
+    prefix = "all_samples"
+	name = "${prefix}.iupac.genome.fa"
+    """
+    python3 $moduleDir/bin/nonref_genome.py \
+        ${params.genome_fasta_file} \
+        ${params.genotype_file} \
+        ${name}
+    """
+}
+
+
 process scan_with_moods {
     conda params.conda
     tag "${motif_id}"
@@ -12,7 +35,7 @@ process scan_with_moods {
     publishDir "${params.moods_scans_dir}", pattern: "${name}", mode: "move"
 
     input:
-        tuple val(motif_id), path(pwm_path)
+        tuple val(motif_id), path(pwm_path), path(alt_fasta_file), path(fasta_index)
 
     output:
         tuple val(motif_id), path(pwm_path), path(name)
@@ -21,7 +44,7 @@ process scan_with_moods {
     name = "${motif_id}.moods.log.bed.gz"
     moods_params = file(params.bg_file).exists() ? "--lo-bg `cat ${params.bg_file}`" : ""
     """
-    moods-dna.py --sep ";" -s ${params.alt_fasta_file} \
+    moods-dna.py --sep ";" -s ${alt_fasta_file} \
         --p-value ${params.motif_pval_tr} \
         ${moods_params} \
         -m "${pwm_path}" \
@@ -115,7 +138,7 @@ process calc_enrichment {
     python3 ${projectDir}/bin/motif_stats.py  \
         ${pval_file} ${counts_file} ${name} \
         --flank_width ${params.flank_width} \
-        --fdr_tr ${params.fdr_tr}
+        --fdr ${params.fdr_tr}
     """
 }
 
@@ -151,7 +174,9 @@ workflow readMotifsList {
 
 // ------------ Entry workflows -------------------
 workflow scanWithMoods {
-    readMotifsList() | scan_with_moods
+    readMotifsList()
+        | combine(make_iupac_genome())
+        | scan_with_moods
 }
 
 workflow cavsMotifEnrichment {
