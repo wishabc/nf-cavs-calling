@@ -103,7 +103,6 @@ process merge_annotations {
     input:
         path context
         path mutation_rates
-        path phenotypes
     
     output:
         path name
@@ -114,7 +113,6 @@ process merge_annotations {
     python3 $moduleDir/bin/merge_annotations.py \
         ${context} \
         ${mutation_rates} \
-        ${phenotypes} \
         tmp.bed
     
     head -1 tmp.bed > res.bed
@@ -148,12 +146,11 @@ workflow {
     
     annotateLD(sample_wise_pvals, data)
     
-    cavsMotifEnrichment(data)
+    data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
     merge_annotations(
         extract_context(data),
         mutationRates(data),
-        annotate_with_phenotypes(data)
     )
 
 }
