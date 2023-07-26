@@ -224,7 +224,10 @@ process pack_data {
     bgzip -c tmp.txt > ${sorted_non_aggregated}
     tabix ${sorted_non_aggregated}
 
-    python3 $moduleDir/bin/collect_stats.py ${sorted_aggregated} ${name}
+    python3 $moduleDir/bin/collect_stats.py \
+        ${sorted_aggregated} \
+        ${name} \
+        --fdr ${params.fdr_tr}
     """
 
 }
