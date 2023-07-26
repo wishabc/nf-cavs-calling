@@ -112,7 +112,7 @@ workflow mutationRates {
 
 workflow {
     Channel.fromPath(params.nonagr_pvals)
-        differentialCavs
+        | differentialCavs
 
     sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
 
