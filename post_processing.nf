@@ -7,8 +7,6 @@ include { differentialCavs } from "./differential_cavs"
 
 // Put in the Apptainer
 params.conda = "$moduleDir/environment.yml"
-params.phenotypes_data = "/home/sabramov/phenotypes_data"
-
 
 process process_mutation_rates {
     tag "${vcf.simpleName}"
@@ -88,6 +86,9 @@ process annotate_with_phenotypes {
 
     output:
         path name
+        
+    when:
+        file(params.phenotypes_data, type: 'dir').exists()
 
     script:
     name = "phenotypes_ann.bed"
@@ -146,7 +147,7 @@ workflow {
         | filter_tested_variants
     
     annotateLD(sample_wise_pvals, data)
-    
+
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
     merge_annotations(
