@@ -119,9 +119,14 @@ workflow {
     data = sample_wise_pvals
         | collect(sort: true)
         | filter_tested_variants
-        | (extract_context & mutationRates & annotate_with_phenotypes)
-        | view()
-        // | merge_results
+    
+    
+
+    // merge_results(
+        extract_context(data)
+        mutationRates(data)
+        annotate_with_phenotypes(data)
+    // )
     
     Channel.fromPath(params.nonagr_pvals)
         | differentialCavs
