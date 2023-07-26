@@ -107,6 +107,6 @@ workflow annotateLD {
 }
 
 workflow {
-    Channel.fromPath("${params.by_sample_pval_files}/*.bed") 
+    Channel.fromPath("${params.raw_pvals_dir}/*.bed") 
         | annotateLD
 }
