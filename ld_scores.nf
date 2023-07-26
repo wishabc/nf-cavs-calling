@@ -98,6 +98,8 @@ workflow annotateLD {
             | intersect_with_tested_variants
             | collectFile(
                 storeDir: params.outdir,
+                keepHeader: true,
+                skip: 1,
                 name: "ld_scores.annotated_samples.geno.ld"
             )
     emit:

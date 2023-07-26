@@ -17,6 +17,7 @@ process LRT {
     pvals = "${chromosome}.pvals.bed"
     tested = "${chromosome}.tested.bed"
     """
+    
     python3 $moduleDir/bin/lrt.py \
         ${input_data} \
         ${chromosome} \
