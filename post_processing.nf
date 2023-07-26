@@ -122,7 +122,7 @@ workflow {
     
     annotateLD(sample_wise_pvals, data)
     
-    cavsMotifEnrichment()
+    cavsMotifEnrichment(data)
 
     // merge_results(
         extract_context(data)
