@@ -120,7 +120,6 @@ workflow {
         | collect(sort: true)
         | filter_tested_variants
         | (extract_context & mutationRates & annotate_with_phenotypes)
-        | flatten()
         | view()
         // | merge_results
     
