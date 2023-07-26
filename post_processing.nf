@@ -81,6 +81,7 @@ process extract_context {
 process annotate_with_phenotypes {
     conda params.conda
     publishDir params.outdir
+    label "high_mem"
 
     input:
         path pval_file
