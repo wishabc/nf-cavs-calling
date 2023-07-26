@@ -113,8 +113,8 @@ workflow mutationRates {
 workflow {
     sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
     
-    sample_wise_pvals
-        | annotateLD
+    
+    annotateLD(sample_wise_pvals, data)
 
     data = sample_wise_pvals
         | collect(sort: true)
@@ -129,7 +129,7 @@ workflow {
     // )
     
     Channel.fromPath(params.nonagr_pvals)
-        | differentialCavs
+        differentialCavs
 
 
 }

@@ -80,14 +80,11 @@ process intersect_with_tested_variants {
 workflow annotateLD {
     take:
         samples
+        data
     main:
-        uniq_vars = samples
-            | collect(sort: true)
-            | filter_tested_variants
-
         out = Channel.of(1..22)
             | map(it -> "chr${it}")
-            | combine(uniq_vars)
+            | combine(data)
             | ld_scores
             | collectFile(
                 keepHeader: true,
