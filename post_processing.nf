@@ -101,9 +101,9 @@ process merge_annotations {
     scratch true
 
     input:
-        context
-        mutation_rates
-        phenotypes
+        path context
+        path mutation_rates
+        path phenotypes
     
     output:
         name
