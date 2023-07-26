@@ -18,6 +18,7 @@ dependencies:
   - samtools=1.15
   - tqdm
   - pip
+  - vcftools
   - pip:
     - babachi
 prefix: /home/sabramov/miniconda3/envs/cavs-calling
