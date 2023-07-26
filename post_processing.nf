@@ -151,8 +151,8 @@ workflow {
     cavsMotifEnrichment(data)
 
     merge_annotations(
-        extract_context(data)
-        mutationRates(data)
+        extract_context(data),
+        mutationRates(data),
         annotate_with_phenotypes(data)
     )
 
