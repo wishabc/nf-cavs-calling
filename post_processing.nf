@@ -106,7 +106,7 @@ process merge_annotations {
         path phenotypes
     
     output:
-        name
+        path name
     
     script:
     name = "cavs.annotations.bed.gz"
