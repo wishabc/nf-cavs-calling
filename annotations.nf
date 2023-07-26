@@ -122,6 +122,7 @@ workflow {
         | (extract_context & mutationRates & annotate_with_phenotypes & cavsMotifEnrichment)
         | flatten()
         | view()
+        // | merge_results
     
     Channel.fromPath(params.nonagr_pvals)
         | differentialCavs
