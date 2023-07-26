@@ -36,10 +36,11 @@ process differential_cavs {
         path tested_snps
 
     output:
-        path name
+        tuple path(name), path(tested_new)
 
     script:
-    name = "differential_pvals.${params.aggregation_key}.bed"
+    pvals_new = "differential_pvals.${params.aggregation_key}.bed"
+    tested_new = "differential_tested.${params.aggregation_key}.bed"
     """
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
@@ -49,6 +50,9 @@ process differential_cavs {
 
     head -1 tmp.bed > ${name}
     sort-bed tmp.bed >> ${name}
+
+    head - 1 ${tested_snps} > ${tested_new}
+    sort-bed ${tested_snps} >> ${tested_new}
     """
 
 }

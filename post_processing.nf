@@ -36,7 +36,6 @@ process process_mutation_rates {
 }
 
 process merge_and_sort {
-    publishDir "${params.outdir}"
     conda params.conda
     scratch true
 
@@ -60,7 +59,6 @@ process merge_and_sort {
 process extract_context {
     conda params.conda
     scratch true
-    publishDir "${params.outdir}"
 
     input:
         path variants
@@ -70,11 +68,12 @@ process extract_context {
     script:
     name = "variants_context.bed"
     """
+    echo -e "#chr\tstart\tend\tcontext" > ${name}
     cat ${variants} \
         | awk -v OFS='\t' '{ print \$1,\$2-${params.window},\$3+${params.window} }' \
         | uniq > variants.bed 
     bedtools getfasta -fi ${params.genome_fasta_file} -bed variants.bed -bedOut \
-        | awk -v OFS='\t' '{ print \$1,\$2+${params.window},\$3-${params.window},\$4 }' > ${name}
+        | awk -v OFS='\t' '{ print \$1,\$2+${params.window},\$3-${params.window},\$4 }' >> ${name}
     """
 }
 
@@ -96,9 +95,10 @@ process annotate_with_phenotypes {
     """
 }
 
-process merge_results {
+process merge_annotations {
     conda params.conda
     publishDir params.outdir
+    scratch true
 
     input:
         context
@@ -109,13 +109,17 @@ process merge_results {
         name
     
     script:
-    name = "cavs.annotations.bed"
+    name = "cavs.annotations.bed.gz"
     """
     python3 $moduleDir/bin/merge_annotations.py \
         ${context} \
         ${mutation_rates} \
         ${phenotypes} \
-        ${name}
+        tmp.bed
+    
+    head -1 tmp.bed > res.bed
+    sort-bed tmp.bed >> res.bed
+    bgzip -c res.bed > ${name}
     """
 }
 
@@ -146,10 +150,10 @@ workflow {
     
     cavsMotifEnrichment(data)
 
-    // merge_results(
+    merge_annotations(
         extract_context(data)
         mutationRates(data)
         annotate_with_phenotypes(data)
-    // )
+    )
 
 }

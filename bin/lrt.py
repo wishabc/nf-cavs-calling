@@ -17,7 +17,7 @@ result_columns = [
     'group_id', 'n_groups',
     'log_p_overall',
     'log_p_differential',
-    'es1', 'es2', 'es2_std',
+    'overall_es', 'group_es', 'group_es_std',
     'DL1', 'DL2'
 ]
 class LRT:
@@ -53,7 +53,7 @@ class LRT:
         es2_std = np.cosh(alpha * es2) / (alpha * np.sqrt(df['n'].sum()))
         return pd.Series(
             [es2, es2_std, per_group_L2],
-            ['es2', 'es2_std', 'per_group_L2']
+            ['group_es', 'group_es_std', 'per_group_L2']
         )
 
     def test_snp(self, df):
@@ -62,7 +62,7 @@ class LRT:
         n = df['n'].to_numpy()
         L0 = self.censored_binomial_likelihood(x, n, 0.5).sum()
         es1, L1 = self.get_ml_es_estimation(x, n)
-        return pd.Series([es1, L1, L1-L0, n_groups], ['es1', 'L1', 'DL1', 'n_groups'])
+        return pd.Series([es1, L1, L1-L0, n_groups], ['overall_es', 'L1', 'DL1', 'n_groups'])
     
 
     def censored_binomial_likelihood(self, xs, ns, p):
