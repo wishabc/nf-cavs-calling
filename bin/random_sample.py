@@ -10,7 +10,6 @@ from aggregation import calc_fdr
 tqdm.pandas()
 
 maf_bins_fr = [0.00001, 0.0001, 0.001, 0.01, 0.05, 0.1, 0.2]
-mutations = ['C>A', 'C>T', 'C>G', 'T>A']
 
 
 def get_sampling_df(df):
@@ -85,61 +84,6 @@ def sample_index(n_aggregated, random_state=42):
     sample_ind = sample_ind.reset_index().rename(columns={'index': 'variant_id'})
     return pd.MultiIndex.from_frame(sample_ind)
 
-def comp(x):
-    return {
-        'A': 'T',
-        'C': 'G',
-        'G': 'C',
-        'T': 'A'
-    }.get(x)
-
-def revcomp(s):
-    return ''.join([comp(x) for x in s[::-1]])
-
-def palindromic(ref, alt):
-    return {ref, alt} == {'A', 'T'} or {ref, alt} == {'G', 'C'}
-
-def get_mutation_stats(row):
-    ref = row['ref']
-    alt = row['alt']
-    assert row['sequence'][20] == ref
-    preceding = row['sequence'][:20]
-    following = row['sequence'][21:]
-    flank_len = len(preceding)
-    if palindromic(ref, alt):
-        initial_fwd = f'{ref}>{alt}' in mutations
-        ref_orient = True
-        fwd = initial_fwd  # if cycle dosen't break
-        palindromic_res = [True] + [False] * flank_len
-        for i in range(flank_len):
-            left = preceding[-i - 1]
-            right = following[i]
-            if not palindromic(left, right):
-                fwd = 'T' not in {left, right} and not (left == right == 'G')
-                ref_orient = not (fwd ^ initial_fwd)
-                break
-            palindromic_res[i + 1] = True
-        if initial_fwd:
-            sub = f'{ref}>{alt}'
-        else:
-            sub = f'{alt}>{ref}'
-        
-    else:        
-        palindromic_res = [False] * (flank_len + 1)
-        for sub, ref_orient, fwd in [
-            (f'{ref}>{alt}', True, True),
-            (f'{comp(ref)}>{comp(alt)}', True, False),
-            (f'{alt}>{ref}', False, True),
-            (f'{comp(alt)}>{comp(ref)}', False, False),
-        ]:
-            if sub in mutations:
-                break
-            
-    if not fwd:
-        preceding, following = revcomp(following), revcomp(preceding)
-        
-    return pd.Series(list(preceding)[-3:] + list(following)[:3] + [sub, fwd, ref_orient] + palindromic_res[:4])
-
 
 def make_full_df(input_df, annotation_df, non_cpg):
     es_mean = input_df.groupby(['#chr', 'start', 'end', 'ref', 'alt'])['es'].mean().reset_index().rename(
@@ -148,7 +92,6 @@ def make_full_df(input_df, annotation_df, non_cpg):
     
     input_df = input_df.merge(annotation_df).merge(es_mean)
 
-    input_df['chr'] = input_df['#chr']
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(lambda x: pd.to_numeric(x, errors='coerce'))
     input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
     input_df = input_df[pd.notna(input_df['MAF'])]
@@ -177,13 +120,7 @@ def make_full_df(input_df, annotation_df, non_cpg):
         ~input_df['ref_orient'],
     )
 
-    input_df['pref_orient'] = np.where(input_df['ref_orient'], 
-        input_df['es_weighted_mean'] > 0, input_df['es_weighted_mean'] < 0)
-
     input_df['signature1'] = input_df.apply(lambda row: f"{row['-1']}[{row['sub']}]{row['1']}", axis=1)
-    input_df['signature2'] = input_df.apply(lambda row: f"{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}", axis=1)
-    input_df['signature3'] = input_df.apply(lambda row: f"{row['-3']}{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}{row['3']}", axis=1)
-    input_df['cpg'] = ((input_df['sub'] != 'A>T') & (input_df['1'] == 'G')) | ((input_df['sub'] == 'C>G') & (input_df['-1'] == 'C'))
     return input_df
 
 
@@ -230,5 +167,11 @@ if __name__ == '__main__':
         annotation_df,
         args.noncpg
     )
+    input_df['pref_orient'] = np.where(
+        input_df['ref_orient'], 
+        input_df['es_weighted_mean'] > 0,
+        input_df['es_weighted_mean'] < 0
+    )
+
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)

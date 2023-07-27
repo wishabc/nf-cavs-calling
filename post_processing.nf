@@ -157,6 +157,6 @@ workflow {
     )
     nonagr_files
         | combine(annotation)
-        | sampleVariants
+        //| sampleVariants
 
 }
