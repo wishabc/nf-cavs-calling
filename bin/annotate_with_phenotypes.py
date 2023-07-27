@@ -155,7 +155,7 @@ def parse_gtex(snps_pos, qtlfiles, transqtl):
 
 
 def arr_to_str(arr):
-    non_nans = [x for x in arr if x is not None]
+    non_nans = [remove_phen_name_punctuation(x) for x in arr if x is not None]
     if len(non_nans) == 0:
         return ""
     return '|'.join(sorted(non_nans))
