@@ -77,10 +77,10 @@ def aggregate_pvalues_df(pval_df):
     ).join(snp_stats).reset_index()
 
 
-def calc_fdr(aggr_df):
+def calc_fdr(aggr_df, prefix='logit_pval_'):
     for allele in alleles:
         aggr_df[f"fdrp_bh_{allele}"] = multipletests(
-                    aggr_df[f'logit_pval_{allele}'],
+                    aggr_df[f'{prefix}{allele}'],
                     alpha=0.05,
                     method='fdr_bh'
                 )[1]

@@ -5,7 +5,7 @@ import scipy.stats as st
 import numpy as np
 from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
-
+from aggregation import calc_fdr
 
 tqdm.pandas()
 
@@ -50,44 +50,28 @@ def frac_bins_data(df):
     })
 
 
-def get_fraction_trend_from_df(df, maf_bins=maf_bins_fr, estimate=False):
-    signature = 'signature1'
-    #  ctx_label = 'CTX3'
+def get_fraction_trend_from_df(df):
+    cts = df.pivot_table(index='signature1', columns='imbalanced', values='ID', aggfunc='count')
     
-    cts = df.pivot_table(index=signature, columns='imbalanced', values='ID', aggfunc='count')
     ctsx = (pd.isna(cts) | (cts <= 2)).iloc[:, 0] + (pd.isna(cts) | (cts <= 2)).iloc[:, 1]
     singular_signatures = ctsx[ctsx].index
 
-    all_data = df[~df[signature].isin(singular_signatures)
-                  & df['MAF'].notna() & (df['MAF'] > min(maf_bins))
-                  & (df['MAF'] <= max(maf_bins))]
+    all_data = df[~df['signature1'].isin(singular_signatures) & ~pd.isna(df['maf_bin'])]
     
-    all_data['MAF_rank'] = all_data['MAF'].rank()
-    all_data['imbalanced_numeric'] = all_data['imbalanced'].astype(int)
-    all_data['maf_bin'] = pd.cut(all_data['MAF'], bins=maf_bins)
+    reduced = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette", data=all_data).fit(maxiter=50)
+    full = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette + MAF_rank", data=all_data).fit(maxiter=50)
+    ctxp = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient", data=all_data).fit(maxiter=50)
     
+    all_data['reduced'] = reduced.predict(all_data)
+    all_data['full'] = full.predict(all_data)
+    all_data['ctx'] = ctxp.predict(all_data)
+    
+    gb = all_data.groupby('maf_bin')[['reduced', 'full', 'ctx']].mean()
+
     frac_reg = all_data.groupby('maf_bin').apply(frac_bins_data).droplevel(1)
-    
-    if estimate:
-        reduced = smf.logit(f"imbalanced_numeric ~ {signature}*pref_orient + FMR + BAD + mut_rates_roulette", data=all_data).fit(maxiter=50)
-        full = smf.logit(f"imbalanced_numeric ~ {signature}*pref_orient + FMR + BAD + mut_rates_roulette + MAF_rank", data=all_data).fit(maxiter=50)
-        ctxp = smf.logit(f"imbalanced_numeric ~ {signature}*pref_orient", data=all_data).fit(maxiter=50)
-
-        llr = full.llf - reduced.llf
-        pval = st.chi2.sf(llr, df=1)
-    
-        all_data['reduced'] = reduced.predict(all_data)
-        all_data['full'] = full.predict(all_data)
-        all_data['ctx'] = ctxp.predict(all_data)
-    
-        gb = all_data.groupby('maf_bin')[['reduced', 'full', 'ctx']].mean()
-
-        frac_reg[['reduced', 'full', 'ctx']] = gb[['reduced', 'full', 'ctx']]
-    else:
-        llr = 0
-        pval = 1
-    frac_reg['llr'] = llr
-    frac_reg['pval'] = pval
+    frac_reg[['reduced', 'full', 'ctx']] = gb[['reduced', 'full', 'ctx']]
+    frac_reg['llr'] = full.llf - reduced.llf
+    frac_reg['pval'] = st.chi2.sf(frac_reg['llr'], df=1)
 
     return frac_reg
 
@@ -180,10 +164,12 @@ def make_full_df(input_df, annotation_df, non_cpg):
     input_df.loc[input_df['es_maj'] == 0, 'imbalanced_side_is_major'] = np.nan
 
 
+    ## FIX below
     input_df[
-            ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
-            + [f'palindromic_{i}' for i in range(1, 4)]
-        ] = input_df.apply(get_mutation_stats, axis=1)
+            ['-3', '-2', '-1', '1', '2', '3', 
+            'sub', 'fwd', 'ref_orient', 'palindromic', 
+            *[f'palindromic_{i}' for i in range(1, 4)]]
+        ] = input_df.progress_apply(get_mutation_stats, axis=1)
 
     input_df['maj_orient'] = np.where(
         input_df['ref_is_major'], 
@@ -197,9 +183,7 @@ def make_full_df(input_df, annotation_df, non_cpg):
     input_df['signature1'] = input_df.apply(lambda row: f"{row['-1']}[{row['sub']}]{row['1']}", axis=1)
     input_df['signature2'] = input_df.apply(lambda row: f"{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}", axis=1)
     input_df['signature3'] = input_df.apply(lambda row: f"{row['-3']}{row['-2']}{row['-1']}[{row['sub']}]{row['1']}{row['2']}{row['3']}", axis=1)
-    if non_cpg:
-        input_df['cpg'] = ((input_df['sub'] != 'A>T') & (input_df['1'] == 'G')) | ((input_df['sub'] == 'C>G') & (input_df['-1'] == 'C'))
-        input_df = input_df[~input_df['cpg']]
+    input_df['cpg'] = ((input_df['sub'] != 'A>T') & (input_df['1'] == 'G')) | ((input_df['sub'] == 'C>G') & (input_df['-1'] == 'C'))
     return input_df
 
 
@@ -216,13 +200,11 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
             seed
         )
         sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
-        #sample_df = sample_df.sample(frac=0.75, random_state=seed, axis=0)
-        sample_df['FDR'] = multipletests(
-                    sample_df['min_pval'],
-                    method='fdr_bh'
-                )[1]
-        sample_df['imbalanced'] = (sample_df['FDR'] <= 0.05) #& (np.abs(sample_df['es']) >= np.log2(1.5))
-        frac = get_fraction_trend_from_df(sample_df, estimate=True)
+        sample_df = calc_fdr(sample_df, prefix='pval_')
+        sample_df['imbalanced'] = (sample_df['min_fdr'] <= 0.05)
+        sample_df['imbalanced_numeric'] = sample_df['imbalanced'].astype(int)
+    
+        frac = get_fraction_trend_from_df(sample_df)
         frac_regs.append(frac)
 
     return pd.concat(frac_regs)
@@ -230,14 +212,15 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Sampling one of recurrent variants")
-    parser.add_argument('-I', help='Non-aggregated BED file')
-    parser.add_argument('-a', help='File with annotations')
-    parser.add_argument('-O', help='File to save calculated metrics')
+    parser.add_argument('I', help='Non-aggregated BED file')
+    parser.add_argument('a', help='File with annotations')
+    parser.add_argument('O', help='File to save calculated metrics')
     parser.add_argument('--noncpg', help='Use only non-cpg', default=False, action="store_true")
     parser.add_argument('--start', type=int, help='Start value for seed', default=10)
     parser.add_argument('--step', type=int, help='Step size for seed values', default=10)
 
     args = parser.parse_args()
+
     input_df = pd.read_table(args.I)
     annotation_df = pd.read_table(args.a)
     print('Preprocessing df')

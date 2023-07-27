@@ -138,7 +138,7 @@ workflow mutationRates {
 }
 
 workflow {
-    Channel.fromPath(params.nonagr_pvals)
+    nonagr_files = Channel.fromPath(params.nonagr_pvals)
         | differentialCavs
 
     sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
@@ -151,9 +151,12 @@ workflow {
 
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
-    merge_annotations(
+    annotation = merge_annotations(
         extract_context(data),
         mutationRates(data),
     )
+    nonagr_files
+        | combine(annotation)
+        | sampleVariants
 
 }
