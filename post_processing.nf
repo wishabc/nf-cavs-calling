@@ -113,6 +113,7 @@ process merge_annotations {
     script:
     name = "cavs.annotations.bed.gz"
     """
+    
     python3 $moduleDir/bin/merge_annotations.py \
         ${context} \
         ${mutation_rates} \
