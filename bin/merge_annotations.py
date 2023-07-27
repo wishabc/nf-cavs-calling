@@ -25,7 +25,9 @@ def get_mutation_stats(row):
     alt = row['alt']
     sequence = row['sequence']
     preceding, ref_at_seq, following = sequence[:20], sequence[20], sequence[21:]
-    assert ref_at_seq == ref
+    if ref_at_seq != ref:
+        print(ref, ref_at_seq)
+        raise ValueError
 
     flank_len = len(preceding)
     if palindromic(ref, alt):

@@ -125,6 +125,50 @@ process merge_annotations {
     """
 }
 
+process random_sample {
+    tag "${step_start}"
+    conda params.conda
+
+    input:
+        tuple val(step_start), path(non_aggregated_file), path(annotations_file)
+
+    output:
+        path name
+
+    script:
+    name = "${step_start}.sampling.tsv"
+    """
+    python3 $moduleDir/bin/random_sample.py \
+        ${non_aggregated_file} \
+        ${annotations_file} \
+        ${name} \
+        --start ${step_start} \
+        --step ${params.samples_per_job}
+    """
+}
+
+workflow sampleVariants {
+    take:
+        data
+    main:
+        params.sampling_count = 1000
+        params.samples_per_job = 10
+        total_count = params.sampling_count * params.samples_per_job 
+        out = Channel.of(1..params.sampling_count) 
+            | map(it -> it * params.samples_per_job)
+            | combine(data)
+            | random_sample
+            | collectFile(
+                storeDir: params.outdir,
+                name: "subsampled.n${total_count}.tsv",
+                keepHeader: true,
+                skip: 1
+            )
+    emit:
+        out
+        
+}
+
 workflow mutationRates {
     take:
         data
@@ -152,12 +196,11 @@ workflow {
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
     annotation = merge_annotations(
-        extract_context(data),
-        mutationRates(data),
+        extract_context(data), mutationRates(data)
     )
     differentialCavs(nonagr_files)
     nonagr_files
         | combine(annotation)
-        //| sampleVariants
+        | sampleVariants
 
 }
