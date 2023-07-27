@@ -212,8 +212,8 @@ process pack_data {
         path name, emit: stats
     
     script:
-    sorted_aggregated = "aggregated.${params.aggregation_key}.sorted.bed"
-    sorted_non_aggregated = "non_aggregated.${params.aggregation_key}.sorted.bed.gz"
+    sorted_aggregated = "aggregated.${params.aggregation_key}.bed"
+    sorted_non_aggregated = "non_aggregated.${params.aggregation_key}.bed.gz"
     name = "cav_stats.${params.aggregation_key}.tsv"
     """
     head -1 ${aggregated_variants} > ${sorted_aggregated}
@@ -293,7 +293,6 @@ workflow aggregation {
         aggregated_merged = out 
             | map(it -> it[1])
             | collectFile(
-                storeDir: params.outdir,
                 skip: 1,
                 keepHeader: true,
                 name: "aggregated.bed",
@@ -301,7 +300,6 @@ workflow aggregation {
         non_aggregated_merged = merged
             | map(it -> it[1])
             | collectFile(
-                storeDir: params.outdir,
                 skip: 1,
                 keepHeader: true,
                 name: "non_aggregated.bed",
