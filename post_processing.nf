@@ -104,6 +104,7 @@ process merge_annotations {
     scratch true
 
     input:
+        path unique_snps
         path context
         path mutation_rates
     
@@ -115,6 +116,7 @@ process merge_annotations {
     """
     
     python3 $moduleDir/bin/merge_annotations.py \
+        ${unique_snps} \
         ${context} \
         ${mutation_rates} \
         tmp.bed
@@ -196,7 +198,7 @@ workflow {
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
     annotation = merge_annotations(
-        extract_context(data), mutationRates(data)
+        data, extract_context(data), mutationRates(data)
     )
     differentialCavs(nonagr_files)
     nonagr_files

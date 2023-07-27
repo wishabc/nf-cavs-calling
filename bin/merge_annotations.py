@@ -65,8 +65,11 @@ def get_mutation_stats(row):
     return pd.Series([f"{preceding[-1]}[{sub}]{following[0]}", sub, fwd, ref_orient])
 
 
-def main(context, mutation_rates):
-    result = context.merge(
+def main(unique_snps, context, mutation_rates):
+    result = unique_snps.merge(context)
+    assert len(result.index) == len(unique_snps.index)
+    
+    result = result.merge(
         mutation_rates, how='left'
     )
     result[['signature1', 'sub', 'fwd', 'ref_orient']] = result.progress_apply(
@@ -78,9 +81,10 @@ def main(context, mutation_rates):
 
 
 if __name__ == '__main__':
-    context = pd.read_table(sys.argv[1])
-    mutation_rates = pd.read_table(sys.argv[2])
+    unique_snps = pd.read_table(sys.argv[1])
+    context = pd.read_table(sys.argv[2])
+    mutation_rates = pd.read_table(sys.argv[3])
     
-    main(context, mutation_rates).to_csv(
-        sys.argv[3], sep='\t', index=False
+    main(unique_snps, context, mutation_rates).to_csv(
+        sys.argv[4], sep='\t', index=False
     )
