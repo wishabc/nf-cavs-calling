@@ -151,7 +151,7 @@ def parse_gtex(snps_pos, qtlfiles, transqtl):
     cis = pd.DataFrame(cis).groupby(['#chr', 'end']).agg(
         cis=('cis', arr_to_str)
     ).reset_index()
-    return snps_pos.merge(cis, how='outer').merge(trans, how='outer')
+    return snps_pos.merge(cis, how='left').merge(trans, how='left')
 
 
 def arr_to_str(arr):
@@ -185,11 +185,11 @@ def parse_dbs(snps_positions, grasp, ebi, clinvar, fm, phewas):
     f = parse_finemapping(fm)
     dfs = [snps_positions, g, e, c, p, f]
     return reduce(lambda left, right: pd.merge(
-            left, right,
-            on=['ID'],
-            how='outer'
-        ),
-        dfs
+        left, right,
+        on=['ID'],
+        how='left'
+    ),
+    dfs
     )
 
 def main(phenotypes_dir, snps_path, out_path):
