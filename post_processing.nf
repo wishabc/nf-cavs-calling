@@ -109,7 +109,7 @@ process merge_annotations {
 }
 
 process random_sample {
-    tag "${step_start}"
+    tag "${step_start}-${step_start+params.samples_per_job}"
     conda params.conda
 
     input:
