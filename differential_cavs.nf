@@ -37,7 +37,7 @@ process differential_cavs {
         path tested_snps
 
     output:
-        tuple path(name), path(tested_new)
+        tuple path(pvals_new), path(tested_new)
 
     script:
     pvals_new = "differential_pvals.${params.aggregation_key}.bed"
@@ -49,8 +49,8 @@ process differential_cavs {
         tmp.bed \
         --fdr ${params.fdr_tr}
 
-    head -1 tmp.bed > ${name}
-    sort-bed tmp.bed >> ${name}
+    head -1 tmp.bed > ${pvals_new}
+    sort-bed tmp.bed >> ${pvals_new}
 
     head - 1 ${tested_snps} > ${tested_new}
     sort-bed ${tested_snps} >> ${tested_new}

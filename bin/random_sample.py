@@ -21,7 +21,7 @@ def get_sampling_df(df):
     return variants_df, non_unique_n_aggregated, variants_df.index.difference(non_unique_df_index)
 
 
-def wilson(p, n, z = 1.96):
+def wilson(p, n, z=1.96):
     denominator = 1 + z ** 2/n
     centre_adjusted_probability = p + z * z / (2 * n)
     adjusted_standard_deviation = np.sqrt((p * (1 - p) + z * z / (4 * n)) / n)
