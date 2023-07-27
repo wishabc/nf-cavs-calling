@@ -1,5 +1,9 @@
 import pandas as pd
 import sys
+from tqdm import tqdm
+
+tqdm.pandas()
+
 
 mutations = ['C>A', 'C>T', 'C>G', 'T>A']
 _comp = {
