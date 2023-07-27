@@ -160,19 +160,6 @@ def arr_to_str(arr):
         return ""
     return '|'.join(sorted(non_nans))
 
-def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
-    snp_id = row['ID']
-    snp_posid = row['posID']
-    assert len(gtex[list(gtex.keys())[0]]) != 0
-    res = [arr_to_str([ids_phenotypes_dict[y]
-                                for y in all_phenotypes.get(snp_id, {}).get(x, [])
-                                if y is not None])
-                                for x in phenotype_db_names] + [arr_to_str(snps_dict.get(snp_posid, [None, []])[1]) for snps_dict in gtex.values()]
-    assert len(res) == 7
-    for i, x in enumerate([*phenotype_db_names, 'QTLgenes_cis', 'QTLgenes_trans']):
-        row[x] = res[i]
-    return row
-
 
 def remove_phen_name_punctuation(phenotype_name):
     return phenotype_name.lower().replace("'", '').replace('_', ' ')
@@ -195,7 +182,6 @@ def parse_dbs(snps_positions, grasp, ebi, clinvar, fm, phewas):
 def main(phenotypes_dir, snps_path, out_path):
     print('Reading files')
     snps_positions = pd.read_table(snps_path, header=None, names=['#chr', 'start', 'end', 'ID', 'ref', 'alt'])
-    snps_positions['posID'] = snps_positions['#chr'] + '_' + snps_positions['end'].astype(str)
     grasp = os.path.join(phenotypes_dir, 'pheno', 'grasp_pheno.tsv')
     ebi = os.path.join(phenotypes_dir, 'pheno', 'gwas_catalog.tsv')
     clinvar = os.path.join(phenotypes_dir, 'pheno', 'variant_summary.txt')
