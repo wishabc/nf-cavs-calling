@@ -3,6 +3,8 @@ import pandas as pd
 import glob
 import sys
 from tqdm import tqdm
+from functools import reduce
+
 
 tqdm.pandas()
 phenotype_db_names = ['grasp', 'ebi', 'clinvar', 'phewas', 'finemapping']
@@ -13,23 +15,21 @@ def pack(arr):
 
 
 def parse_grasp(filepath):
-    phenotypes = {}
     print('Parsing Grasp')
     with open(filepath) as file:
         r = file.readlines()
+    result = {'ID': [], 'grasp': []}
     for line in tqdm(list(r)):
         a = line.strip('\n').split('\t')
-        if a[1] not in phenotypes:
-            phenotypes[a[1]] = set()
-        rs_id = f"rs{a[0]}"
-        # if rs_id not in snps:
-        #     continue
-        phenotypes[a[1]].add(rs_id)
-    return phenotypes
+        result['ID'].append(f"rs{a[0]}")
+        result['grasp'].append(a[1])
+    return pd.DataFrame(result).groupby('ID').agg(
+        grasp=('grasp', arr_to_str)
+    ).reset_index()
 
 
 def parse_finemapping(filepath):
-    phenotypes = {}
+    result = {'ID': [], 'finemapping': []}
     print('Parsing Finemapping')
     with open(filepath) as file:
         f = file.readlines()
@@ -37,17 +37,37 @@ def parse_finemapping(filepath):
         if k == 0:
             continue
         a = line.strip('\n').split(',')
-        if a[0] not in phenotypes:
-            phenotypes[a[0]] = set()
-        rs_id = a[2]
-        # if rs_id not in snps:
-        #     continue
-        phenotypes[a[0]].add(rs_id)
-    return phenotypes
+
+        result['ID'].append(a[2])
+        result['finemapping'].append(a[0])
+    return pd.DataFrame(result).groupby('ID').agg(
+        finemapping=('finemapping', arr_to_str)
+    ).reset_index()
+
+def parse_clinvar(filepath):
+    result = {'ID': [], 'clinvar': []}
+    print('Parsing ClinVar')
+    with open(filepath, 'r') as file:
+        f = file.readlines()
+    for k, line in enumerate(tqdm(list(f))):
+        if k == 0:
+            continue
+        a = line.strip('\n').split('\t')
+        if 'pathogenic' not in a[6].lower() and 'risk factor' not in a[6].lower():
+            continue
+
+        for ph in a[13].split(';'):
+            if ph in ('not provided', 'not specified'):
+                continue
+            result['ID'].append(f"rs{a[9]}")
+            result['clinvar'].append(ph)
+    return pd.DataFrame(result).groupby('ID').agg(
+        clinvar=('clinvar', arr_to_str)
+    ).reset_index()
 
 
 def parse_ebi(filepath):
-    phenotypes = {}
+    result = {'ID': [], 'ebi': []}
     print('Parsing EBI')
     with open(filepath, 'r') as file:
         f = file.readlines()
@@ -56,20 +76,37 @@ def parse_ebi(filepath):
             continue
         try:
             a = line.strip('\n').split('\t')
-            if a[7] not in phenotypes:
-                phenotypes[a[7]] = set()
-            rs_id = f"rs{a[23]}"
-            # if rs_id not in snps:
-            #     continue
-            phenotypes[a[7]].add(rs_id)
+            result['ID'].append(f"rs{a[23]}")
+            result['ebi'].append(a[7])
         except ValueError:
             continue
-    return phenotypes
+    return pd.DataFrame(result).groupby('ID').agg(
+        ebi=('ebi', arr_to_str)
+    ).reset_index()
 
 
-def parse_gtex(qtlfiles, transqtl):
+def parse_phewas(filepath):
+    result = {'ID': [], 'phewas': []}
+    print('Parsing phewas')
+    with open(filepath, 'r') as file:
+        f = file.readlines()
+    for k, line in enumerate(tqdm(list(f))):
+        if k == 0:
+            continue
+        a = line[line.find('"rs'):].split('",')
+        ph = a[1][1:]
+        rs_id = f"rs{int(a[0][3:])}"
+        result['ID'].append(rs_id)
+        result['phewas'].append(ph)
+    return pd.DataFrame(result).groupby('ID').agg(
+        phewas=('phewas', arr_to_str)
+    ).reset_index()
 
-    result = {'trans': {}, 'cis': {}}
+
+def parse_gtex(snps_pos, qtlfiles, transqtl):
+
+    cis = {'#chr': [], 'end': [], 'cis': []}
+    trans = {'#chr': [], 'end': [], 'trans': []}
     print('Number of cis-eQTL files:', len(qtlfiles))
 
     for qtlfile in tqdm(list(qtlfiles)):
@@ -86,9 +123,10 @@ def parse_gtex(qtlfiles, transqtl):
                 a = line.strip('\n').split('\t')
                 a = {tit[x]: a[x] for x in range(titlen)}
 
-                chrpos = '_'.join(a['variant_id'].split('_')[:2])
-                result['cis'].setdefault(chrpos, (set(), set()))[0].add(tis)
-                result['cis'][chrpos][1].add(a['gene_id'])
+                chrom, end = a['variant_id'].split('_')[:2]
+                cis['#chr'].append(chrom)
+                cis['end'].append(int(end))
+                cis['cis'].append(a['gene_id'])
 
     print('Starting to parse transqtl')
     with open(transqtl) as trfile:
@@ -101,58 +139,20 @@ def parse_gtex(qtlfiles, transqtl):
             a = line.strip('\n').split('\t')
             a = {tit[x]: a[x] for x in range(titlen)}
 
-            chrpos = '_'.join(a['variant_id'].split('_')[:2])
+            chrom, end = a['variant_id'].split('_')[:2]
             tis = a['tissue_id']
             gen = a['gene_id']
+            trans['#chr'].append(chrom)
+            trans['end'].append(int(end))
+            trans['trans'].append(gen)
+    trans = pd.DataFrame(trans).groupby(['#chr', 'end']).agg(
+        trans=('trans', arr_to_str)
+    ).reset_index()
+    cis = pd.DataFrame(cis).groupby(['#chr', 'end']).agg(
+        cis=('cis', arr_to_str)
+    ).reset_index()
+    return snps_pos.merge(cis, how='outer').merge(trans, how='outer')
 
-            result['trans'].setdefault(chrpos, (set(), set()))[0].add(tis)
-            result['trans'][chrpos][1].add(gen)
-    return result
-    
-    
-
-def parse_phewas(filepath):
-    phenotypes = {}
-    print('Parsing phewas')
-    with open(filepath, 'r') as file:
-        f = file.readlines()
-    for k, line in enumerate(tqdm(list(f))):
-        if k == 0:
-            continue
-        a = line[line.find('"rs'):].split('",')
-        ph = a[1][1:]
-        if ph not in phenotypes:
-            phenotypes[ph] = set()
-        rs_id = f"rs{int(a[0][3:])}"
-        # if rs_id not in snps:
-        #     continue
-        phenotypes[ph].add(rs_id)
-
-    return phenotypes
-
-
-def parse_clinvar(filepath):
-    phenotypes = {}
-    print('Parsing ClinVar')
-    with open(filepath, 'r') as file:
-        f = file.readlines()
-    for k, line in enumerate(tqdm(list(f))):
-        if k == 0:
-            continue
-        a = line.strip('\n').split('\t')
-        if 'pathogenic' not in a[6].lower() and 'risk factor' not in a[6].lower():
-            continue
-
-        for ph in a[13].split(';'):
-            if ph in ('not provided', 'not specified'):
-                continue
-            if ph not in phenotypes:
-                phenotypes[ph] = set()
-            rs_id = f"rs{a[9]}"
-            # if rs_id not in snps:
-            #     continue
-            phenotypes[ph].add(rs_id)
-    return phenotypes
 
 def arr_to_str(arr):
     non_nans = [x for x in arr if x is not None]
@@ -162,7 +162,7 @@ def arr_to_str(arr):
 
 def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
     snp_id = row['ID']
-    snp_posid = row.posID
+    snp_posid = row['posID']
     assert len(gtex[list(gtex.keys())[0]]) != 0
     res = [arr_to_str([ids_phenotypes_dict[y]
                                 for y in all_phenotypes.get(snp_id, {}).get(x, [])
@@ -177,6 +177,20 @@ def get_phens_by_id(row, all_phenotypes, ids_phenotypes_dict, gtex):
 def remove_phen_name_punctuation(phenotype_name):
     return phenotype_name.lower().replace("'", '').replace('_', ' ')
 
+def parse_dbs(snps_positions, grasp, ebi, clinvar, fm, phewas):
+    g = parse_grasp(grasp)
+    e = parse_ebi(ebi)
+    c = parse_clinvar(clinvar)
+    p = parse_phewas(phewas)
+    f = parse_finemapping(fm)
+    dfs = [snps_positions, g, e, c, p, f]
+    return reduce(lambda left, right: pd.merge(
+            left, right,
+            on=['ID'],
+            how='outer'
+        ),
+        dfs
+    )
 
 def main(phenotypes_dir, snps_path, out_path):
     print('Reading files')
@@ -191,44 +205,12 @@ def main(phenotypes_dir, snps_path, out_path):
     qtlfiles = glob.glob(os.path.join(phenotypes_dir, 'eqtl', 'signif', '*.txt'))
     transqtl = os.path.join(phenotypes_dir, 'eqtl', 'GTEx_Analysis_v8_trans_eGenes_fdr05.txt')
     print('Started parsing DBs')
-    phenotypes_for_db_list = [parse_grasp(grasp),
-                              parse_ebi(ebi),
-                              parse_clinvar(clinvar),
-                              parse_phewas(phewas),
-                              parse_finemapping(fm),
-                              ]
+    phen_df = parse_dbs(snps_positions, grasp, ebi, clinvar, fm, phewas)
+
     print('Started parsing GTEX')
-    gtex = parse_gtex(qtlfiles, transqtl)
+    phen_df = parse_gtex(phen_df, qtlfiles, transqtl)
     print('Parsing finished')
-    phenotypes_ids_dict = {}
-    ids_phenotypes_dict = {}
-    phenotype_id = 1
-
-    for db in phenotypes_for_db_list:
-        for phenotype in db:
-            r_ph = remove_phen_name_punctuation(phenotype)
-            if r_ph not in phenotypes_ids_dict:
-                phenotypes_ids_dict[r_ph] = phenotype_id
-                ids_phenotypes_dict[phenotype_id] = r_ph
-                phenotype_id += 1
-
-    all_phenotypes = {}
-
-    for i in tqdm(range(len(phenotypes_for_db_list)), total=len(phenotypes_for_db_list)):
-        for phenotype in phenotypes_for_db_list[i]:
-            for rs in phenotypes_for_db_list[i][phenotype]:
-                if rs not in all_phenotypes:
-                    all_phenotypes[rs] = {x: set() for x in phenotype_db_names}
-                all_phenotypes[rs][phenotype_db_names[i]].add(
-                    phenotypes_ids_dict[remove_phen_name_punctuation(phenotype)])
-    
-    print('pheno sizes:', len(phenotypes_ids_dict), len(all_phenotypes))
-
-    
-    a = snps_positions.progress_apply(
-        lambda x: get_phens_by_id(x, all_phenotypes, ids_phenotypes_dict, gtex), axis=1)
-    
-    a.to_csv(out_path, sep='\t', index=False)
+    phen_df.to_csv(out_path, sep='\t', index=False)
 
 
 if __name__ == '__main__':
