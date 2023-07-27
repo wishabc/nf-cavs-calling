@@ -3,9 +3,8 @@ import argparse
 import statsmodels.formula.api as smf
 import scipy.stats as st
 import numpy as np
-from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
-from aggregation import calc_fdr
+from aggregation import calc_fdr, starting_columns
 
 tqdm.pandas()
 
@@ -13,8 +12,8 @@ maf_bins_fr = [0.00001, 0.0001, 0.001, 0.01, 0.05, 0.1, 0.2]
 
 
 def get_sampling_df(df):
-    variants_df = df.reset_index()
-    variants_df['sample'] = variants_df.groupby('variant_id').cumcount()
+    variants_df = df.reset_index().copy()
+    variants_df['sample'] = variants_df.groupby(starting_columns).cumcount()
     variants_df = variants_df.set_index(['variant_id', 'sample']).sort_index()
 
     non_unique_variants_ids = variants_df.loc[(slice(None), 1), :].index.get_level_values('variant_id')
@@ -67,7 +66,7 @@ def get_fraction_trend_from_df(df):
     
     gb = all_data.groupby('maf_bin')[['reduced', 'full', 'ctx']].mean()
 
-    frac_reg = all_data.groupby('maf_bin').apply(frac_bins_data).droplevel(1)
+    frac_reg = all_data.groupby('maf_bin').apply(frac_bins_data).reset_index()
     frac_reg[['reduced', 'full', 'ctx']] = gb[['reduced', 'full', 'ctx']]
     frac_reg['llr'] = full.llf - reduced.llf
     frac_reg['pval'] = st.chi2.sf(frac_reg['llr'], df=1)
@@ -85,45 +84,6 @@ def sample_index(n_aggregated, random_state=42):
     return pd.MultiIndex.from_frame(sample_ind)
 
 
-def make_full_df(input_df, annotation_df, non_cpg):
-    es_mean = input_df.groupby(['#chr', 'start', 'end', 'ref', 'alt'])['es'].mean().reset_index().rename(
-        columns={'es': 'es_weighted_mean'}
-    )
-    
-    input_df = input_df.merge(annotation_df).merge(es_mean)
-
-    input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(lambda x: pd.to_numeric(x, errors='coerce'))
-    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
-    input_df = input_df[pd.notna(input_df['MAF'])]
-    input_df['revMAF'] = 0.5 - input_df['MAF']
-    input_df = input_df[input_df.eval('(FMR <= 0.2) & (MAF != 0)')]
-
-    input_df['ref_is_major'] = input_df['RAF'] >= input_df['AAF']
-    input_df['es_maj'] = np.where(input_df['ref_is_major'], input_df['es'], -input_df['es'])
-    input_df['MAF_quantile'] = pd.cut(input_df['MAF'], input_df['MAF'].quantile(np.linspace(0, 1, 10)), include_lowest=True)
-    input_df['negative'] = input_df['min_pval'] >= 0.3
-    input_df['pval_quantile'] = pd.cut(input_df['min_pval'], input_df['min_pval'].quantile(np.linspace(0, 1, 10)), include_lowest=True)
-    input_df['imbalanced_side_is_major'] = input_df['es_maj'] > 0
-    input_df.loc[input_df['es_maj'] == 0, 'imbalanced_side_is_major'] = np.nan
-
-
-    ## FIX below
-    input_df[
-            ['-3', '-2', '-1', '1', '2', '3', 
-            'sub', 'fwd', 'ref_orient', 'palindromic', 
-            *[f'palindromic_{i}' for i in range(1, 4)]]
-        ] = input_df.progress_apply(get_mutation_stats, axis=1)
-
-    input_df['maj_orient'] = np.where(
-        input_df['ref_is_major'], 
-        input_df['ref_orient'],
-        ~input_df['ref_orient'],
-    )
-
-    input_df['signature1'] = input_df.apply(lambda row: f"{row['-1']}[{row['sub']}]{row['1']}", axis=1)
-    return input_df
-
-
 def main(nonaggregated_df, seed_start=20, seed_step=10):
     # sampling_df - df with 2-level index: [variant_id, count (0-based)]
     print('Making sampling df')
@@ -138,7 +98,7 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
         )
         sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
         sample_df = calc_fdr(sample_df, prefix='pval_')
-        sample_df['imbalanced'] = (sample_df['min_fdr'] <= 0.05)
+        sample_df['imbalanced'] = sample_df['min_fdr'] <= 0.05
         sample_df['imbalanced_numeric'] = sample_df['imbalanced'].astype(int)
     
         frac = get_fraction_trend_from_df(sample_df)
@@ -162,16 +122,19 @@ if __name__ == '__main__':
     annotation_df = pd.read_table(args.a)
     print('Preprocessing df')
     ## takes long. Need to optimize at some point
-    input_df = make_full_df(
-        input_df[input_df['is_tested']],
-        annotation_df,
-        args.noncpg
+    es_mean = input_df.groupby(['#chr', 'start', 'end', 'ref', 'alt'])['es'].mean().reset_index().rename(
+        columns={'es': 'es_weighted_mean'}
     )
+    input_df = input_df[input_df['is_tested']].merge(annotation_df).merge(es_mean)
     input_df['pref_orient'] = np.where(
         input_df['ref_orient'], 
         input_df['es_weighted_mean'] > 0,
         input_df['es_weighted_mean'] < 0
     )
+
+    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1)
+
+    input_df['variant_id'] = input_df[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).agg('@'.join, axis=1)
 
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
