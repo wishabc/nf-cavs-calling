@@ -60,7 +60,7 @@ def get_mutation_stats(row):
     if not fwd:
         preceding, following = revcomp(following), revcomp(preceding)
         
-    return pd.Series(f"{preceding[-1]}[{sub}]{following[0]}" + [sub, fwd, ref_orient])
+    return pd.Series([f"{preceding[-1]}[{sub}]{following[0]}", sub, fwd, ref_orient])
 
 
 def main(context, mutation_rates):
