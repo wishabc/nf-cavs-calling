@@ -15,7 +15,7 @@ process process_mutation_rates {
     label "med_mem"
 
     input:
-        tuple  path(vcf), path(variants_file)
+        tuple path(vcf), path(variants_file)
 
     output:
         path name
@@ -30,27 +30,6 @@ process process_mutation_rates {
         -a ${variants_file} -b stdin -sorted -wa -wb >> tmp.bed
     
     python3 $moduleDir/bin/filter_variants.py tmp.bed ${name}
-    """
-}
-
-process merge_and_sort {
-    conda params.conda
-    scratch true
-
-    input:
-        path bed_files
-    
-    output:
-        path name
-
-    script:
-    name = "mut_rates.annotation.bed"
-    """
-    for file in ${bed_files}; do
-        awk 'NR>1' \$file >> tmp.bed
-    done
-    head -1 ${bed_files[0]} > ${name}
-    sort-bed tmp.bed >> ${name}
     """
 }
 
@@ -94,7 +73,10 @@ process annotate_with_phenotypes {
     name = "phenotypes_ann.bed"
     """
     echo "Annotating"
-    python3 $moduleDir/bin/annotate_with_phenotypes.py ${params.phenotypes_data} ${pval_file} ${name}
+    python3 $moduleDir/bin/annotate_with_phenotypes.py \
+        ${params.phenotypes_data} \
+        ${pval_file} \
+        ${name}
     """
 }
 
@@ -114,7 +96,6 @@ process merge_annotations {
     script:
     name = "cavs.annotations.bed.gz"
     """
-    
     python3 $moduleDir/bin/merge_annotations.py \
         ${unique_snps} \
         ${context} \
@@ -178,8 +159,11 @@ workflow mutationRates {
         out = Channel.fromPath("${params.vcfs_dir}/*.vcf.gz")
             | combine(data)
             | process_mutation_rates
-            | collect(sort: true)
-            | merge_and_sort
+            | collectFile(
+                name: "mut_rates.annotation.bed",
+                skip: 1,
+                keepHeader: true
+            )
     emit:
         out
 }

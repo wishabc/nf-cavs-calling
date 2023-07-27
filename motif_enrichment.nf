@@ -90,7 +90,7 @@ process motif_counts {
             --delim "|" \
             --multidelim ";" \
             --echo \
-            --echo-map <(cat ${pval_file}) \
+            --echo-map <(tail -n+2 ${pval_file}) \
             - \
         | python3 $projectDir/bin/parse_variants_motifs.py \
             ${params.genome_fasta_file} \
@@ -136,7 +136,9 @@ process calc_enrichment {
     """
     # Counts file
     python3 ${projectDir}/bin/motif_stats.py  \
-        ${pval_file} ${counts_file} ${name} \
+        ${pval_file} \
+        ${counts_file} \
+        ${name} \
         --flank_width ${params.flank_width} \
         --fdr ${params.fdr_tr}
     """

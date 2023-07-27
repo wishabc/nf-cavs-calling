@@ -181,7 +181,7 @@ def parse_dbs(snps_positions, grasp, ebi, clinvar, fm, phewas):
 
 def main(phenotypes_dir, snps_path, out_path):
     print('Reading files')
-    snps_positions = pd.read_table(snps_path, header=None, names=['#chr', 'start', 'end', 'ID', 'ref', 'alt'])
+    snps_positions = pd.read_table(snps_path)
     grasp = os.path.join(phenotypes_dir, 'pheno', 'grasp_pheno.tsv')
     ebi = os.path.join(phenotypes_dir, 'pheno', 'gwas_catalog.tsv')
     clinvar = os.path.join(phenotypes_dir, 'pheno', 'variant_summary.txt')
