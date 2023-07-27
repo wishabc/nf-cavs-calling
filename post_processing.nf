@@ -93,6 +93,7 @@ process annotate_with_phenotypes {
     script:
     name = "phenotypes_ann.bed"
     """
+    echo "Annotating"
     python3 $moduleDir/bin/annotate_with_phenotypes.py ${params.phenotypes_data} ${pval_file} ${name}
     """
 }
