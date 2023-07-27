@@ -52,7 +52,7 @@ process differential_cavs {
     head -1 tmp.bed > ${pvals_new}
     sort-bed tmp.bed >> ${pvals_new}
 
-    head - 1 ${tested_snps} > ${tested_new}
+    head -1 ${tested_snps} > ${tested_new}
     sort-bed ${tested_snps} >> ${tested_new}
     """
 

@@ -4,7 +4,10 @@ import statsmodels.formula.api as smf
 import scipy.stats as st
 import numpy as np
 from statsmodels.stats.multitest import multipletests
+from tqdm import tqdm
 
+
+tqdm.pandas()
 
 maf_bins_fr = [0.00001, 0.0001, 0.001, 0.01, 0.05, 0.1, 0.2]
 mutations = ['C>A', 'C>T', 'C>G', 'T>A']
@@ -154,30 +157,29 @@ def get_mutation_stats(row):
     return pd.Series(list(preceding)[-3:] + list(following)[:3] + [sub, fwd, ref_orient] + palindromic_res[:4])
 
 
-def make_full_df(input_df, context_df, mut_df, non_cpg):
-    input_df['min_pval'] = input_df[['pval_ref', 'pval_alt']].min(axis=1)
-    input_df['variant_id'] = input_df['#chr'] + '_' + input_df['end'].astype(str) + '_' + input_df['alt']
+def make_full_df(input_df, annotation_df, non_cpg):
+    es_mean = input_df.groupby(['#chr', 'start', 'end', 'ref', 'alt'])['es'].mean().reset_index().rename(
+        columns={'es': 'es_weighted_mean'}
+    )
     
-    es_mean = input_df.groupby('variant_id')['es'].mean().reset_index().rename(columns={'es': 'es_weighted_mean'})
-    
-    input_df = input_df.merge(context_df).merge(mut_df).merge(es_mean)
+    input_df = input_df.merge(annotation_df).merge(es_mean)
 
     input_df['chr'] = input_df['#chr']
-    input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].replace('.', np.nan).astype(np.float_)
+    input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(lambda x: pd.to_numeric(x, errors='coerce'))
     input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
-    input_df = input_df[(input_df['MAF'] != '.') & pd.notna(input_df['MAF'])]
-    input_df['ref_is_major'] = input_df['RAF'] >= input_df['AAF']
+    input_df = input_df[pd.notna(input_df['MAF'])]
+    input_df['revMAF'] = 0.5 - input_df['MAF']
+    input_df = input_df[input_df.eval('(FMR <= 0.2) & (MAF != 0)')]
 
-    input_df = input_df[input_df.eval('(ref_counts + alt_counts >= 20) & (FMR <= 0.2) & (MAF != 0)')]
+    input_df['ref_is_major'] = input_df['RAF'] >= input_df['AAF']
     input_df['es_maj'] = np.where(input_df['ref_is_major'], input_df['es'], -input_df['es'])
     input_df['MAF_quantile'] = pd.cut(input_df['MAF'], input_df['MAF'].quantile(np.linspace(0, 1, 10)), include_lowest=True)
-    input_df['cover'] = input_df.eval('ref_counts + alt_counts')
-    input_df['negative'] = (input_df['cover'] >= 30) & (input_df['min_pval'] >= 0.3)
+    input_df['negative'] = input_df['min_pval'] >= 0.3
     input_df['pval_quantile'] = pd.cut(input_df['min_pval'], input_df['min_pval'].quantile(np.linspace(0, 1, 10)), include_lowest=True)
     input_df['imbalanced_side_is_major'] = input_df['es_maj'] > 0
     input_df.loc[input_df['es_maj'] == 0, 'imbalanced_side_is_major'] = np.nan
 
-    input_df['revMAF'] = 0.5 - input_df['MAF']
+
     input_df[
             ['-3', '-2', '-1', '1', '2', '3', 'sub', 'fwd', 'ref_orient', 'palindromic']
             + [f'palindromic_{i}' for i in range(1, 4)]
@@ -229,8 +231,7 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Sampling one of recurrent variants")
     parser.add_argument('-I', help='Non-aggregated BED file')
-    parser.add_argument('-c', help='File with context annotation')
-    parser.add_argument('-m', help='File with extracted mutation rates')
+    parser.add_argument('-a', help='File with annotations')
     parser.add_argument('-O', help='File to save calculated metrics')
     parser.add_argument('--noncpg', help='Use only non-cpg', default=False, action="store_true")
     parser.add_argument('--start', type=int, help='Start value for seed', default=10)
@@ -238,10 +239,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     input_df = pd.read_table(args.I)
-    mut_rates = pd.read_table(args.m)
-    context_df = pd.read_table(args.c, header=None, names=['#chr', 'start', 'end', 'sequence'])
+    annotation_df = pd.read_table(args.a)
     print('Preprocessing df')
     ## takes long. Need to optimize at some point
-    input_df = make_full_df(input_df, context_df, mut_rates, args.noncpg)
+    input_df = make_full_df(
+        input_df[input_df['is_tested']],
+        annotation_df,
+        args.noncpg
+    )
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
