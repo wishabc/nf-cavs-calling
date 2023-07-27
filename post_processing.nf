@@ -66,7 +66,7 @@ process extract_context {
     script:
     name = "variants_context.bed"
     """
-    echo -e "#chr\tstart\tend\tcontext" > ${name}
+    echo -e "#chr\tstart\tend\tsequence" > ${name}
     cat ${variants} \
         | awk -v OFS='\t' '{ print \$1,\$2-${params.window},\$3+${params.window} }' \
         | uniq > variants.bed 
