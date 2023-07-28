@@ -84,10 +84,34 @@ def sample_index(n_aggregated, random_state=42):
     return pd.MultiIndex.from_frame(sample_ind)
 
 
-def main(nonaggregated_df, seed_start=20, seed_step=10):
+def main(input_df, annotation_df, seed_start=20, seed_step=10):
     # sampling_df - df with 2-level index: [variant_id, count (0-based)]
-    print('Making sampling df')
-    sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(nonaggregated_df)
+    # This script can be further optimized by moving preprocessing
+    # to a separate script
+    print('Preprocessing df')
+    input_df = input_df[input_df['is_tested']]
+
+    input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(
+        lambda x: pd.to_numeric(x, errors='coerce')
+    )
+    input_df.dropna(subset=['RAF', 'AAF'], inplace=True)
+    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1)
+    input_df['MAF_rank'] = input_df['MAF'].rank()
+    input_df['maf_bin'] = pd.cut(input_df['MAF'], bins=maf_bins_fr)
+
+    es_mean = input_df.groupby(starting_columns)['es'].mean().reset_index().rename(
+        columns={'es': 'es_weighted_mean'}
+    )
+    input_df = input_df.merge(annotation_df).merge(es_mean)
+    input_df['pref_orient'] = np.where(
+        input_df['ref_orient'], 
+        input_df['es_weighted_mean'] > 0,
+        input_df['es_weighted_mean'] < 0
+    )
+    input_df['variant_id'] = input_df[starting_columns].astype(str).agg('@'.join, axis=1)
+    
+    sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(input_df)
+    print('Preprocessing finished')
 
     frac_regs = []
     for seed in tqdm(list(range(seed_start, seed_start + seed_step))):
@@ -120,27 +144,5 @@ if __name__ == '__main__':
 
     input_df = pd.read_table(args.I)
     annotation_df = pd.read_table(args.a)
-    print('Preprocessing df')
-    input_df = input_df[input_df['is_tested']]
-
-    input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(
-        lambda x: pd.to_numeric(x, errors='coerce')
-    )
-    input_df.dropna(subset=['RAF', 'AAF'], inplace=True)
-    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1)
-    input_df['MAF_rank'] = input_df['MAF'].rank()
-    input_df['maf_bin'] = pd.cut(input_df['MAF'], bins=maf_bins_fr)
-
-    es_mean = input_df.groupby(starting_columns)['es'].mean().reset_index().rename(
-        columns={'es': 'es_weighted_mean'}
-    )
-    input_df = input_df.merge(annotation_df).merge(es_mean)
-    input_df['pref_orient'] = np.where(
-        input_df['ref_orient'], 
-        input_df['es_weighted_mean'] > 0,
-        input_df['es_weighted_mean'] < 0
-    )
-    input_df['variant_id'] = input_df[starting_columns].astype(str).agg('@'.join, axis=1)
-    print('Preprocessing finished')
-    df = main(input_df, seed_start=args.start, seed_step=args.step)
+    df = main(input_df, annotation_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
