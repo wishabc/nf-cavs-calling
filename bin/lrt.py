@@ -135,7 +135,11 @@ if __name__ == '__main__':
 
     input_df = pd.read_table(args.input_data)
     data_wrapper = LRT(
-        input_df[input_df['is_tested'] & (True if args.chrom is None else input_df['#chr'] == args.chrom)].copy(),
+        input_df[
+            (input_df['BAD'] <= 1.5)
+            & input_df['is_tested']
+            & (True if args.chrom is None else input_df['#chr'] == args.chrom)
+        ],
         min_samples=args.min_samples,
         min_groups_per_variant=args.min_groups,
         allele_tr=args.allele_tr
