@@ -121,20 +121,23 @@ if __name__ == '__main__':
     input_df = pd.read_table(args.I)
     annotation_df = pd.read_table(args.a)
     print('Preprocessing df')
-    ## takes long. Need to optimize at some point
+    input_df = input_df[input_df['is_tested']]
+    input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(
+        lambda x: pd.to_numeric(x, errors='coerce')
+    )
+    input_df.dropna(['RAF', 'AAF'], inplace=True)
+    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1)
+
     es_mean = input_df.groupby(starting_columns)['es'].mean().reset_index().rename(
         columns={'es': 'es_weighted_mean'}
     )
-    input_df = input_df[input_df['is_tested']].merge(annotation_df).merge(es_mean)
+    input_df = input_df.merge(annotation_df).merge(es_mean)
     input_df['pref_orient'] = np.where(
         input_df['ref_orient'], 
         input_df['es_weighted_mean'] > 0,
         input_df['es_weighted_mean'] < 0
     )
-
-    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1)
-    input_df = input_df[~pd.isna(input_df['MAF'])]
     input_df['variant_id'] = input_df[starting_columns].astype(str).agg('@'.join, axis=1)
-
+    print('Preprocessing finished')
     df = main(input_df, seed_start=args.start, seed_step=args.step)
     df.to_csv(args.O, sep='\t', index=False)
