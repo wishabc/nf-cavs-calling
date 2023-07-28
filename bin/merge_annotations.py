@@ -81,7 +81,7 @@ def main(unique_snps, context, mutation_rates):
 
 
 if __name__ == '__main__':
-    unique_snps = pd.read_table(sys.argv[1], header=None, names=['#chr', 'start', 'end', 'ID', 'ref', 'alt'])
+    unique_snps = pd.read_table(sys.argv[1])
     context = pd.read_table(sys.argv[2])
     mutation_rates = pd.read_table(sys.argv[3])
     
