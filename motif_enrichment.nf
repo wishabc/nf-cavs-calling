@@ -134,8 +134,7 @@ process calc_enrichment {
     script:
     name = "${motif_id}.stats.tsv"
     """
-    # Counts file
-    python3 ${projectDir}/bin/motif_stats.py  \
+    python3 $moduleDir/bin/motif_stats.py  \
         ${pval_file} \
         ${counts_file} \
         ${name} \
