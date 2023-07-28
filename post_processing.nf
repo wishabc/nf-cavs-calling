@@ -113,7 +113,7 @@ process random_sample {
     conda params.conda
 
     input:
-        tuple val(step_start), path(non_aggregated_file), path(annotations_file)
+        tuple val(step_start), path(annotations_file), path(non_aggregated_file)
 
     output:
         path name
@@ -181,12 +181,9 @@ workflow {
 
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
-    annotation = merge_annotations(
-        data, extract_context(data), mutationRates(data)
-    )
     differentialCavs(nonagr_files)
-    nonagr_files
-        | combine(annotation)
+    merge_annotations(data, extract_context(data), mutationRates(data))
+        | combine(nonagr_files)
         | sampleVariants
 
 }
