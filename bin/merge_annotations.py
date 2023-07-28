@@ -75,7 +75,7 @@ def main(unique_snps, context, mutation_rates):
     result[['signature1', 'sub', 'fwd', 'ref_orient']] = result.progress_apply(
         get_mutation_stats, axis=1
     )
-    result['cpg'] = ((result['sub'] != 'A>T') & (result['1'] == 'G')) | ((result['sub'] == 'C>G') & (result['-1'] == 'C'))
+    result['cpg'] = ((result['sub'] != 'A>T') & (result['signature1'].str.endswith('G'))) | ((result['sub'] == 'C>G') & (result['signature1'].str.startswith('C')))
 
     return result
 
