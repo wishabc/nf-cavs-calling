@@ -90,7 +90,7 @@ def main(nonaggregated_df, seed_start=20, seed_step=10):
     sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(nonaggregated_df)
 
     frac_regs = []
-    for seed in range(seed_start, seed_start + seed_step):
+    for seed in tqdm(list(range(seed_start, seed_start + seed_step))):
         print(f'Processing seed: {seed}')
         sampled_variants_index = sample_index(
             non_unique_n_aggregated,
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     annotation_df = pd.read_table(args.a)
     print('Preprocessing df')
     input_df = input_df[input_df['is_tested']]
-    
+
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(
         lambda x: pd.to_numeric(x, errors='coerce')
     )
