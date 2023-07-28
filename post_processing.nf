@@ -109,9 +109,9 @@ process merge_annotations {
 }
 
 process random_sample {
-    tag "${step_start}-${step_start+params.samples_per_job}"
+    tag "seeds:${step_start}-${step_start+params.samples_per_job}"
     conda params.conda
-    label "med_mem"
+    label "high_mem"
 
     input:
         tuple val(step_start), path(annotations_file), path(non_aggregated_file)
@@ -135,8 +135,8 @@ workflow sampleVariants {
     take:
         data
     main:
-        params.sampling_count = 1000
-        params.samples_per_job = 10
+        params.sampling_count = 100
+        params.samples_per_job = 100
         total_count = params.sampling_count * params.samples_per_job 
         out = Channel.of(1..params.sampling_count) 
             | map(it -> it * params.samples_per_job)
