@@ -122,11 +122,14 @@ if __name__ == '__main__':
     annotation_df = pd.read_table(args.a)
     print('Preprocessing df')
     input_df = input_df[input_df['is_tested']]
+    
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(
         lambda x: pd.to_numeric(x, errors='coerce')
     )
-    input_df.dropna(['RAF', 'AAF'], inplace=True)
+    input_df.dropna(subset=['RAF', 'AAF'], inplace=True)
     input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1)
+    input_df['MAF_rank'] = input_df['MAF'].rank()
+    input_df['maf_bin'] = pd.cut(input_df['MAF'], bins=maf_bins_fr)
 
     es_mean = input_df.groupby(starting_columns)['es'].mean().reset_index().rename(
         columns={'es': 'es_weighted_mean'}
