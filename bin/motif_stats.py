@@ -75,7 +75,7 @@ class MotifEnrichment:
     @staticmethod
     def set_index(df):
         if len(df.index) == 0:
-            exit(0)
+            return df
         df['variant_id'] = df[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).agg('@'.join, axis=1)
         return df.set_index('variant_id')
 

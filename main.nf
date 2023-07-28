@@ -34,12 +34,9 @@ process filter_tested_variants {
     command = pval_files[0].extension == 'gz' ? 'zcat' : 'cat'
     name = pval_files.size() > 1 ? "unique_variants.bed" : "${pval_files[0].simpleName}.bed"
     """
+    head -1 ${pval_files[0]} | cut -f1-6 > ${name}
+    
     ${command} ${pval_files} \
-        | cut -f1-6 > tmp.bed
-    
-    head -1 tmp.bed > ${name}
-    
-    cat tmp.bed \
         | awk -v OFS='\t' -v col='is_tested' \
             'NR==1 {
                 for(i=1;i<=NF;i++){
@@ -50,6 +47,7 @@ process filter_tested_variants {
                 }
             }
             (\$c == "True") { print }' \
+        | cut -f1-6 \
         | sort-bed - \
         | uniq >> ${name}
     """
