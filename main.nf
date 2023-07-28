@@ -39,7 +39,7 @@ process filter_tested_variants {
     
     head -1 tmp.bed > ${name}
     
-    cat tmp.bed 
+    cat tmp.bed \
         | awk -v OFS='\t' -v col='is_tested' \
             'NR==1 {
                 for(i=1;i<=NF;i++){
