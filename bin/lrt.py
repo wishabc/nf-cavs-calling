@@ -136,7 +136,7 @@ if __name__ == '__main__':
     input_df = pd.read_table(args.input_data)
     data_wrapper = LRT(
         input_df[
-            (input_df['BAD'] <= 1.5)
+            (input_df['BAD'] <= 1)
             & input_df['is_tested']
             & (True if args.chrom is None else input_df['#chr'] == args.chrom)
         ],

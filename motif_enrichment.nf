@@ -70,7 +70,6 @@ process motif_counts {
     // scratch true
     tag "${motif_id}"
     conda params.conda
-    publishDir "${params.outdir}/counts", pattern: "${counts_file}"
 
     input:
         tuple val(motif_id), path(pwm_path), path(moods_file), path(pval_file)
@@ -101,7 +100,7 @@ process motif_counts {
 
 process tabix_index {
     conda params.conda
-    publishDir "${params.outdir}"
+    publishDir params.outdir
     label "high_mem"
     scratch true
 
