@@ -111,6 +111,7 @@ process merge_annotations {
 process random_sample {
     tag "${step_start}-${step_start+params.samples_per_job}"
     conda params.conda
+    label "med_mem"
 
     input:
         tuple val(step_start), path(annotations_file), path(non_aggregated_file)
