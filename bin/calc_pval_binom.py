@@ -16,11 +16,11 @@ class CalcImbalance:
         p = 1 / (BADs + 1)
         ws = np.full(k.shape, 0.5, dtype=np.float64)
         if self.modify_w:
-            ws = self.modify_w_binom(n, p, ws, k)
+            ws = self.modify_w_binom(k, n, p, ws)
         
         es = self.odds_es(k, n, BADs, ws)
-        pval_ref = self.censored_binom_pvalue(k, n, p, ws, self.allele_tr, smooth=smooth)
-        pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, self.allele_tr, smooth=smooth)
+        pval_ref = self.censored_binom_pvalue(k, n, p, ws, smooth=smooth)
+        pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, smooth=smooth)
         return [ws, es, pval_ref, pval_alt]
 
     def calc_min_cover_by_BAD(self, BAD, es=1, pvalue_tr=0.05, cmax=1000):
@@ -53,10 +53,10 @@ class CalcImbalance:
         return (1 - w) * self.cdf(x, n, p, smooth) + w * self.cdf(x, n, 1 - p, smooth)
 
 
-    def censored_binom_pvalue(self, x, n, p, w, allele_tr, smooth):
-        if allele_tr > 0:
-            norm_coef = self.binom_cdf_mixture(n - (allele_tr - 1), n, p, w, smooth) - self.binom_cdf_mixture(allele_tr - 1, n, p, w, smooth)
-            return (self.binom_sf_mixture(x - 1, n, p, w, smooth) - self.binom_sf_mixture(n - (allele_tr - 1), n, p, w, smooth)) / norm_coef
+    def censored_binom_pvalue(self, x, n, p, w, smooth):
+        if self.allele_tr > 0:
+            norm_coef = self.binom_cdf_mixture(n - (self.allele_tr - 1), n, p, w, smooth) - self.binom_cdf_mixture(self.allele_tr - 1, n, p, w, smooth)
+            return (self.binom_sf_mixture(x - 1, n, p, w, smooth) - self.binom_sf_mixture(n - (self.allele_tr - 1), n, p, w, smooth)) / norm_coef
         else:
             return self.binom_sf_mixture(x - 1, n, p, w, smooth)
 
@@ -65,17 +65,12 @@ class CalcImbalance:
         # w * np.log2(OR / BAD) + (1 - w) * np.log2(OR * BAD)
         return np.log2(x) - np.log2(n - x) + (1 - 2 * w) * np.log2(BAD) 
     
-    def modify_w_binom(self, n, p, ws, counts):
-        p1 = ws * binom.pmf(counts, n, 1 - p)
-        p2 = (1 - ws) * binom.pmf(counts, n, p)
-        return self.recalc_ws(ws, p1, p2)
-    
     @staticmethod
-    def recalc_ws(ws, p1, p2):
-        print(ws, p1, p2)
+    def modify_w_binom(counts, n, p, ws):
+        p1 = binom.pmf(counts, n, 1 - p)
+        p2 = binom.pmf(counts, n, p)
         idx = (ws != 1) & (ws != 0)
-        ws[idx] = p1[idx] / (p1[idx] + p2[idx])
-        print(ws)
+        ws[idx] = ws * p1[idx] / (ws * p1[idx] + (1 - ws) * p2[idx])
         return ws
 
 
