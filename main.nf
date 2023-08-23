@@ -276,7 +276,7 @@ workflow aggregation {
                     if (row.containsKey(params.aggregation_key)) {
                         return tuple(row.ag_id, row[params.aggregation_key])
                     } else {
-                        throw new Exception("Column '${params.aggregation_key}' does not exist in the samples file")
+                        throw new Exception("Column '${params.aggregation_key}' does not exist in the samples file '${params.samples_file}'")
                     }
                 }
             pvals = sample_split_pvals
