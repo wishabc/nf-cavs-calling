@@ -72,6 +72,7 @@ class CalcImbalance:
     
     @staticmethod
     def recalc_ws(ws, p1, p2):
+        print(ws, p1, p2)
         idx = (ws != 1) & (ws != 0)
         ws[idx] = p1[idx] / (p1[idx] + p2[idx])
         return ws
