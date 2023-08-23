@@ -71,6 +71,7 @@ class CalcImbalance:
         p2 = binom.pmf(counts, n, p)
         idx = (ws != 1) & (ws != 0)
         ws[idx] = ws * p1[idx] / (ws * p1[idx] + (1 - ws) * p2[idx])
+        print(ws)
         return ws
 
 
