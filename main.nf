@@ -272,8 +272,13 @@ workflow aggregation {
         if (params.aggregation_key != 'all') {
             sample_cl_correspondence = Channel.fromPath(params.samples_file)
                 | splitCsv(header: true, sep: '\t')
-                | map(row -> tuple(row.ag_id, row[params.aggregation_key]))
-
+                | map{ row ->
+                    if (row.containsKey(params.aggregation_key)) {
+                        return tuple(row.ag_id, row[params.aggregation_key])
+                    } else {
+                        throw new Exception("Column '${params.aggregation_key}' does not exist in the samples file")
+                    }
+                }
             pvals = sample_split_pvals
                 | join(sample_cl_correspondence)
                 | filter(it -> !it[2].isEmpty())
