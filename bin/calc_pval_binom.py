@@ -67,16 +67,14 @@ class CalcImbalance:
     
     @staticmethod
     def modify_w_binom(counts, n, p, ws):
-        p1 = binom.pmf(counts, n, 1 - p)
-        p2 = binom.pmf(counts, n, p)
         idx = (ws != 1) & (ws != 0)
-        result = ws.copy()
-        result[idx] = ws[idx] * p1[idx] / (ws[idx] * p1[idx] + (1 - ws[idx]) * p2[idx])
-        tmp = np.log(ws) - np.log(1-ws) + (n - 2 * counts) * (np.log(1-p) - np.log(p))
+        ws[idx] = expit(
+            -(np.log(ws[idx]) - np.log(1 - ws[idx])
+            + (n - 2 * counts[idx]) * (np.log(1 - p[idx]) - np.log(p[idx]))
+            )
+        )
 
-        print(result[:20], expit(-tmp[:20]))
-        print(np.allclose(result, expit(-tmp)))
-        return result
+        return ws
 
 
 def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
