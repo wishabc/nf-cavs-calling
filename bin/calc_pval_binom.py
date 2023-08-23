@@ -3,7 +3,7 @@ from scipy.stats import binom
 from scipy.special import betainc
 import argparse
 import numpy as np
-
+from scipy.special import expit
 
 updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested']
 
@@ -69,13 +69,14 @@ class CalcImbalance:
     def modify_w_binom(counts, n, p, ws):
         p1 = binom.pmf(counts, n, 1 - p)
         p2 = binom.pmf(counts, n, p)
-        print(p1[:20], p2[:20])
         idx = (ws != 1) & (ws != 0)
-        ws[idx] = ws[idx] * p1[idx] / (ws[idx] * p1[idx] + (1 - ws[idx]) * p2[idx])
-        # log(ws) + log(p1) - log(ws*p1 + (1-ws)*p2)
-        # low(ws) + log(p1) - logsumexp()
-        print(ws)
-        return ws
+        result = ws.copy()
+        result[idx] = ws[idx] * p1[idx] / (ws[idx] * p1[idx] + (1 - ws[idx]) * p2[idx])
+        tmp = np.log(ws) - np.log(1-ws) + (n - 2 * counts) * (np.log(1-p) - np.log(p))
+
+        print(result[:20], expit(-tmp[:20]))
+        print(np.allclose(result, expit(-tmp)))
+        return result
 
 
 def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
