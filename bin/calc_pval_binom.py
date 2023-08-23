@@ -69,6 +69,7 @@ class CalcImbalance:
     def modify_w_binom(counts, n, p, ws):
         p1 = binom.pmf(counts, n, 1 - p)
         p2 = binom.pmf(counts, n, p)
+        print(p1[:20], p2[:20])
         idx = (ws != 1) & (ws != 0)
         ws[idx] = ws * p1[idx] / (ws * p1[idx] + (1 - ws) * p2[idx])
         print(ws)
