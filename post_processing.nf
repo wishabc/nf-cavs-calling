@@ -141,8 +141,9 @@ process extract_topmed_AF_genotyped_variants {
     script:
     name = "all.genotyped.bed"
     """
+    echo "#chr\tstart\tend\tRAF\tAAF" > ${name}
     bcftools query -f '%CHROM\t%END0\t%END\t%INFO/RAF\t%INFO/AAF\n' \
-        ${params.genotype_file} > ${name}
+        ${params.genotype_file} >> ${name}
     """
 }
 
