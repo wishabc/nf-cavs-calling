@@ -131,6 +131,21 @@ process random_sample {
     """
 }
 
+process extract_topmed_freqs_genotyped {
+    conda params.conda
+    publishDir params.outdir
+
+    output:
+        path name
+
+    script:
+    name = "all.genotyped.bed"
+    """
+    bcftools query -f '%CHROM\t%END0\t%END\t%INFO/RAF\t%INFO/AAF\n' \
+        ${params.genotype_file} > ${name}
+    """
+}
+
 workflow sampleVariants {
     take:
         data
@@ -187,4 +202,5 @@ workflow {
         | combine(nonagr_files)
         | sampleVariants
 
+    extract_topmed_freqs_genotyped()
 }
