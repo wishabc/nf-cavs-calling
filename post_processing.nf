@@ -131,22 +131,6 @@ process random_sample {
     """
 }
 
-process extract_topmed_AF_genotyped_variants {
-    conda params.conda
-    publishDir params.outdir
-
-    output:
-        path name
-
-    script:
-    name = "all.genotyped.bed"
-    """
-    echo "#chr\tstart\tend\tRAF\tAAF" > ${name}
-    bcftools query -f '%CHROM\t%END0\t%END\t%INFO/RAF\t%INFO/AAF\n' \
-        ${params.genotype_file} >> ${name}
-    """
-}
-
 workflow sampleVariants {
     take:
         data
@@ -202,6 +186,4 @@ workflow {
     merge_annotations(data, extract_context(data), mutationRates(data))
         | combine(nonagr_files)
         | sampleVariants
-
-    extract_topmed_AF_genotyped_variants()
 }
