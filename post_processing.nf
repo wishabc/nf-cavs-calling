@@ -131,7 +131,7 @@ process random_sample {
     """
 }
 
-process extract_topmed_freqs_genotyped {
+process extract_topmed_AF_genotyped_variants {
     conda params.conda
     publishDir params.outdir
 
@@ -202,5 +202,5 @@ workflow {
         | combine(nonagr_files)
         | sampleVariants
 
-    extract_topmed_freqs_genotyped()
+    extract_topmed_AF_genotyped_variants()
 }
