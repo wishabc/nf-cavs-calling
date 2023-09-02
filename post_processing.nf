@@ -184,6 +184,12 @@ workflow {
 
     differentialCavs(nonagr_files)
     merge_annotations(data, extract_context(data), mutationRates(data))
+
+}
+
+workflow sample {
+    nonagr_files = Channel.fromPath(params.nonagr_pvals)
+    Channel.fromPath("${params.outdir}/cavs.annotations.bed.gz")
         | combine(nonagr_files)
         | sampleVariants
 }
