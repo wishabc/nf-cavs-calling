@@ -48,8 +48,19 @@ def frac_bins_data(df):
     })
 
 
-def get_fraction_trend_from_df(all_data):
+def get_fraction_trend_from_df(df):
+    cts = df.pivot_table(
+        index='signature1', 
+        columns='imbalanced',
+        values='ID',
+        aggfunc='count'
+    )
+    
+    ctsx = (pd.isna(cts) | (cts <= 5)).iloc[:, 0] + (pd.isna(cts) | (cts <= 5)).iloc[:, 1]
+    singular_signatures = ctsx[ctsx].index
 
+    all_data = df[~df['signature1'].isin(singular_signatures) & ~pd.isna(df['maf_bin'])]
+    
     # reduced = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette", data=all_data).fit(maxiter=50)
     # full = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette + MAF_rank", data=all_data).fit(maxiter=50)
     # ctxp = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient", data=all_data).fit(maxiter=50)
@@ -104,24 +115,10 @@ def main(input_df, annotation_df, seed_start=20, seed_step=10):
     )
     input_df['variant_id'] = input_df[starting_columns].astype(str).agg('@'.join, axis=1)
     
-    cts = input_df.pivot_table(
-        index='signature1', 
-        columns='imbalanced',
-        values='ID',
-        aggfunc='count'
-    )
-    
-    ctsx = (pd.isna(cts) | (cts <= 2)).iloc[:, 0] + (pd.isna(cts) | (cts <= 2)).iloc[:, 1]
-    singular_signatures = ctsx[ctsx].index
-
-    input_df = input_df[~input_df['signature1'].isin(singular_signatures) & ~pd.isna(input_df['maf_bin'])].copy()
-    
-
     sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(input_df)
     print('Preprocessing finished')
 
     frac_regs = []
-
     for seed in tqdm(list(range(seed_start, seed_start + seed_step))):
         print(f'Processing seed: {seed}')
         sampled_variants_index = sample_index(
