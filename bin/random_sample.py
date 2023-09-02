@@ -89,7 +89,7 @@ def main(input_df, annotation_df, seed_start=20, seed_step=10):
         lambda x: pd.to_numeric(x, errors='coerce')
     )
     input_df.dropna(subset=['RAF', 'AAF'], inplace=True)
-    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skina=False)
+    input_df['MAF'] = input_df[['RAF', 'AAF']].min(axis=1, skipna=False)
     input_df['MAF_rank'] = input_df['MAF'].rank()
     input_df['maf_bin'] = pd.cut(input_df['MAF'], bins=maf_bins_fr)
 
