@@ -29,7 +29,7 @@ def wilson(p, n, z=1.96):
     
     lower_bound = (centre_adjusted_probability - z * adjusted_standard_deviation) / denominator
     upper_bound = (centre_adjusted_probability + z * adjusted_standard_deviation) / denominator
-    return (lower_bound, upper_bound)
+    return lower_bound, upper_bound
 
 
 def frac_bins_data(df):
@@ -49,27 +49,32 @@ def frac_bins_data(df):
 
 
 def get_fraction_trend_from_df(df):
-    cts = df.pivot_table(index='signature1', columns='imbalanced', values='ID', aggfunc='count')
+    cts = df.pivot_table(
+        index='signature1', 
+        columns='imbalanced',
+        values='ID',
+        aggfunc='count'
+    )
     
     ctsx = (pd.isna(cts) | (cts <= 2)).iloc[:, 0] + (pd.isna(cts) | (cts <= 2)).iloc[:, 1]
     singular_signatures = ctsx[ctsx].index
 
     all_data = df[~df['signature1'].isin(singular_signatures) & ~pd.isna(df['maf_bin'])]
     
-    reduced = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette", data=all_data).fit(maxiter=50)
-    full = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette + MAF_rank", data=all_data).fit(maxiter=50)
-    ctxp = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient", data=all_data).fit(maxiter=50)
+    # reduced = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette", data=all_data).fit(maxiter=50)
+    # full = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient + FMR + BAD + mut_rates_roulette + MAF_rank", data=all_data).fit(maxiter=50)
+    # ctxp = smf.logit(f"imbalanced_numeric ~ signature1 * pref_orient", data=all_data).fit(maxiter=50)
     
-    all_data['reduced'] = reduced.predict(all_data)
-    all_data['full'] = full.predict(all_data)
-    all_data['ctx'] = ctxp.predict(all_data)
+    # all_data['reduced'] = reduced.predict(all_data)
+    # all_data['full'] = full.predict(all_data)
+    # all_data['ctx'] = ctxp.predict(all_data)
     
-    gb = all_data.groupby('maf_bin')[['reduced', 'full', 'ctx']].mean()
+    # gb = all_data.groupby('maf_bin')[['reduced', 'full', 'ctx']].mean()
 
     frac_reg = all_data.groupby('maf_bin').apply(frac_bins_data).reset_index()
-    frac_reg[['reduced', 'full', 'ctx']] = gb[['reduced', 'full', 'ctx']]
-    frac_reg['llr'] = full.llf - reduced.llf
-    frac_reg['pval'] = st.chi2.sf(frac_reg['llr'], df=1)
+    # frac_reg[['reduced', 'full', 'ctx']] = gb[['reduced', 'full', 'ctx']]
+    # frac_reg['llr'] = full.llf - reduced.llf
+    # frac_reg['pval'] = st.chi2.sf(frac_reg['llr'], df=1)
 
     return frac_reg
 
