@@ -2,7 +2,6 @@
 include { filter_tested_variants } from "./main"
 include { annotateLD } from "./ld_scores"
 include { cavsMotifEnrichment } from "./motif_enrichment"
-include { differentialCavs } from "./differential_cavs"
 
 
 // Put in the Apptainer
@@ -182,7 +181,6 @@ workflow {
 
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
-    differentialCavs(nonagr_files)
     merge_annotations(data, extract_context(data), mutationRates(data))
 
 }
