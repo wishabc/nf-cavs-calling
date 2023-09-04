@@ -190,7 +190,7 @@ workflow cavsMotifEnrichment {
             | map(it -> it[2])
             | collectFile(
                 storeDir: params.outdir,
-                name: "motif_enrichmnent.tsv",
+                name: "motif_enrichmnent.${params.aggregation_key}.tsv",
                 keepHeader: true,
                 skip: 1
             )
