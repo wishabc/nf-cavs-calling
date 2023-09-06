@@ -324,8 +324,8 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(row.ag_id,
-                    check_var(row?.hotspots_file, 'hp'), 
-                    check_var(row?.footprints_file, 'fp')
+                    check_var(row?.hotspot_peaks_point1per, 'hp'), 
+                    check_var(row?.footprint, 'fp')
                     )
                 )
         out = pval_files
@@ -368,4 +368,11 @@ workflow aggregatePvals {
     Channel.fromPath("${params.raw_pvals_dir}/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | aggregation
+}
+
+
+workflow tmp {
+    Channel.fromPath("${params.raw_pvals_dir}/*.bed")
+        | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
+        | annotateWithFootprints
 }
