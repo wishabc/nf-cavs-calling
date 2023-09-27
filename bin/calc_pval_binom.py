@@ -88,7 +88,7 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     imbalance_est = CalcImbalance(allele_tr=allele_tr, modify_w=modify_w)
     df['coverage'] = df.eval('ref_counts + alt_counts')
     if coverage_tr == 'auto':
-        by_BAD_coverage_tr = {x: imbalance_est.calc_min_cover_by_BAD(x, pvalue_tr=0.1) for x in df['BAD'].unique()}
+        by_BAD_coverage_tr = {x: imbalance_est.calc_min_cover_by_BAD(x, pvalue_tr=0.05) for x in df['BAD'].unique()}
         df['is_tested'] = df['coverage'] >= df['BAD'].map(by_BAD_coverage_tr)
     else:    
         df['is_tested'] = df.eval(f'coverage >= {coverage_tr}')
