@@ -23,13 +23,12 @@ class CalcImbalance:
         pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, smooth=smooth)
         return [ws, es, pval_ref, pval_alt]
 
-    def calc_min_cover_by_BAD(self, BAD, es=1, pvalue_tr=0.05, cmax=1000):
+    def calc_min_cover_by_BAD(self, BAD, pvalue_tr=0.05, cmax=1000):
         covs = np.arange(self.allele_tr * 2, cmax + 1)
-        x = covs / (1 + np.power(2.0, -es) / BAD)
-        mask = (self.allele_tr <= x) & (x <= covs - self.allele_tr)
-        BADs = np.full(mask.sum(), BAD)
-        sigs = self.calc_pval(covs[mask], x[mask], BADs, smooth=True)[2]
-        return np.min(covs[mask][sigs <= pvalue_tr])
+        x = covs - self.allele_tr
+        BADs = np.full(covs.shape, BAD)
+        sigs = self.calc_pval(covs, x, BADs, smooth=True)[2]
+        return np.min(covs[sigs <= pvalue_tr])
 
     @staticmethod
     def cdf(x, n, p, smooth):
