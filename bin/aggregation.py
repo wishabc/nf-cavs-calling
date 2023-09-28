@@ -19,6 +19,9 @@ result_columns = [*starting_columns, 'AAF', 'RAF',
     #'logit_pval_ref', 'logit_pval_alt',
      'group_id',
     #'fdrp_bh_ref', 'fdrp_bh_alt',
+    'aggregated_pval_ref',
+    'aggregated_pval_alt',
+    'aggregated_pval',
      'min_fdr'
     ]
 
@@ -57,12 +60,14 @@ def aggregate_pvalues_df(pval_df):
             ['footprints', 'group_id', 'hotspots'] 
             if col not in pval_df.columns}
         )
-    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1) * 2
+    pval_df['min_pval'] = np.minimum(pval_df[['pval_ref', 'pval_alt']].min(axis=1) * 2, 1)
     groups = pval_df.groupby(starting_columns)
     snp_stats = groups.agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
         aggregated_pval=('min_pval', aggregate_pvalues),
+        aggregated_pval_ref=('pval_ref', aggregate_pvalues),
+        aggregated_pval_alt=('pval_alt', aggregate_pvalues),
         hotspots_n=('hotspots', calc_sum_if_not_minus),
         footprints_n=('footprints', calc_sum_if_not_minus),
         mean_cover=('coverage', 'mean'),
