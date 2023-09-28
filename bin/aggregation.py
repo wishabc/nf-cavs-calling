@@ -84,12 +84,14 @@ def aggregate_pvalues_df(pval_df):
         AAF=('AAF', 'first'),
         RAF=('RAF', 'first')
     )
-    pval_df[[*starting_columns, 'pval_ref', 'pval_alt', 'min_pval', 'coverage']].groupby(
-        starting_columns
-    ).progress_apply(
-        aggregate_pvals_stf
-    )
-    return snp_stats.reset_index()
+    return snp_stats.join(
+        pval_df[[*starting_columns, 'pval_ref', 'pval_alt', 'min_pval', 'coverage']].groupby(
+            starting_columns
+        ).progress_apply(
+            aggregate_pvals_stf
+        )
+    ).reset_index()
+    # return snp_stats.reset_index()
     # return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
     #     starting_columns
     # ).progress_apply(
