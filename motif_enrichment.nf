@@ -32,7 +32,7 @@ process scan_with_moods {
     conda params.conda
     tag "${motif_id}"
     scratch true
-    publishDir "${params.moods_scans_dir}", pattern: "${name}", mode: "move"
+    publishDir "${params.outdir}/moods_scans", pattern: "${name}"
 
     input:
         tuple val(motif_id), path(pwm_path), path(alt_fasta_file), path(fasta_index)
