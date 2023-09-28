@@ -46,14 +46,22 @@ def aggregate_es(stat):
 
 
 def aggregate_pvalues(pval_list, method='stouffer'):
-    pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
-    if len(pvalues) == 0:
-        return 1
-    elif len(pvalues) == 1:
-        return pvalues[0]
-    return st.combine_pvalues(pvalues, method=method)[1]
+    pvalues = pval_list
+    # pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
+    # if len(pvalues) == 0:
+    #     return 1
+    # elif len(pvalues) == 1:
+    #     return pvalues[0]
+    return st.combine_pvalues(pvalues, method=method,)[1]
 
-
+def aggregate_pvals_stf(df):
+    weights = 1 / df['coverage']
+    weights = weights / weights.sum()
+    pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
+    pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
+    pval_weighted = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
+    return pd.Series([pval_ref_weighted, pval_alt_weighted, pval_weighted], ["pval_ref_weighted", "pval_alt_weighted", "pval_weighted"])
+    
 def aggregate_pvalues_df(pval_df):
     pval_df = pval_df.assign(
             **{col: pd.NA for col in 
@@ -75,6 +83,11 @@ def aggregate_pvalues_df(pval_df):
         group_id=('group_id', 'first'),
         AAF=('AAF', 'first'),
         RAF=('RAF', 'first')
+    )
+    pval_df[[*starting_columns, 'pval_ref', 'pval_alt', 'min_pval', 'coverage']].groupby(
+        starting_columns
+    ).progress_apply(
+        aggregate_pvals_stf
     )
     return snp_stats.reset_index()
     # return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
@@ -103,7 +116,7 @@ def main(pval_df, chrom=None):
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
     res_df = calc_fdr(aggr_df)
-    return res_df[result_columns]
+    return res_df
 
 
 if __name__ == '__main__':
