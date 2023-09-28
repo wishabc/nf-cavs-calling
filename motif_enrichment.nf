@@ -179,6 +179,18 @@ workflow scanWithMoods {
         | scan_with_moods
 }
 
+
+workflow scanReference {
+    // Care not to overwrite moods_scans_dir
+    readMotifsList()
+        | combine(
+            Channel.of(
+                [file(params.genome_fasta_file), 
+                file("${params.genome_fasta_file}.fai")])
+        )
+        | scan_with_moods
+}
+
 workflow cavsMotifEnrichment {
     take:
         data
