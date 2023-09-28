@@ -115,8 +115,9 @@ def main(pval_df, chrom=None):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
-    res_df = calc_fdr(aggr_df)
-    return res_df
+    # res_df = calc_fdr(aggr_df)
+    # return res_df
+    return aggr_df
 
 
 if __name__ == '__main__':
