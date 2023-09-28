@@ -40,13 +40,13 @@ def aggregate_es(stat):
     return pd.Series([es_mean, es_weighted_mean], ["es_mean", "es_weighted_mean"])
 
 
-def logit_aggregate_pvalues(pval_list):
+def aggregate_pvalues(pval_list, method='stouffer'):
     pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
     if len(pvalues) == 0:
         return 1
     elif len(pvalues) == 1:
         return pvalues[0]
-    return st.combine_pvalues(pvalues, method='mudholkar_george')[1]
+    return st.combine_pvalues(pvalues, method=method)[1]
 
 
 def aggregate_pvalues_df(pval_df):
@@ -55,13 +55,12 @@ def aggregate_pvalues_df(pval_df):
             ['footprints', 'group_id', 'hotspots'] 
             if col not in pval_df.columns}
         )
-    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1)
+    pval_df['min_pval'] = pval_df[['pval_ref', 'pval_alt']].min(axis=1) * 2
     groups = pval_df.groupby(starting_columns)
     snp_stats = groups.agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
-        logit_pval_alt=('pval_alt', logit_aggregate_pvalues),
-        logit_pval_ref=('pval_ref', logit_aggregate_pvalues),
+        aggregated_pval=('min_pval', aggregate_pvalues),
         hotspots_n=('hotspots', calc_sum_if_not_minus),
         footprints_n=('footprints', calc_sum_if_not_minus),
         mean_cover=('coverage', 'mean'),
@@ -77,14 +76,12 @@ def aggregate_pvalues_df(pval_df):
     ).join(snp_stats).reset_index()
 
 
-def calc_fdr(aggr_df, prefix='logit_pval_'):
-    for allele in alleles:
-        aggr_df[f"fdrp_bh_{allele}"] = multipletests(
-                    aggr_df[f'{prefix}{allele}'],
-                    alpha=0.05,
-                    method='fdr_bh'
-                )[1]
-    aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
+def calc_fdr(aggr_df, prefix='aggregated_'):
+    aggr_df["min_fdr"] = multipletests(
+            aggr_df[f'{prefix}pval'],
+            alpha=0.05,
+            method='fdr_bh'
+        )[1]
     return aggr_df
 
 
@@ -92,7 +89,8 @@ def main(pval_df):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     pval_df = pval_df[pval_df['is_tested']]
-    
+    if args.chrom is not None:
+        pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
@@ -104,6 +102,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
+    parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
     args = parser.parse_args()
     pval_df = pd.read_table(args.I, low_memory=False)
-    main(pval_df).to_csv(args.O, sep='\t', index=False)
+    main(pval_df, args.chrom).to_csv(args.O, sep='\t', index=False)
