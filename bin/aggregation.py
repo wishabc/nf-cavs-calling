@@ -15,9 +15,11 @@ starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 result_columns = [*starting_columns, 'AAF', 'RAF',
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
-    'es_weighted_mean', 'es_mean', 
-    'logit_pval_ref', 'logit_pval_alt', 'group_id',
-    'fdrp_bh_ref', 'fdrp_bh_alt', 'min_fdr'
+    #'es_weighted_mean', 'es_mean', 
+    #'logit_pval_ref', 'logit_pval_alt',
+     'group_id',
+    #'fdrp_bh_ref', 'fdrp_bh_alt',
+     'min_fdr'
     ]
 
 
@@ -69,11 +71,12 @@ def aggregate_pvalues_df(pval_df):
         AAF=('AAF', 'first'),
         RAF=('RAF', 'first')
     )
-    return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
-        starting_columns
-    ).progress_apply(
-        aggregate_es
-    ).join(snp_stats).reset_index()
+    return snp_stats.reset_index()
+    # return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
+    #     starting_columns
+    # ).progress_apply(
+    #     aggregate_es
+    # ).join(snp_stats).reset_index()
 
 
 def calc_fdr(aggr_df, prefix='aggregated_'):
