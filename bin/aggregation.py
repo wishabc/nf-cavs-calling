@@ -89,7 +89,7 @@ def main(pval_df, chrom=None):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     pval_df = pval_df[pval_df['is_tested']]
-    if args.chrom is not None:
+    if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
