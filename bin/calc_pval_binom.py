@@ -6,6 +6,11 @@ import numpy as np
 from scipy.special import expit
 from statsmodels.stats.multitest import multipletests
 
+from tqdm import tqdm
+
+tqdm.pandas()
+
+
 updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested']
 
 class CalcImbalance:
@@ -113,7 +118,7 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     ind = (result['min_pval'] > 1) | (result['is_tested'])
     result['min_pval'] = np.where(ind, pd.NA, result['min_pval'])
     result['FDR_sample'] = pd.NA
-    return result.groupby('sample_id').apply(calc_fdr).reset_index()
+    return result.groupby('sample_id').progress_apply(calc_fdr).reset_index()
 
 
 if __name__ == '__main__':
