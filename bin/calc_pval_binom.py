@@ -118,7 +118,7 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     ind = (result['min_pval'] > 1) | (result['is_tested'])
     result['min_pval'] = np.where(ind, pd.NA, result['min_pval'])
     result['FDR_sample'] = pd.NA
-    return result.groupby('sample_id').progress_apply(calc_fdr).reset_index()
+    return result.groupby('sample_id').progress_apply(calc_fdr, group_keys=True).reset_index(drop=True)
 
 
 if __name__ == '__main__':
