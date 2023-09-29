@@ -4,12 +4,13 @@ from aggregation import starting_columns
 
 
 def main(new_badmap, old_badmap, output):
-    old_df = pd.read_table(old_badmap, low_memory=False).set_index(starting_columns)
+    group_cols = [*starting_columns, 'sample_id']
+    old_df = pd.read_table(old_badmap, low_memory=False).set_index(group_cols)
     print(old_df.index)
     if new_badmap is None:
         old_df.to_csv(output, sep='\t', index=False)
         return
-    new_df = pd.read_table(new_badmap, low_memory=False).set_index(starting_columns)
+    new_df = pd.read_table(new_badmap, low_memory=False).set_index(group_cols)
     if new_df.empty:
         old_df.to_csv(output, sep='\t', index=False)
         return
