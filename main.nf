@@ -74,7 +74,12 @@ process apply_babachi {
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
     head -n 1 ${snps_file} > header.txt
-    tail -n +2 ${snps_file} | awk '((\$10 >= 0.05) && (\$10 != "None")) { print; }' > snps.common.bed
+    tail -n +2 ${snps_file} | awk '(
+        (\$10 >= ${params.babachi_maf_tr}) 
+            && (\$10 != "None")
+            && (\$11 >= ${params.babachi_maf_tr})
+            && (\$11 != "None")
+    ) { print; }' > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le ${params.min_snps_count} ]]; then
 	    touch ${name}
         touch ${badmap_file}

@@ -148,7 +148,7 @@ workflow motifCounts {
         data
     main:
         out = readMotifsList()
-            | map(it -> tuple(it[0], it[1], "${params.moods_scans_dir}/${it[0]}.moods.log.bed.gz"))
+            | map(it -> tuple(it[0], it[1], file("${params.moods_scans_dir}/${it[0]}.moods.log.bed.gz")))
             | combine(data)
             | motif_counts
         out 
@@ -204,4 +204,24 @@ workflow {
         | filter_tested_variants
         | cavsMotifEnrichment
 
+}
+
+process extract_variants_from_vcf {
+    params.conda
+
+    output:
+        path name
+
+    script:
+    name = "unique_variants.bed"
+    """
+    bcftools query -f'%CHROM\t%POS0\t%POS\t%ID\t%REF\t%ALT\n' \
+        ${params.genotype_file} > ${name}
+    
+    """
+}
+
+workflow fromVCF {
+    extract_variants_from_vcf()
+        | motifCounts
 }

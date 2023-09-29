@@ -79,6 +79,7 @@ def aggregate_pvalues_df(pval_df):
             if col not in pval_df.columns}
         )
     pval_df['min_pval'] = np.minimum(pval_df[['pval_ref', 'pval_alt']].min(axis=1) * 2, 1)
+    
     groups = pval_df.groupby(starting_columns)
     snp_stats = groups.agg(
         nSNPs=('coverage', 'count'),
