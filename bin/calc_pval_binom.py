@@ -115,7 +115,7 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     )
     result = df.assign(**dict(zip(updated_columns, result)))[result_columns]
     result['min_pval'] = result[['pval_ref', 'pval_alt']].min(axis=1) * 2
-    ind = (result['min_pval'] > 1) | (result['is_tested'])
+    ind = (result['min_pval'] > 1) | (~result['is_tested'])
     result['min_pval'] = np.where(ind, pd.NA, result['min_pval'])
     result['FDR_sample'] = pd.NA
     return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)
