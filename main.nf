@@ -92,7 +92,7 @@ process apply_babachi {
         -p ${params.prior} \
         ${prior_params} \
         -s ${params.states} \
-        -a ${params.allele_tr}
+        -a ${params.babachi_allele_tr}
 
 
     head -1 ${badmap_file} | xargs -I % echo "`cat header.txt`\t%" > ${name}
