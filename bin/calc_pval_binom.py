@@ -4,6 +4,7 @@ from scipy.special import betainc
 import argparse
 import numpy as np
 from scipy.special import expit
+from statsmodels.stats.multitest import multipletests
 
 updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested']
 
@@ -76,6 +77,14 @@ class CalcImbalance:
         return ws
 
 
+def calc_fdr(group_df):
+    ind = group_df['min_pval'].notna()
+    if group_df[ind].shape[0] > 0:  # check if any non-NA p-values exist
+        corrected_pvalues = multipletests(
+            group_df[ind]['min_pval'], alpha=0.05, method='fdr_bh')[1]
+        group_df.loc[ind, 'FDR_sample'] = corrected_pvalues
+    return group_df
+
 def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
     df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
     # Remove already present columns
@@ -99,7 +108,11 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
         BADs=df['BAD'].to_numpy(),
         smooth=False
     )
-    return df.assign(**dict(zip(updated_columns, result)))[result_columns]
+    result = df.assign(**dict(zip(updated_columns, result)), FDR_sample=pd.NA)[result_columns]
+    result['min_pval'] = result[['pval_ref', 'pval_alt']].min(axis=1) * 2
+    ind = (result['min_pval'] > 1) | (result['is_tested'])
+    result['min_pval'] = np.where(ind, pd.NA, result['min_pval']) 
+    return result.groupby('sample_id').apply(calc_fdr).reset_index()
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-include { callCavsFromVcfsBinom; calcPvalBinom; addExcludedCavs; aggregate_pvals } from "./pval_calc"
+include { callCavsFirstRound; calcPvalBinom; add_cavs; aggregate_pvals } from "./pval_calc"
 
 params.conda = "$moduleDir/environment.yml"
 
@@ -75,10 +75,10 @@ process apply_babachi {
 	"""
     head -n 1 ${snps_file} > header.txt
     tail -n +2 ${snps_file} | awk '(
-        (\$10 >= ${params.babachi_maf_tr}) 
-            && (\$10 != "None")
-            && (\$11 >= ${params.babachi_maf_tr})
-            && (\$11 != "None")
+        (\$10 >= ${params.babachi_maf_tr}) \
+            && (\$10 != "None") \
+            && (\$11 >= ${params.babachi_maf_tr}) \
+            && (\$11 != "None") \
     ) { print; }' > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le ${params.min_snps_count} ]]; then
 	    touch ${name}
@@ -198,7 +198,7 @@ process collect_files {
     """
     head -n 1 ${babachi_files[0]} > ${name}
     tail -n +2 -q ${babachi_files} \
-        | awk '((\$7 >= ${params.allele_tr}) && (\$8 >= ${params.allele_tr})) {print;}' \
+        | awk '\$7+\$8 >= ${params.initial_filter} {print;}' \
         | sort-bed - >> ${name}
     """
 }
@@ -349,14 +349,14 @@ workflow {
     babachi_files = estimateBADByIndiv(iter1_prefix)
     intersect_files = babachi_files[1]
     // Calculate P-value + exclude 1-st round CAVs 
-    no_cavs_snps = callCavsFromVcfsBinom(intersect_files, iter1_prefix)
+    no_cavs_snps = callCavsFirstRound(intersect_files, iter1_prefix)
 
     iter2_prefix = 'final'
     // Reestimate BAD, and add excluded SNVs
     all_snps = estimateBAD(no_cavs_snps, iter2_prefix)
         | join(intersect_files, remainder: true)
         | map(it -> tuple(it[0], it[1] != null ? it[1] : file('empty'), it[2]))
-        | addExcludedCavs
+        | add_cavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
     agg_files = calcPvalBinom(all_snps, iter2_prefix)
@@ -364,7 +364,6 @@ workflow {
         | flatten()
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
-        | aggregation
 }   
 
 

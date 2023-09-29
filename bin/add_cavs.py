@@ -3,23 +3,18 @@ import argparse
 from aggregation import starting_columns
 
 
-def set_index(df):
-    if not df.empty:
-        df.index = df.apply(lambda row: "@".join(map(str, [row[x] for x in [*starting_columns, 'sample_id']])), axis=1)
-    return df
-
 def main(new_badmap, old_badmap, output):
-    old_df = set_index(pd.read_table(old_badmap, low_memory=False))
+    old_df = pd.read_table(old_badmap, low_memory=False).set_index(starting_columns)
     if new_badmap is None:
         old_df.to_csv(output, sep='\t', index=False)
         return
-    new_df = set_index(pd.read_table(new_badmap, low_memory=False))
+    new_df = pd.read_table(new_badmap, low_memory=False).set_index(starting_columns)
     if new_df.empty:
         new_df.to_csv(output, sep='\t', index=False)
         return
     assert len(new_df.index.difference(old_df.index)) == 0
     old_df.loc[new_df.index] = new_df
-    old_df.to_csv(output, sep='\t', index=False)
+    old_df.reset_index().to_csv(output, sep='\t', index=False)
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@ process exclude_cavs {
     tag "${indiv_id}"
     
     input:
-        tuple val(indiv_id), path(aggregated_snps), path(bad_annotations)
+        tuple val(indiv_id), path(non_aggregated_snps)
 
     output:
         tuple val(indiv_id), path(name)
@@ -58,11 +58,9 @@ process exclude_cavs {
     script:
     name = "${indiv_id}.snps.bed"
     """
-    python3 $moduleDir/bin/filter_cavs.py \
-        -a ${aggregated_snps} \
-        -b ${bad_annotations} \
-        -O ${name} \
-        --fdr ${params.fdr_tr}
+    cat ${non_aggregated_snps} 
+        | awk -v OFS='\t' '((NR==1) || (\$NF <= 0.05)) {print}'
+        | cut -f1-11 > ${name}
     """
 }
 
@@ -73,32 +71,23 @@ process add_cavs {
     scratch true
 
     input:
-        tuple val(indiv_id), path(new_badmap), path(old_badmap)
+        tuple val(indiv_id), path(new_bad_annotated), path(old_badmap_annotated)
 
     output:
         tuple val(indiv_id), path(name)
 
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
-    n_badmap = new_badmap.name != 'empty' ? "-n ${new_badmap}" : ""
+    n_badmap = new_bad_annotated.name != 'empty' ? "-n ${new_badmap}" : ""
     """
     python3 $moduleDir/bin/add_cavs.py \
-        -o ${old_badmap} \
+        -o ${old_badmap_annotated} \
         ${n_badmap} \
         --output not_sorted_cavs.bed
 
     head -1 not_sorted_cavs.bed > ${name}
     sort-bed not_sorted_cavs.bed >> ${name}
     """
-}
-
-workflow addExcludedCavs {
-    take:
-        data
-    main:
-        out = add_cavs(data)
-    emit:
-        out
 }
 
 workflow calcPvalBinom {
@@ -112,14 +101,12 @@ workflow calcPvalBinom {
 }
 
 
-workflow callCavsFromVcfsBinom {
+workflow callCavsFirstRound {
     take:
         bad_annotations
         prefix
     main:
-        pval_files = calcPvalBinom(bad_annotations, prefix)
-        no_cavs_snps = aggregate_pvals(pval_files, prefix)
-            | join(bad_annotations)
+        no_cavs_snps = calcPvalBinom(bad_annotations, prefix)
             | exclude_cavs
     emit:
         no_cavs_snps
@@ -133,5 +120,5 @@ workflow {
         | unique()
         | map(indiv_id -> tuple(indiv_id, "${params.outdir}/snp_annotation/${indiv_id}*"))
         
-    callCavsFromVcfsBinom(extracted_vcfs, "")
+    callCavsFirstRound(extracted_vcfs, "")
 }

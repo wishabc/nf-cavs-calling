@@ -55,7 +55,7 @@ def aggregate_pvalues(pval_list, method='stouffer'):
     return st.combine_pvalues(pvalues, method=method,)[1]
 
 def aggregate_pvals_stf(df):
-    weights = df['coverage']
+    weights = np.power(df['coverage'], 2)
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # pval_weighted = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
@@ -74,14 +74,13 @@ def aggregate_pvals_stf(df):
     
 def aggregate_pvalues_df(pval_df):
     pval_df = pval_df.assign(
-            **{col: pd.NA for col in 
+        **{
+            col: pd.NA for col in 
             ['footprints', 'group_id', 'hotspots'] 
-            if col not in pval_df.columns}
-        )
-    pval_df['min_pval'] = np.minimum(pval_df[['pval_ref', 'pval_alt']].min(axis=1) * 2, 1)
-    
-    groups = pval_df.groupby(starting_columns)
-    snp_stats = groups.agg(
+            if col not in pval_df.columns
+        }
+    )
+    snp_stats = pval_df.groupby(starting_columns).agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
         hotspots_n=('hotspots', calc_sum_if_not_minus),
@@ -125,9 +124,9 @@ def main(pval_df, chrom=None):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
-    # res_df = calc_fdr(aggr_df)
-    # return res_df
-    return aggr_df
+    res_df = calc_fdr(aggr_df)
+    return res_df
+    #return aggr_df
 
 
 if __name__ == '__main__':
