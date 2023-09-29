@@ -26,26 +26,6 @@ process calc_pval_binom {
 }
 
 
-process aggregate_pvals {
-    conda params.conda
-    tag "${indiv_id}"
-
-    input:
-        tuple val(indiv_id), path(pval_file)
-        val prefix
-
-    output:
-        tuple val(indiv_id), path(name)
-
-    script:
-    name = "${indiv_id}.aggregation.bed"
-    """
-    python3 $moduleDir/bin/aggregation.py \
-        -I ${pval_file} \
-        -O ${name}
-    """
-}
-
 process exclude_cavs {
     conda params.conda
     tag "${indiv_id}"
