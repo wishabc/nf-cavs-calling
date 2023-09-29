@@ -15,7 +15,7 @@ process calc_pval_binom {
     script:
     name = "${indiv_id}.pvalue.bed"
     """
-    
+
     python3 $moduleDir/bin/calc_pval_binom.py \
         -I ${badmap_intersect_file} \
         -O ${name} \
@@ -79,7 +79,7 @@ process add_cavs {
 
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
-    n_badmap = new_bad_annotated.name != 'empty' ? "-n ${new_badmap}" : ""
+    n_badmap = new_bad_annotated.name != 'empty' ? "-n ${new_bad_annotated}" : ""
     """
     python3 $moduleDir/bin/add_cavs.py \
         -o ${old_badmap_annotated} \
