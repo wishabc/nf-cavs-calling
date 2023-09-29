@@ -4,7 +4,8 @@ import argparse
 
 def main(df, fdr_tr=0.05):
     tested_vars = df['group_id'].value_counts().rename('tested')
-    imbalanced_vars = 0#df[df['min_fdr'] <= fdr_tr]['group_id'].value_counts().rename('imbalanced')
+    imbalanced_vars = tested_vars.copy()
+    imbalanced_vars['tested'] = 0#df[df['min_fdr'] <= fdr_tr]['group_id'].value_counts().rename('imbalanced')
     result = pd.concat([tested_vars, imbalanced_vars], axis=1).reset_index(names='group_id')
     result['percentage'] = result.eval('imbalanced / tested')
     return result
