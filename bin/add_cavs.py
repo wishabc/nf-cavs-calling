@@ -5,12 +5,13 @@ from aggregation import starting_columns
 
 def main(new_badmap, old_badmap, output):
     old_df = pd.read_table(old_badmap, low_memory=False).set_index(starting_columns)
+    print(old_df.index)
     if new_badmap is None:
         old_df.to_csv(output, sep='\t', index=False)
         return
     new_df = pd.read_table(new_badmap, low_memory=False).set_index(starting_columns)
     if new_df.empty:
-        new_df.to_csv(output, sep='\t', index=False)
+        old_df.to_csv(output, sep='\t', index=False)
         return
     assert len(new_df.index.difference(old_df.index)) == 0
     old_df.loc[new_df.index] = new_df
