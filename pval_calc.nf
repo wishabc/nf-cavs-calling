@@ -61,7 +61,8 @@ process exclude_cavs {
     """
     cat ${non_aggregated_snps} \
         | awk -v OFS='\t' '((NR==1) || (\$NF > ${params.fdr_tr})) {print}' \
-        | cut -f1-12 > ${name}
+        | cut -f1-12
+        | sort-bed - > ${name}
     """
 }
 
