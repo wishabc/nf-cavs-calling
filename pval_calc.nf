@@ -59,10 +59,11 @@ process exclude_cavs {
     script:
     name = "${indiv_id}.snps.bed"
     """
+    head -1 ${non_aggregated_snps} | cut -f1-12  > ${name}
     cat ${non_aggregated_snps} \
-        | awk -v OFS='\t' '((NR==1) || (\$NF > ${params.fdr_tr})) {print}' \
+        | awk -v OFS='\t' '\$NF > ${params.fdr_tr} {print}' \
         | cut -f1-12 \
-        | sort-bed - > ${name}
+        | sort-bed - >> ${name}
     """
 }
 
