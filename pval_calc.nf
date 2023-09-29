@@ -15,6 +15,7 @@ process calc_pval_binom {
     script:
     name = "${indiv_id}.pvalue.bed"
     """
+    echo 1
     python3 $moduleDir/bin/calc_pval_binom.py \
         -I ${badmap_intersect_file} \
         -O ${name} \
