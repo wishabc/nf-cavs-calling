@@ -364,6 +364,7 @@ workflow {
         | flatten()
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
+        | aggregation
 }   
 
 
