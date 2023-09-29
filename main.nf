@@ -74,7 +74,7 @@ process apply_babachi {
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
     head -n 1 ${snps_file} > header.txt
-    tail -n +2 ${snps_file} | awk '(
+    tail -n +2 ${snps_file} | awk '( \
         (\$10 >= ${params.babachi_maf_tr}) \
             && (\$10 != "None") \
             && (\$11 >= ${params.babachi_maf_tr}) \
