@@ -59,7 +59,7 @@ process exclude_cavs {
     name = "${indiv_id}.snps.bed"
     """
     cat ${non_aggregated_snps} \
-        | awk -v OFS='\t' '((NR==1) || (\$NF <= 0.05)) {print}' \
+        | awk -v OFS='\t' '((NR==1) || (\$NF > ${params.fdr_tr})) {print}' \
         | cut -f1-11 > ${name}
     """
 }
