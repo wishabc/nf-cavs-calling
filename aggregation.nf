@@ -7,7 +7,7 @@ process aggregate_pvals {
     tag "${indiv_id}"
 
     input:
-        tuple val(indiv_id), path(pval_file)
+        tuple val(indiv_id), path(pval_file), path(weights)
 
     output:
         tuple val(indiv_id), path(name)
@@ -18,7 +18,7 @@ process aggregate_pvals {
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
         -O ${name} \
-        --weights /net/seq/data2/projects/sabramov/ENCODE4/dnase0620/ENCODE3+4/aggregation_weights_fixed.json
+        --weights ${weights}
     """
 }
 
@@ -108,6 +108,9 @@ workflow aggregation {
 
         aggregated_merged = pvals
             | merge_files
+            | combine(
+                Channel.fromPath(params.weights)
+            )
             | aggregate_pvals
             | map(it -> it[1])
             | collectFile(
