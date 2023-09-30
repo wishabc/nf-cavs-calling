@@ -55,7 +55,6 @@ def aggregate_pvalues(pval_list, method='stouffer'):
     return st.combine_pvalues(pvalues, method=method,)[1]
 
 def aggregate_pvals_stf(df, weights_dict):
-    # weights = np.power(df['coverage'], 2)
     weights = df[['BAD', 'coverage']].apply(lambda row: weights_dict[str(float(row['BAD']))][str(int(row['coverage']))], axis=1).to_numpy()
     weights = np.power(weights, 2)
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
@@ -66,8 +65,8 @@ def aggregate_pvals_stf(df, weights_dict):
     # pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # pval_weighted2 = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
     return pd.Series(
-        [pval_ref_weighted, pval_alt_weighted],
-        ["pval_ref_weighted", "pval_alt_weighted"]
+        [pval_ref_weighted, pval_alt_weighted, es_weighted],
+        ["pval_ref_weighted", "pval_alt_weighted", "es_weighted"]
         )
     
 def aggregate_pvalues_df(pval_df, weights):
@@ -90,7 +89,7 @@ def aggregate_pvalues_df(pval_df, weights):
         RAF=('RAF', 'first')
     )
     return snp_stats.join(
-        pval_df[[*starting_columns, 'BAD', 'pval_ref', 'pval_alt', 'coverage']].groupby(
+        pval_df[[*starting_columns, 'BAD', 'es', 'pval_ref', 'pval_alt', 'coverage']].groupby(
             starting_columns
         ).progress_apply(
             lambda x: aggregate_pvals_stf(x, weights)
