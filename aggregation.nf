@@ -17,7 +17,8 @@ process aggregate_pvals {
     """
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
-        -O ${name}
+        -O ${name} \
+        --weights /net/seq/data2/projects/sabramov/ENCODE4/dnase0620/ENCODE3+4/aggregation_weights_fixed.json
     """
 }
 
