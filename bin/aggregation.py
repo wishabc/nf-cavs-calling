@@ -69,11 +69,10 @@ def parse_row(row, weights_dict):
 
 def aggregate_pvals_stf(df, weights_dict):
     weights = df[['BAD', 'coverage']].apply(lambda row: parse_row(row, weights_dict), axis=1).to_numpy()
-    weights = np.power(weights, 2)
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     #pval_weighted = st.combine_pvalues(df['min_pval'].fillna(1), method='stouffer', weights=weights)[1]
-    es_weighted = np.zeros(weights.shape)
+    es_weighted = np.average(expit(df['es'] * np.log(2)), weights=weights)
     # pval_ref_weighted2 = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     # pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # pval_weighted2 = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
