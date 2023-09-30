@@ -135,7 +135,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', help='Weights file', default=None)
     args = parser.parse_args()
     pval_df = pd.read_table(args.I, low_memory=False)
-    pval_df = pval_df[pval_df['BAD'] <= pval_df[['ref_counts', 'alt_counts']].max(axis=1)/pval_df[['ref_counts', 'alt_counts']].min(axis=1) ]
+    #pval_df = pval_df[pval_df['BAD'] <= pval_df[['ref_counts', 'alt_counts']].max(axis=1)/pval_df[['ref_counts', 'alt_counts']].min(axis=1) ]
     with open(args.weights) as f:
         weights = json.load(f)
     main(pval_df, args.chrom, weights).to_csv(args.O, sep='\t', index=False)
