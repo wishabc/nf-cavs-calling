@@ -5,7 +5,7 @@ from statsmodels.stats.multitest import multipletests
 import numpy as np
 from scipy.special import logit, expit
 from tqdm import tqdm
-
+import json
 tqdm.pandas()
 
 alleles = {'ref': 'alt', 'alt': 'ref'}
@@ -54,25 +54,22 @@ def aggregate_pvalues(pval_list, method='stouffer'):
     #     return pvalues[0]
     return st.combine_pvalues(pvalues, method=method,)[1]
 
-def aggregate_pvals_stf(df):
-    weights = np.power(df['coverage'], 2)
+def aggregate_pvals_stf(df, weights_dict):
+    # weights = np.power(df['coverage'], 2)
+    weights = df[['BAD', 'coverage']].apply(lambda row: weights_dict[str(float(row['BAD']))][str(row['coverage'])])
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
-    # pval_weighted = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
+    # # pval_weighted = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
     
-    weights = np.sqrt(df['coverage'])
-    pval_ref_weighted2 = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
-    pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
+    # pval_ref_weighted2 = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
+    # pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # pval_weighted2 = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
     return pd.Series(
-        [pval_ref_weighted, pval_alt_weighted,
-        pval_ref_weighted2, pval_alt_weighted2], 
-        ["pval_ref_weighted", "pval_alt_weighted",
-        "pval_ref_weighted_sqrt", "pval_alt_weighted_sqrt",
-        ]
+        [pval_ref_weighted, pval_alt_weighted]
+        ["pval_ref_weighted", "pval_alt_weighted"]
         )
     
-def aggregate_pvalues_df(pval_df):
+def aggregate_pvalues_df(pval_df, weights):
     pval_df = pval_df.assign(
         **{
             col: pd.NA for col in 
@@ -92,10 +89,10 @@ def aggregate_pvalues_df(pval_df):
         RAF=('RAF', 'first')
     )
     return snp_stats.join(
-        pval_df[[*starting_columns, 'pval_ref', 'pval_alt', 'min_pval', 'coverage']].groupby(
+        pval_df[[*starting_columns, 'BAD', 'pval_ref', 'pval_alt', 'min_pval', 'coverage']].groupby(
             starting_columns
         ).progress_apply(
-            aggregate_pvals_stf
+            lambda x: aggregate_pvals_stf(x, weights)
         )
     ).reset_index()
     # return snp_stats.reset_index()
@@ -115,7 +112,7 @@ def calc_fdr(aggr_df, prefix='aggregated_'):
     return aggr_df
 
 
-def main(pval_df, chrom=None):
+def main(pval_df, chrom=None, weights=None):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     pval_df = pval_df[pval_df['is_tested']]
@@ -123,7 +120,7 @@ def main(pval_df, chrom=None):
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
-    aggr_df = aggregate_pvalues_df(pval_df)
+    aggr_df = aggregate_pvalues_df(pval_df, weights)
     #res_df = calc_fdr(aggr_df)
     #return res_df
     return aggr_df
@@ -134,6 +131,9 @@ if __name__ == '__main__':
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
     parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
+    parser.add_argument('--weights', help='Weights file', default=None)
     args = parser.parse_args()
     pval_df = pd.read_table(args.I, low_memory=False)
-    main(pval_df, args.chrom).to_csv(args.O, sep='\t', index=False)
+    with open(args.weights) as f:
+        weights = json.load(f)
+    main(pval_df, args.chrom, weights).to_csv(args.O, sep='\t', index=False)
