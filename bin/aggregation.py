@@ -54,8 +54,21 @@ def aggregate_pvalues(pval_list, method='stouffer'):
     #     return pvalues[0]
     return st.combine_pvalues(pvalues, method=method,)[1]
 
+def parse_row(row, weights_dict):
+    try:
+        d = weights_dict[str(float(row['BAD']))]
+    except KeyError:
+        print(f'No {row["BAD"]} BAD in weights dict')
+        raise
+    try:
+        result = d[[str(int(row['coverage']))]]
+    except KeyError:
+        print(f'No {row["BAD"]},{row["coverage"]} in weights dict')
+        raise
+    return result
+
 def aggregate_pvals_stf(df, weights_dict):
-    weights = df[['BAD', 'coverage']].apply(lambda row: weights_dict[str(float(row['BAD']))][str(int(row['coverage']))], axis=1).to_numpy()
+    weights = df[['BAD', 'coverage']].apply(lambda row: parse_row(row, weights_dict), axis=1).to_numpy()
     weights = np.power(weights, 2)
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
