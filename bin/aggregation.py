@@ -65,7 +65,7 @@ def aggregate_pvals_stf(df, weights_dict):
     # pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # pval_weighted2 = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
     return pd.Series(
-        [pval_ref_weighted, pval_alt_weighted]
+        [pval_ref_weighted, pval_alt_weighted],
         ["pval_ref_weighted", "pval_alt_weighted"]
         )
     
