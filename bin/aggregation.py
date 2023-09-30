@@ -61,7 +61,7 @@ def parse_row(row, weights_dict):
         print(f'No {row["BAD"]} BAD in weights dict')
         raise
     try:
-        result = d[[str(int(row['coverage']))]]
+        result = d[str(int(row['coverage']))]
     except KeyError:
         print(f'No {row["BAD"]},{row["coverage"]} in weights dict')
         raise
