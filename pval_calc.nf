@@ -68,6 +68,7 @@ process add_cavs {
         ${n_badmap} \
         --output not_sorted_cavs.bed
 
+
     head -1 not_sorted_cavs.bed > ${name}
     sort-bed not_sorted_cavs.bed >> ${name}
     """
