@@ -56,8 +56,7 @@ def aggregate_pvalues(pval_list, method='stouffer'):
 
 def aggregate_pvals_stf(df, weights_dict):
     # weights = np.power(df['coverage'], 2)
-    print(df.columns)
-    weights = df[['BAD', 'coverage']].apply(lambda row: weights_dict[str(float(row['BAD']))][str(row['coverage'])]).fillna(1).to_numpy()
+    weights = df[['BAD', 'coverage']].apply(lambda row: weights_dict[str(float(row['BAD']))][str(row['coverage'])], axis=1).fillna(1).to_numpy()
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # # pval_weighted = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
@@ -81,10 +80,10 @@ def aggregate_pvalues_df(pval_df, weights):
     snp_stats = pval_df.groupby(starting_columns).agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
-        # hotspots_n=('hotspots', calc_sum_if_not_minus),
-        # footprints_n=('footprints', calc_sum_if_not_minus),
-        # mean_cover=('coverage', 'mean'),
-        # mean_BAD=('BAD', 'mean'),
+        hotspots_n=('hotspots', calc_sum_if_not_minus),
+        footprints_n=('footprints', calc_sum_if_not_minus),
+        mean_cover=('coverage', 'mean'),
+        mean_BAD=('BAD', 'mean'),
         group_id=('group_id', 'first'),
         AAF=('AAF', 'first'),
         RAF=('RAF', 'first')
