@@ -60,7 +60,7 @@ def aggregate_pvals_stf(df, weights_dict):
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     #pval_weighted = st.combine_pvalues(df['min_pval'].fillna(1), method='stouffer', weights=weights)[1]
-    
+    es_weighted = np.zeros(weights.shape)
     # pval_ref_weighted2 = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     # pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
     # pval_weighted2 = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
