@@ -90,7 +90,7 @@ def aggregate_pvalues_df(pval_df, weights):
         RAF=('RAF', 'first')
     )
     return snp_stats.join(
-        pval_df[[*starting_columns, 'BAD', 'pval_ref', 'pval_alt', 'min_pval', 'coverage']].groupby(
+        pval_df[[*starting_columns, 'BAD', 'pval_ref', 'pval_alt', 'coverage']].groupby(
             starting_columns
         ).progress_apply(
             lambda x: aggregate_pvals_stf(x, weights)
