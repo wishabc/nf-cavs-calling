@@ -187,6 +187,7 @@ process estimate_mse {
     conda params.conda
     scratch true
     publishDir params.outdir
+    label "high_mem"
 
     input:
         path all_pvals
