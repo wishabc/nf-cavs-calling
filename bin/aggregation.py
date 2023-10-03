@@ -17,9 +17,10 @@ result_columns = [*starting_columns, 'AAF', 'RAF',
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
     'group_id',
-    'pval_ref_weighted',
-    'pval_alt_weighted',
-    'es_weighted',
+    'pval_ref_combined',
+    'pval_alt_combined',
+    'es_combined',
+    'logit_es_combined',
     'min_pval',
     'min_fdr'
     ]
@@ -39,12 +40,12 @@ def calc_sum_if_not_minus(df_column):
 
 def aggregate_pvals(df):
     weights = df['inverse_mse']
-    pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
-    pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
-    es_weighted = np.average(expit(df['es'] * np.log(2)), weights=weights)
+    pval_ref_combined = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
+    pval_alt_combined = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
+    es_combined = np.average(expit(df['es'] * np.log(2)), weights=weights)
     return pd.Series(
-        [pval_ref_weighted, pval_alt_weighted, es_weighted],
-        ["pval_ref_weighted", "pval_alt_weighted", "es_weighted"]
+        [pval_ref_combined, pval_alt_combined, es_combined],
+        ["pval_ref_combined", "pval_alt_combined", "es_combined"]
         )
     
 def aggregate_pvalues_df(pval_df):
@@ -125,8 +126,11 @@ def main(pval_df, chrom=None, max_cover_tr=15):
         aggr_df, 
         cover_tr=max_cover_tr, 
         cover_col='max_cover',
-        pval_cols=["pval_ref_weighted", "pval_alt_weighted"]
+        pval_cols=["pval_ref_combined", "pval_alt_combined"]
     )
+    pseudocount = 1/100
+    es = aggr_df['es_combined']
+    aggr_df['logit_es_combined'] = np.log2((es + pseudocount) / (1 - es + pseudocount))
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 
