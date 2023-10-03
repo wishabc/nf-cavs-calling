@@ -15,57 +15,18 @@ starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 result_columns = [*starting_columns, 'AAF', 'RAF',
     'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
-    #'es_weighted_mean', 'es_mean', 
-    #'logit_pval_ref', 'logit_pval_alt',
-     'group_id',
-    #'fdrp_bh_ref', 'fdrp_bh_alt',
-    'aggregated_pval_ref',
-    'aggregated_pval_alt',
-    'aggregated_pval',
-     'min_fdr'
+    'group_id',
+    'pval_ref_weighted',
+    'pval_alt_weighted',
+    'es_weighted',
+    'min_pval',
+    'min_fdr'
     ]
 
 
 def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
-
-
-def aggregate_es(stat):
-    valid_index = ~pd.isna(stat['min_pval']) & (stat['min_pval'] != 1) & (stat['min_pval'] != 0)
-    stat = stat[valid_index]
-    es_column = stat['es']
-    if es_column.empty:
-        es_mean = np.nan
-        es_weighted_mean = np.nan
-    else:
-        es_weighted_mean = np.average(es_column.to_numpy(), weights=-np.log10(stat['min_pval']))
-        es_mean = logit(np.average(expit(es_column.to_numpy()), weights=stat['coverage']))
-    
-    return pd.Series([es_mean, es_weighted_mean], ["es_mean", "es_weighted_mean"])
-
-
-def aggregate_pvalues(pval_list, method='stouffer'):
-    pvalues = pval_list
-    # pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
-    # if len(pvalues) == 0:
-    #     return 1
-    # elif len(pvalues) == 1:
-    #     return pvalues[0]
-    return st.combine_pvalues(pvalues, method=method,)[1]
-
-def parse_row(row, weights_dict):
-    try:
-        d = weights_dict[str(float(row['BAD']))]
-    except KeyError:
-        print(f'No {row["BAD"]} BAD in weights dict')
-        raise
-    try:
-        result = d[str(int(row['coverage']))]
-    except KeyError:
-        print(f'No {row["BAD"]},{row["coverage"]} in weights dict')
-        raise
-    return result
 
 def aggregate_pvals(df):
     weights = df['inverse_mse']

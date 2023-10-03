@@ -11,7 +11,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested', 'min_pval', 'FDR_sample']
+updated_columns = ['coverage', 'w', 'es', 'pval_ref', 'pval_alt', 'is_tested', 'min_pval', 'FDR_sample']
 
 class CalcImbalance:
     def __init__(self, allele_tr, modify_w):
@@ -92,7 +92,7 @@ def main(df, coverage_tr=10, allele_tr=0, modify_w=False):
     # Remove already present columns
     df = df[[x for x in df.columns if x not in updated_columns]]
     # Check if empty
-    result_columns = [*df.columns, 'coverage', *updated_columns]
+    result_columns = [*df.columns, *updated_columns]
     if df.empty:
         return pd.DataFrame([], columns=result_columns)
 
