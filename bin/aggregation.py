@@ -67,21 +67,17 @@ def parse_row(row, weights_dict):
         raise
     return result
 
-def aggregate_pvals_stf(df, weights_dict):
-    weights = df[['BAD', 'coverage']].apply(lambda row: parse_row(row, weights_dict), axis=1).to_numpy()
+def aggregate_pvals(df):
+    weights = df['inverse_mse']
     pval_ref_weighted = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_weighted = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
-    #pval_weighted = st.combine_pvalues(df['min_pval'].fillna(1), method='stouffer', weights=weights)[1]
     es_weighted = np.average(expit(df['es'] * np.log(2)), weights=weights)
-    # pval_ref_weighted2 = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
-    # pval_alt_weighted2 = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
-    # pval_weighted2 = st.combine_pvalues(df['min_pval'], method='stouffer', weights=weights)[1]
     return pd.Series(
         [pval_ref_weighted, pval_alt_weighted, es_weighted],
         ["pval_ref_weighted", "pval_alt_weighted", "es_weighted"]
         )
     
-def aggregate_pvalues_df(pval_df, weights):
+def aggregate_pvalues_df(pval_df):
     pval_df = pval_df.assign(
         **{
             col: pd.NA for col in 
@@ -101,11 +97,9 @@ def aggregate_pvalues_df(pval_df, weights):
         RAF=('RAF', 'first')
     )
     return snp_stats.join(
-        pval_df[[*starting_columns, 'BAD', 'es', 'pval_ref', 'pval_alt', 'coverage']].groupby(
+        pval_df[[*starting_columns, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
             starting_columns
-        ).progress_apply(
-            lambda x: aggregate_pvals_stf(x, weights)
-        )
+        ).progress_apply(aggregate_pvals)
     ).reset_index()
     # return snp_stats.reset_index()
     # return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
@@ -160,7 +154,7 @@ def calc_fdr_pd(pd_series):
     return result
 
 
-def main(pval_df, chrom=None, weights=None):
+def main(pval_df, chrom=None):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     pval_df = pval_df[pval_df['is_tested']]
@@ -168,7 +162,10 @@ def main(pval_df, chrom=None, weights=None):
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
-    aggr_df = aggregate_pvalues_df(pval_df, weights)
+    aggr_df = aggregate_pvalues_df(pval_df)
+    aggr_df['min_pval'] = aggr_df[["pval_ref_weighted", "pval_alt_weighted"]].min(axis=1) * 2
+    aggr_df.loc[aggr_df['min_pval'] > 1, 'min_pval'] = pd.NA
+    aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     #res_df = calc_fdr(aggr_df)
     #return res_df
     return aggr_df
@@ -183,6 +180,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     pval_df = pd.read_table(args.I, low_memory=False)
     #pval_df = pval_df[pval_df['BAD'] <= pval_df[['ref_counts', 'alt_counts']].max(axis=1)/pval_df[['ref_counts', 'alt_counts']].min(axis=1) ]
-    with open(args.weights) as f:
-        weights = json.load(f)
-    main(pval_df, args.chrom, weights).to_csv(args.O, sep='\t', index=False)
+    weights = pd.read_table(args.weights)
+    pval_df = pval_df.merge(weights, on=['BAD', 'coverage'])
+    main(pval_df, args.chrom).to_csv(args.O, sep='\t', index=False)
