@@ -180,9 +180,9 @@ if __name__ == '__main__':
                                     Expected to be "auto" or a positive integer""", default='auto')
     args = parser.parse_args()
     try:
-        coverage_tr = int(args.max_coverage_tr) if args.ct != 'auto' else 'auto'
+        coverage_tr = int(args.max_coverage_tr) if args.max_coverage_tr != 'auto' else 'auto'
     except ValueError:
-        print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
+        print(f'Incorrect coverage threshold provided. {args.max_coverage_tr} not a positive integer or "auto"')
         raise
     pval_df = pd.read_table(args.I, low_memory=False)
     #pval_df = pval_df[pval_df['BAD'] <= pval_df[['ref_counts', 'alt_counts']].max(axis=1)/pval_df[['ref_counts', 'alt_counts']].min(axis=1) ]
