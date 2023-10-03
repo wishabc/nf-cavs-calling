@@ -4,7 +4,7 @@ from scipy.special import betainc
 import argparse
 import numpy as np
 from scipy.special import expit
-from aggregation import calc_fdr_pd, parse_coverage
+from aggregation import calc_fdr_pd, parse_coverage, get_min_pval
 
 from tqdm import tqdm
 
@@ -87,7 +87,7 @@ def calc_fdr(group_df):
     group_df.loc[:, 'FDR_sample'] = corrected_pvalues
     return group_df
 
-def main(df, coverage_tr=10, allele_tr=0, modify_w=False):
+def main(df, coverage_tr=15, allele_tr=0, modify_w=False):
     df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
     # Remove already present columns
     df = df[[x for x in df.columns if x not in updated_columns]]
@@ -110,9 +110,12 @@ def main(df, coverage_tr=10, allele_tr=0, modify_w=False):
         min_pval=pd.NA, 
         FDR_sample=pd.NA
     )[result_columns]
-    result['min_pval'] = result[['pval_ref', 'pval_alt']].min(axis=1) * 2
-    ind = result.eval(f'min_pval > 1 | coverage < {coverage_tr}')
-    result.loc[ind, 'min_pval'] = pd.NA
+    result['min_pval'] = get_min_pval(
+        result,
+        cover_tr=coverage_tr,
+        cover_col='coverage',
+        pval_cols=[['pval_ref', 'pval_alt']]
+    )
     return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)[result_columns]
 
 
@@ -124,7 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
     parser.add_argument('--coverage_threhold', type=str, help="""Coverage threshold for variants to calculate per-sample q-values.
-                            Expected to be "auto" or a positive integer""", default='auto')
+                            Expected to be "auto" or a positive integer""", default=15)
     args = parser.parse_args()
     coverage_tr = parse_coverage(args.coverage_threhold)
     input_df = pd.read_table(args.I, low_memory=False)

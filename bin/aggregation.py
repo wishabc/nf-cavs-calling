@@ -3,7 +3,7 @@ import pandas as pd
 import scipy.stats as st
 from scipy import interpolate
 import numpy as np
-from scipy.special import logit, expit
+from scipy.special import expit
 from tqdm import tqdm
 
 
@@ -71,12 +71,7 @@ def aggregate_pvalues_df(pval_df):
             starting_columns
         ).progress_apply(aggregate_pvals)
     ).reset_index()
-    # return snp_stats.reset_index()
-    # return pval_df[[*starting_columns, 'es', 'min_pval', 'coverage']].groupby(
-    #     starting_columns
-    # ).progress_apply(
-    #     aggregate_es
-    # ).join(snp_stats).reset_index()
+
 
 def qvalue(pvals, bootstrap=False):
     m, pvals = len(pvals), np.asarray(pvals)
@@ -114,19 +109,24 @@ def calc_fdr_pd(pd_series):
         result[ind] = qvalue(pd_series[ind].to_numpy(), bootstrap=True)
     return result
 
+def get_min_pval(df, cover_tr, cover_col, pval_cols):
+    min_pval = (df[pval_cols].min(axis=1) * 2).to_numpy()
+    ind = df[cover_col] < cover_tr | min_pval > 1
+    min_pval[ind] = np.nan
+    return min_pval
 
 def main(pval_df, chrom=None, max_cover_tr=15):
-    if pval_df.empty:
-        return pd.DataFrame([], columns=result_columns)
-    pval_df = pval_df[pval_df['is_tested']]
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
-    aggr_df['min_pval'] = aggr_df[["pval_ref_weighted", "pval_alt_weighted"]].min(axis=1) * 2
-    ind = aggr_df.eval(f'max_cover < {max_cover_tr} | min_pval > 1')
-    aggr_df.loc[ind, 'min_pval'] = pd.NA
+    aggr_df['min_pval'] = get_min_pval(
+        aggr_df, 
+        cover_tr=max_cover_tr, 
+        cover_col='max_cover',
+        pval_cols=["pval_ref_weighted", "pval_alt_weighted"]
+    )
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 
