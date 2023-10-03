@@ -5,7 +5,8 @@ from scipy import interpolate
 import numpy as np
 from scipy.special import logit, expit
 from tqdm import tqdm
-import json
+
+
 tqdm.pandas()
 
 alleles = {'ref': 'alt', 'alt': 'ref'}
@@ -128,7 +129,7 @@ def main(pval_df, chrom=None, max_cover_tr=15):
     ind = aggr_df.eval(f'max_cover <= {max_cover_tr} | min_pval > 1')
     aggr_df.loc[ind, 'min_pval'] = pd.NA
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
-    return aggr_df
+    return aggr_df[result_columns]
 
 
 if __name__ == '__main__':
