@@ -29,7 +29,7 @@ process collect_files {
     """
     head -n 1 ${babachi_files[0]} > ${name}
     tail -n +2 -q ${babachi_files} \
-        | awk '\$7+\$8 >= ${params.initial_filter} {print;}' \
+        | awk '\$7+\$8 >= ${params.initial_coverage_filter} {print;}' \
         | sort-bed - >> ${name}
     """
 }
