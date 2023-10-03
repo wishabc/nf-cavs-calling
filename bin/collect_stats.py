@@ -18,5 +18,5 @@ if __name__ == '__main__':
         type=float, default=0.1)
     args = parser.parse_args()
     aggregated_variants = pd.read_table(args.I)
-    res_df = main(aggregated_variants, args.fdr)
+    res_df = main(aggregated_variants[aggregated_variants['min_fdr'].notna()], args.fdr)
     res_df.to_csv(args.O, sep='\t', index=False)

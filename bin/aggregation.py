@@ -87,7 +87,7 @@ def qvalue(pvals, bootstrap=False):
     else:
         cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
         pi0 = float(cs(1.))
-
+    
     pi0 = min(pi0, 1)
     # Compute the q-values.
     qvals = np.zeros(len(pvals))
