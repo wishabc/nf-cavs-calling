@@ -58,5 +58,5 @@ Following parameters should be present in ```params.config```. Each option can b
 
 BABACHI params, change only if you know what you are doing
 - ```states, prior, geometric_prior```  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/ for more details
-- ```allele_tr``` - exclude SNPs with less than `alelle_tr` reads on each of the alleles for BAD maps estimation, tested on `allele_tr=5`
+- ```babachi_allele_tr``` - exclude SNPs with less than `alelle_tr` reads on each of the alleles for BAD maps estimation, tested on `allele_tr=5`
 - ```babachi_maf_tr``` - exclude SNPs with less than `babachi_maf_tr` AF on each of the alleles for BAD maps estimation, tested on `babachi_maf_tr=0.05`

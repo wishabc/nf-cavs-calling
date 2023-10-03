@@ -87,8 +87,7 @@ def calc_fdr(group_df):
     group_df.loc[:, 'FDR_sample'] = corrected_pvalues
     return group_df
 
-def main(df, coverage_tr=15, allele_tr=0, modify_w=False):
-    df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
+def main(df, coverage_tr=15, modify_w=False):
     # Remove already present columns
     df = df[[x for x in df.columns if x not in updated_columns]]
     # Check if empty
@@ -96,7 +95,7 @@ def main(df, coverage_tr=15, allele_tr=0, modify_w=False):
     if df.empty:
         return pd.DataFrame([], columns=result_columns)
 
-    imbalance_est = CalcImbalance(allele_tr=allele_tr, modify_w=modify_w)
+    imbalance_est = CalcImbalance(allele_tr=0, modify_w=modify_w)
     df['coverage'] = df.eval('ref_counts + alt_counts')
 
     result = imbalance_est.calc_pval(
@@ -123,7 +122,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('-a', type=int, help='Allelic reads threshold', default=0)
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
     parser.add_argument('--coverage_threhold', type=str, help="""Coverage threshold for variants to calculate per-sample q-values.
@@ -133,7 +131,6 @@ if __name__ == '__main__':
     input_df = pd.read_table(args.I, low_memory=False)
     modified_df = main(
         input_df,
-        allele_tr=args.a,
         modify_w=args.recalc_w,
         coverage_tr=coverage_tr
     )

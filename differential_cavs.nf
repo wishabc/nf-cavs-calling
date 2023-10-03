@@ -23,7 +23,6 @@ process LRT {
         ${chromosome} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups} \
-        --allele_tr ${params.allele_tr} \
         --chrom ${chromosome}
     """
 }

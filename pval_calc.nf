@@ -18,7 +18,6 @@ process calc_pval_binom {
     python3 $moduleDir/bin/calc_pval_binom.py \
         -I ${badmap_intersect_file} \
         -O ${name} \
-        -a ${params.allele_tr} \
         --coverage_threhold ${params.fdr_coverage_filter} \
         --recalc-w
     """
