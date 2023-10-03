@@ -229,26 +229,24 @@ workflow combineFilesAndEstimateBAD {
 
 workflow {
     // Estimate BAD and call 1-st round CAVs
-    iter1_prefix = 'iter1'
 
     bads = Channel.of(params.states.tokenize(','))
     input_data = Channel.fromPath(params.samples_file)
         | splitCsv(header: true, sep: '\t')
         | map(row -> tuple(row.indiv_id, file(row.snps_file)))
 
-    intersect_files = combineFilesAndEstimateBAD(input_data, iter1_prefix)[1]
+    intersect_files = combineFilesAndEstimateBAD(input_data, 'iter1')[1]
     // Calculate P-value + exclude 1-st round CAVs 
-    no_cavs_snps = callCavsFirstRound(intersect_files, iter1_prefix)
+    no_cavs_snps = callCavsFirstRound(intersect_files)
 
-    iter2_prefix = 'final'
     // Reestimate BAD, and add excluded SNVs
-    all_snps = estimateBAD(no_cavs_snps, iter2_prefix)
+    all_snps = estimateBAD(no_cavs_snps, 'final')
         | join(intersect_files, remainder: true)
         | map(it -> tuple(it[0], it[1] != null ? it[1] : file('empty'), it[2]))
         | add_cavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    out = calcPvalBinom(all_snps, iter2_prefix)
+    out = calcPvalBinom(all_snps)
         | split_into_samples
         | flatten()
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))

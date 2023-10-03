@@ -7,7 +7,6 @@ process calc_pval_binom {
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
-        val prefix
 
     output:
         tuple val(indiv_id), path(name)
@@ -24,7 +23,6 @@ process calc_pval_binom {
         --recalc-w
     """
 }
-
 
 process exclude_cavs {
     conda params.conda
@@ -77,9 +75,8 @@ process add_cavs {
 workflow calcPvalBinom {
     take:
         data
-        prefix
     main:
-        pval_files = calc_pval_binom(data, prefix)
+        pval_files = data | calc_pval_binom
     emit:
         pval_files
 }
@@ -88,9 +85,9 @@ workflow calcPvalBinom {
 workflow callCavsFirstRound {
     take:
         bad_annotations
-        prefix
     main:
-        no_cavs_snps = calcPvalBinom(bad_annotations, prefix)
+        no_cavs_snps = bad_annotations
+            | calcPvalBinom
             | exclude_cavs
     emit:
         no_cavs_snps
