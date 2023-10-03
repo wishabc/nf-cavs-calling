@@ -14,6 +14,27 @@ def check_var(var, prefix) {
     return file("${prefix}.empty") 
 }
 
+process collect_files {
+    conda params.conda
+    tag "${badmap_id}"
+
+    input:
+        tuple val(badmap_id), path(babachi_files)
+
+    output:
+        tuple val(badmap_id), path(name)
+    
+    script:
+    name = "${badmap_id}.bed"
+    """
+    head -n 1 ${babachi_files[0]} > ${name}
+    tail -n +2 -q ${babachi_files} \
+        | awk '\$7+\$8 >= ${params.initial_filter} {print;}' \
+        | sort-bed - >> ${name}
+    """
+}
+
+
 process filter_tested_variants {
     conda params.conda
     scratch true
@@ -156,26 +177,6 @@ process annotate_variants {
     """
 }
 
-
-process collect_files {
-    conda params.conda
-    tag "${badmap_id}"
-
-    input:
-        tuple val(badmap_id), path(babachi_files)
-
-    output:
-        tuple val(badmap_id), path(name)
-    
-    script:
-    name = "${badmap_id}.bed"
-    """
-    head -n 1 ${babachi_files[0]} > ${name}
-    tail -n +2 -q ${babachi_files} \
-        | awk '\$7+\$8 >= ${params.initial_filter} {print;}' \
-        | sort-bed - >> ${name}
-    """
-}
 
 process estimate_mse {
     conda params.conda
