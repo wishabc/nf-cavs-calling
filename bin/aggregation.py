@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 import scipy.stats as st
-from statsmodels.stats.multitest import multipletests
+from scipy import interpolate
 import numpy as np
 from scipy.special import logit, expit
 from tqdm import tqdm
@@ -114,14 +114,50 @@ def aggregate_pvalues_df(pval_df, weights):
     #     aggregate_es
     # ).join(snp_stats).reset_index()
 
+def qvalue(pvals, bootstrap=False):
+    """
+    Nominal p-values = min(min(logit_p_ref, logit_p_alt) * 2, 1)
+    If bootstrap is False, trim p==1 from data
+    Else you can keep all p-values (with similar sensisitiy)
+    """
+    m, pvals = len(pvals), np.asarray(pvals)
+    ind = np.argsort(pvals)
+    rev_ind = np.argsort(ind)
+    pvals = pvals[ind]
 
-def calc_fdr(aggr_df, prefix='aggregated_'):
-    aggr_df["min_fdr"] = multipletests(
-            aggr_df[f'{prefix}pval'],
-            alpha=0.05,
-            method='fdr_bh'
-        )[1]
-    return aggr_df
+    # Estimate proportion of features that are truly null.
+    kappa = np.arange(0.05, 0.96, 0.01)
+    pik = np.array([sum(pvals > k) / (m*(1-k)) for k in kappa])
+
+    if bootstrap:
+        minpi0 = np.quantile(pik, 0.1)
+        W = np.array([(pvals>=l).sum() for l in kappa])
+        mse = (W / (np.square(m^2) * np.square(1-kappa))) * (1-(W/m)) + np.square((pik-minpi0))
+        pi0 = pik[mse==min(mse)][0]
+    else:
+        cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
+        pi0 = float(cs(1.))
+
+    pi0 = min(pi0, 1)
+
+    # Compute the q-values.
+    qvals = np.zeros(len(pvals))
+    qvals[-1] = pi0*pvals[-1]
+    for i in np.arange(m-2, -1, -1):
+        qvals[i] = min(pi0*m*pvals[i]/float(i+1), qvals[i+1])
+
+    qvals = qvals[rev_ind]
+
+    return qvals
+
+
+def calc_fdr_pd(pd_series):
+    result = np.full(pd_series.shape[0], np.nan)
+    ind = pd_series.notna()
+    
+    if pd_series[ind].shape[0] > 0:  # check if any non-NA p-values exist
+        result[ind] = qvalue(pd_series[ind].to_numpy(), bootstrap=True)
+    return result
 
 
 def main(pval_df, chrom=None, weights=None):

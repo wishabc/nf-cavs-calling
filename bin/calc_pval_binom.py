@@ -4,14 +4,14 @@ from scipy.special import betainc
 import argparse
 import numpy as np
 from scipy.special import expit
-from statsmodels.stats.multitest import multipletests
+from aggregation import calc_fdr_pd
 
 from tqdm import tqdm
 
 tqdm.pandas()
 
 
-updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested']
+updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested', 'min_pval', 'FDR_sample']
 
 class CalcImbalance:
     def __init__(self, allele_tr, modify_w):
@@ -83,11 +83,8 @@ class CalcImbalance:
 
 
 def calc_fdr(group_df):
-    ind = group_df['min_pval'].notna()
-    if group_df[ind].shape[0] > 0:  # check if any non-NA p-values exist
-        corrected_pvalues = multipletests(
-            group_df[ind]['min_pval'], alpha=0.05, method='fdr_bh')[1]
-        group_df.loc[ind, 'FDR_sample'] = corrected_pvalues
+    corrected_pvalues = calc_fdr_pd(group_df['min_pval'])
+    group_df.loc[:, 'FDR_sample'] = corrected_pvalues
     return group_df
 
 def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
@@ -113,12 +110,15 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
         BADs=df['BAD'].to_numpy(),
         smooth=False
     )
-    result = df.assign(**dict(zip(updated_columns, result)))[result_columns]
+    result = df.assign(
+        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt', 'is_tested'], result)),
+        min_pval=pd.NA, 
+        FDR_sample=pd.NA
+    )[result_columns]
     result['min_pval'] = result[['pval_ref', 'pval_alt']].min(axis=1) * 2
     ind = (result['min_pval'] > 1) | (~result['is_tested'])
-    result['min_pval'] = np.where(ind, pd.NA, result['min_pval'])
-    result['FDR_sample'] = pd.NA
-    return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)
+    result.loc[ind, 'min_pval'] = pd.NA
+    return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)[result_columns]
 
 
 if __name__ == '__main__':

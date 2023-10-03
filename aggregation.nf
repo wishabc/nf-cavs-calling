@@ -80,6 +80,7 @@ process pack_data {
 workflow aggregation {
     take:
         sample_split_pvals
+        mse_estimates
     main:
         params.aggregation_key = params.aggregation_key ?: "all"
         if (params.aggregation_key != 'all') {
@@ -108,9 +109,7 @@ workflow aggregation {
 
         aggregated_merged = pvals
             | merge_files
-            | combine(
-                Channel.fromPath(params.weights)
-            )
+            | combine(mse_estimates)
             | aggregate_pvals
             | map(it -> it[1])
             | collectFile(
@@ -133,7 +132,9 @@ workflow aggregation {
 
 
 workflow {
-    Channel.fromPath("${params.raw_pvals_dir}/*.bed")
+    by_sample_pvals = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
-        | aggregation
+    
+    mse_estimates = Channel.fromPath("${params.main_run_outdir}/mse_estimates.tsv")
+    aggregation(by_sample_pvals, mse_estimates)
 }

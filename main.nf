@@ -183,6 +183,24 @@ process collect_files {
     """
 }
 
+process estimate_mse {
+    conda params.conda
+    scratch true
+    publishDir params.outdir
+
+    input:
+        path all_pvals
+    
+    output:
+        path name
+    
+    script:
+    name = "mse_estimates.tsv"
+    """
+    python3 $moduleDir/bin/estimate_mse.py ${all_pvals} ${name}
+    """
+}
+
 workflow estimateBAD {
     take:
         snv_files
@@ -234,12 +252,17 @@ workflow {
         | add_cavs
 
     // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    agg_files = calcPvalBinom(all_snps, iter2_prefix)
+    out = calcPvalBinom(all_snps, iter2_prefix)
         | split_into_samples
         | flatten()
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
-        | aggregation
+
+    mse = out 
+        | collectFile(name: "all_pvals.bed", skip: 1, keepHeader: true)
+        | estimate_mse
+    
+    aggregation(out, mse)
 }  
 
 workflow annotateWithFootprints {

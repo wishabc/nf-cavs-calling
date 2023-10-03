@@ -30,9 +30,9 @@ nextflow run main.nf -profile Altius
 
 To run just the last, aggregation, step (expected to run previous command first):
 ```
-nextflow run aggregation.nf -profile Altius --raw_pvals_dir <path to by_sample directory in the output folder of main.nf script>
+nextflow run aggregation.nf -profile Altius --main_run_outdir <path to output folder of main.nf script>
 ```
-The `--raw_pvals_dir` param can be omitted if you are running the pipeline in the same folder as `nextflow run main.nf -profile Altius`
+The `--main_run_outdir` param can be omitted if you are running the pipeline in the same folder as `nextflow run main.nf -profile Altius`
 
 ## Config
 There are two config files in the repository.
