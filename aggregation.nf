@@ -18,6 +18,7 @@ process aggregate_pvals {
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
         -O ${name} \
+        --coverage_tr ${params.max_coverage_tr} \
         --weights ${weights}
     """
 }

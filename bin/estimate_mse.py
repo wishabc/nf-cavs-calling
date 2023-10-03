@@ -49,4 +49,4 @@ def mse(n, B, n_points=101):
 if __name__ == '__main__':
     df = pd.read_table(sys.argv[1])[['BAD', 'coverage']].drop_duplicates()
     df['inverse_mse'] = df.progress_apply(lambda row: 1 / mse(row['coverage'], row['BAD']).mean(), axis=1)
-    df.to_csv(sys.argv[2], index=False, sep='\t')
+    df.sort_values(['BAD', 'coverage']).to_csv(sys.argv[2], index=False, sep='\t')

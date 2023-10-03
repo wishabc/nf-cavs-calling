@@ -87,7 +87,7 @@ def calc_fdr(group_df):
     group_df.loc[:, 'FDR_sample'] = corrected_pvalues
     return group_df
 
-def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
+def main(df, coverage_tr=10, allele_tr=0, modify_w=False):
     df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
     # Remove already present columns
     df = df[[x for x in df.columns if x not in updated_columns]]
@@ -98,11 +98,7 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
 
     imbalance_est = CalcImbalance(allele_tr=allele_tr, modify_w=modify_w)
     df['coverage'] = df.eval('ref_counts + alt_counts')
-    if coverage_tr == 'auto':
-        by_BAD_coverage_tr = {x: imbalance_est.calc_min_cover_by_BAD(x, pvalue_tr=0.05) for x in df['BAD'].unique()}
-        df['is_tested'] = df['coverage'] >= df['BAD'].map(by_BAD_coverage_tr)
-    else:    
-        df['is_tested'] = df.eval(f'coverage >= {coverage_tr}')
+    df['is_tested'] = df.eval(f'coverage >= {coverage_tr}')
 
     result = imbalance_est.calc_pval(
         df['coverage'].to_numpy(), 
@@ -125,7 +121,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('-a', type=int, help='Allelic reads threshold', default=5)
+    parser.add_argument('-a', type=int, help='Allelic reads threshold', default=0)
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
     parser.add_argument('--ct', type=str, help="""Coverage threshold for individual variants to be considered tested.
