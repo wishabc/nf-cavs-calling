@@ -258,8 +258,8 @@ workflow {
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
 
-    mse = out 
-        | collectFile(name: "all_pvals.bed", skip: 1, keepHeader: true)
+    mse = out.collectFile(name: "all_pvals.bed", skip: 1, keepHeader: true)
+        | view()
         | estimate_mse
     
     aggregation(out, mse)
