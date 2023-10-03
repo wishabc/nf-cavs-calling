@@ -71,16 +71,10 @@ def aggregate_pvalues_df(pval_df):
     # ).join(snp_stats).reset_index()
 
 def qvalue(pvals, bootstrap=False):
-    """
-    Nominal p-values = min(min(logit_p_ref, logit_p_alt) * 2, 1)
-    If bootstrap is False, trim p==1 from data
-    Else you can keep all p-values (with similar sensisitiy)
-    """
     m, pvals = len(pvals), np.asarray(pvals)
     ind = np.argsort(pvals)
     rev_ind = np.argsort(ind)
     pvals = pvals[ind]
-
     # Estimate proportion of features that are truly null.
     kappa = np.arange(0.05, 0.96, 0.01)
     pik = np.array([sum(pvals > k) / (m*(1-k)) for k in kappa])
@@ -95,15 +89,12 @@ def qvalue(pvals, bootstrap=False):
         pi0 = float(cs(1.))
 
     pi0 = min(pi0, 1)
-
     # Compute the q-values.
     qvals = np.zeros(len(pvals))
     qvals[-1] = pi0*pvals[-1]
     for i in np.arange(m-2, -1, -1):
         qvals[i] = min(pi0*m*pvals[i]/float(i+1), qvals[i+1])
-
     qvals = qvals[rev_ind]
-
     return qvals
 
 
