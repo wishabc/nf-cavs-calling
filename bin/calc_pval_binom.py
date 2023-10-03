@@ -4,14 +4,14 @@ from scipy.special import betainc
 import argparse
 import numpy as np
 from scipy.special import expit
-from aggregation import calc_fdr_pd
+from aggregation import calc_fdr_pd, parse_coverage
 
 from tqdm import tqdm
 
 tqdm.pandas()
 
 
-updated_columns = ['coverage', 'w', 'es', 'pval_ref', 'pval_alt', 'is_tested', 'min_pval', 'FDR_sample']
+updated_columns = ['coverage', 'w', 'es', 'pval_ref', 'pval_alt', 'min_pval', 'FDR_sample']
 
 class CalcImbalance:
     def __init__(self, allele_tr, modify_w):
@@ -98,7 +98,6 @@ def main(df, coverage_tr=10, allele_tr=0, modify_w=False):
 
     imbalance_est = CalcImbalance(allele_tr=allele_tr, modify_w=modify_w)
     df['coverage'] = df.eval('ref_counts + alt_counts')
-    df['is_tested'] = df.eval(f'coverage >= {coverage_tr}')
 
     result = imbalance_est.calc_pval(
         df['coverage'].to_numpy(), 
@@ -107,12 +106,12 @@ def main(df, coverage_tr=10, allele_tr=0, modify_w=False):
         smooth=False
     )
     result = df.assign(
-        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt', 'is_tested'], result)),
+        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result)),
         min_pval=pd.NA, 
         FDR_sample=pd.NA
     )[result_columns]
     result['min_pval'] = result[['pval_ref', 'pval_alt']].min(axis=1) * 2
-    ind = (result['min_pval'] > 1) | (~result['is_tested'])
+    ind = result.eval(f'min_pval > 1 | coverage < {coverage_tr}')
     result.loc[ind, 'min_pval'] = pd.NA
     return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)[result_columns]
 
@@ -124,14 +123,10 @@ if __name__ == '__main__':
     parser.add_argument('-a', type=int, help='Allelic reads threshold', default=0)
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
-    parser.add_argument('--ct', type=str, help="""Coverage threshold for individual variants to be considered tested.
-                                        Expected to be "auto" or a positive integer""", default='auto')
+    parser.add_argument('--coverage_threhold', type=str, help="""Coverage threshold for variants to calculate per-sample q-values.
+                            Expected to be "auto" or a positive integer""", default='auto')
     args = parser.parse_args()
-    try:
-        coverage_tr = int(args.ct) if args.ct != 'auto' else 'auto'
-    except ValueError:
-        print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
-        raise
+    coverage_tr = parse_coverage(args.coverage_threhold)
     input_df = pd.read_table(args.I, low_memory=False)
     modified_df = main(
         input_df,

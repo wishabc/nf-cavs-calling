@@ -20,7 +20,7 @@ process calc_pval_binom {
         -I ${badmap_intersect_file} \
         -O ${name} \
         -a ${params.allele_tr} \
-        --ct ${params.initial_filter} \
+        --coverage_threhold ${params.fdr_coverage_filter} \
         --recalc-w
     """
 }

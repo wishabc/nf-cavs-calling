@@ -25,6 +25,14 @@ result_columns = [*starting_columns, 'AAF', 'RAF',
     ]
 
 
+def parse_coverage(cov_string):
+    try:
+        return int(cov_string) if cov_string != 'auto' else 'auto'
+    except ValueError:
+        print(f'Incorrect coverage threshold provided. {args.max_coverage_tr} not a positive integer or "auto"')
+        raise
+
+
 def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
@@ -117,7 +125,7 @@ def main(pval_df, chrom=None, max_cover_tr=15):
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
     aggr_df['min_pval'] = aggr_df[["pval_ref_weighted", "pval_alt_weighted"]].min(axis=1) * 2
-    ind = aggr_df.eval(f'max_cover <= {max_cover_tr} | min_pval > 1')
+    ind = aggr_df.eval(f'max_cover < {max_cover_tr} | min_pval > 1')
     aggr_df.loc[ind, 'min_pval'] = pd.NA
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
@@ -127,18 +135,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
+    parser.add_argument('--weights', help='Weights file')
     parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
-    parser.add_argument('--weights', help='Weights file', default=None)
-    parser.add_argument('--max_coverage_tr', type=str, help="""Coverage threshold for recurrent variants.
-                                    Expected to be "auto" or a positive integer""", default='auto')
+    parser.add_argument('--max_coverage_tr', type=str, help="""Threshold for the maximum
+                            of coverages of variants aggregated at the same genomic position.
+                            Expected to be "auto" or a positive integer""", default='auto')
     args = parser.parse_args()
-    try:
-        coverage_tr = int(args.max_coverage_tr) if args.max_coverage_tr != 'auto' else 'auto'
-    except ValueError:
-        print(f'Incorrect coverage threshold provided. {args.max_coverage_tr} not a positive integer or "auto"')
-        raise
+
+    coverage_tr = parse_coverage(args.max_coverage_tr)
+
     pval_df = pd.read_table(args.I, low_memory=False)
-    #pval_df = pval_df[pval_df['BAD'] <= pval_df[['ref_counts', 'alt_counts']].max(axis=1)/pval_df[['ref_counts', 'alt_counts']].min(axis=1) ]
     weights = pd.read_table(args.weights)
     pval_df = pval_df.merge(weights, on=['BAD', 'coverage'])
-    main(pval_df, args.chrom, coverage_tr).to_csv(args.O, sep='\t', index=False)
+    main(pval_df, args.chrom, max_cover_tr=coverage_tr).to_csv(args.O, sep='\t', index=False)

@@ -24,7 +24,7 @@ process aggregate_pvals {
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
         -O ${name} \
-        --max_coverage_tr ${params.max_coverage_tr} \
+        --max_coverage_tr ${params.fdr_coverage_filter} \
         --weights ${weights}
     """
 }
