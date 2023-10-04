@@ -47,10 +47,11 @@ class ANOVA:
 
     def test_snp(self, df):
         n_groups = df['group_id'].nunique()
+        N = len(df.index)
         es_mean = aggregate_effect_size(df['es'], df['inverse_mse'])
         Q0 =  np.average(np.square(df['es'] - 0.0), weights=df['inverse_mse'])
         Qtotal =  np.average(np.square(df['es'] - es_mean), weights=df['inverse_mse'])
-        return pd.Series([es_mean, Qtotal, Q0, n_groups], ['overall_es', 'Qtotal', 'Q0', 'n_groups'])
+        return pd.Series([es_mean, Qtotal, Q0, n_groups, N], ['overall_es', 'Qtotal', 'Q0', 'n_groups', 'N'])
 
     def find_testable_pairs(self, df):
         # # of samples for particular group with variant_id present
