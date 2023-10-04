@@ -111,10 +111,11 @@ def calc_fdr_pd(pd_series):
     return result
 
 def get_min_pval(df, cover_tr, cover_col, pval_cols):
-    min_pval = (df[pval_cols].min(axis=1) * 2).to_numpy()
+    min_pval = df[pval_cols].min(axis=1) * 2
+    print(df[pval_cols].min(axis=1) * 2)
     ind = df[cover_col] < cover_tr | min_pval > 1
     min_pval[ind] = np.nan
-    return min_pval
+    return min_pval.to_numpy()
 
 def main(pval_df, chrom=None, max_cover_tr=15):
     if chrom is not None:
