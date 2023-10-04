@@ -35,7 +35,7 @@ class ANOVA:
             print('No variants for LRT')
         self.tested_melt.drop(columns='variant_id', inplace=True)
 
-        melt['es_fraction'] = expit(melt['es'] * np.log(2))
+        self.tested_melt['es_fraction'] = expit(melt['es'] * np.log(2))
     
     def get_testable_snps(self):
         return self.tested_melt
