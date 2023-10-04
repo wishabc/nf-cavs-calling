@@ -102,6 +102,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
     parser.add_argument('input_data', help='Non-aggregated file with tested CAVs')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
+    parser.add_argument('--weights', help='Weights file')
     parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5) # FIXME not used
@@ -110,12 +111,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     input_df = pd.read_table(args.input_data)
+    weights = pd.read_table(args.weights)
+    input_df = input_df.merge(weights, on=['BAD', 'coverage'])
     data_wrapper = ANOVA(
         input_df[
             (input_df['BAD'] <= 1) # FIXME (<= 1.5?)
-            & input_df['is_tested']
             & (True if args.chrom is None else input_df['#chr'] == args.chrom)
-        ],
+        ].copy(),
         min_samples=args.min_samples,
         min_groups_per_variant=args.min_groups,
     )
