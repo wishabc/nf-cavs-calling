@@ -21,9 +21,10 @@ result_columns = [
 ]
 
 class ANOVA:
-    def __init__(self, melt, min_samples=3, min_groups_per_variant=2):
+    def __init__(self, melt, min_samples=3, min_groups_per_variant=2, coverage_tr=10):
         self.min_samples = min_samples
         self.min_groups_per_variant = min_groups_per_variant
+        self.coverage_tr = coverage_tr
 
         melt['variant_id'] = melt['#chr'] + "@" + melt['end'].astype(str) + "@" + melt['alt']       
 
@@ -58,9 +59,13 @@ class ANOVA:
 
     def find_testable_pairs(self, df):
         # # of samples for particular group with variant_id present
-        samples_num = df.value_counts(['group_id', 'variant_id'])
+        max_cover = df[['variant_id', 'group_id', 'coverage']].groupby(['group_id', 'variant_id']).agg(
+            max_coverage=('coverage', 'max')
+        )
+        samples_num = pd.concat([df.value_counts(['group_id', 'variant_id']), max_cover], axis=1)
         # for each group, variant is present in >= 3 samples
-        samples_num = samples_num[samples_num >= self.min_samples]
+        print(samples_num)
+        samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & count >= {self.min_samples}")]
         # of variants for particular group
         groups_per_variant = samples_num.reset_index().value_counts('variant_id')
 
@@ -110,6 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5) # FIXME not used
     parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
+    parser.add_argument('--coverage_tr', help='Coverage threshold for at least one variant in the group', default=10)
 
     args = parser.parse_args()
 
