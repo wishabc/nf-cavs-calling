@@ -72,7 +72,7 @@ class ANOVA:
         # variants present in >=2 groups
         tested_ids = groups_per_variant[groups_per_variant >= self.min_groups_per_variant].index
 
-        testable_variant_group_pairs = samples_num.reset_index().drop(columns=0)
+        testable_variant_group_pairs = samples_num.reset_index()
 
         return testable_variant_group_pairs[
             testable_variant_group_pairs['variant_id'].isin(tested_ids)
