@@ -101,7 +101,6 @@ def qvalue(pvals, bootstrap=False):
     qvals = qvals[rev_ind]
     return qvals
 
-
 def calc_fdr_pd(pd_series):
     result = np.full(pd_series.shape[0], np.nan)
     ind = pd_series.notna()
