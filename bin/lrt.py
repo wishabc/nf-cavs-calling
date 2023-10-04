@@ -62,7 +62,7 @@ class ANOVA:
         max_cover = df[['variant_id', 'group_id', 'coverage']].groupby(['group_id', 'variant_id']).agg(
             max_coverage=('coverage', 'max')
         )
-        samples_num = pd.concat([df.value_counts(['group_id', 'variant_id']), max_cover], axis=1)
+        samples_num = pd.concat([df.value_counts(['group_id', 'variant_id']), max_cover], axis=1).rename(columns={0: "count"})
         # for each group, variant is present in >= 3 samples
         print(samples_num)
         samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & count >= {self.min_samples}")]
