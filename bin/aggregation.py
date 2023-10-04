@@ -38,11 +38,14 @@ def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
 
+def aggregate_effect_size(effect_sizes, weights):
+    return np.average(expit(effect_sizes * np.log(2)), weights=weights)
+
 def aggregate_pvals(df):
     weights = df['inverse_mse']
     pval_ref_combined = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
     pval_alt_combined = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
-    es_combined = np.average(expit(df['es'] * np.log(2)), weights=weights)
+    es_combined = aggregate_effect_size(df['es'], weights)
     return pd.Series(
         [pval_ref_combined, pval_alt_combined, es_combined],
         ["pval_ref_combined", "pval_alt_combined", "es_combined"]
