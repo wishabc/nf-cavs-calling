@@ -35,7 +35,7 @@ class ANOVA:
             print('No variants for LRT')
         self.tested_melt.drop(columns='variant_id', inplace=True)
 
-        self.tested_melt['es_fraction'] = expit(melt['es'] * np.log(2))
+        self.tested_melt['es_fraction'] = expit(self.tested_melt['es'] * np.log(2))
     
     def get_testable_snps(self):
         return self.tested_melt
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     input_df = pd.read_table(args.input_data)
     weights = pd.read_table(args.weights)
-    input_df = input_df.merge(weights, on=['BAD', 'coverage'])
+    input_df = input_df.merge(weights, on=['BAD', 'coverage'], how='left')
     print("Finished reading non-aggregated file, shape:", input_df.shape)
     print("Unique groups:", input_df['group_id'].unique())
     data_wrapper = ANOVA(
