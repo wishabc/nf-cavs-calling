@@ -2,6 +2,7 @@ import pandas as pd
 import argparse
 import numpy as np
 from scipy.stats import f
+from scipy.special import expit
 
 from aggregation import starting_columns, aggregate_effect_size
 
@@ -33,13 +34,15 @@ class ANOVA:
         if self.tested_melt["variant_id"].nunique() == 0:
             print('No variants for LRT')
         self.tested_melt.drop(columns='variant_id', inplace=True)
+
+        melt['es_fraction'] = expit(melt['es'] * np.log(2))
     
     def get_testable_snps(self):
         return self.tested_melt
 
     def test_group(self, df):
         es2 = aggregate_effect_size(df['es'], df['inverse_mse'])
-        Qg = np.average(np.square(df['es'] - es2), weights=df['inverse_mse'])
+        Qg = np.average(np.square(df['es_fraction'] - es2), weights=df['inverse_mse'])
         return pd.Series(
             [es2, np.sqrt(Qg), Qg],
             ['group_es', 'group_es_std', 'per_group_Qg']
@@ -49,8 +52,8 @@ class ANOVA:
         n_groups = df['group_id'].nunique()
         N = len(df.index)
         es_mean = aggregate_effect_size(df['es'], df['inverse_mse'])
-        Q0 =  np.average(np.square(df['es'] - 0.0), weights=df['inverse_mse'])
-        Qtotal =  np.average(np.square(df['es'] - es_mean), weights=df['inverse_mse'])
+        Q0 =  np.average(np.square(df['es_fraction'] - 0.5), weights=df['inverse_mse'])
+        Qtotal =  np.average(np.square(df['es_fraction'] - es_mean), weights=df['inverse_mse'])
         return pd.Series([es_mean, Qtotal, Q0, n_groups, N], ['overall_es', 'Qtotal', 'Q0', 'n_groups', 'N'])
 
     def find_testable_pairs(self, df):
