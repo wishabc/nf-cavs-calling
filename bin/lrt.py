@@ -57,7 +57,7 @@ class ANOVA:
         samples_num = df.value_counts(['group_id', 'variant_id'])
         # for each group, variant is present in >= 3 samples
         samples_num = samples_num[samples_num >= self.min_samples]
-        
+        print(samples_num)
         # of variants for particular group
         groups_per_variant = samples_num.reset_index().value_counts('variant_id')
 
