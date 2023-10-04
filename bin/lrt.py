@@ -114,6 +114,7 @@ if __name__ == '__main__':
     weights = pd.read_table(args.weights)
     input_df = input_df.merge(weights, on=['BAD', 'coverage'])
     print("Finished reading df, shape:", input_df.shape)
+    print("Unique groups:", input_df['group_id'].unique())
     data_wrapper = ANOVA(
         input_df[
             (input_df['BAD'] <= 1) # FIXME (<= 1.5?)
