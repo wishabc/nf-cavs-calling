@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5) # FIXME not used
     parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
-    parser.add_argument('--coverage_tr', help='Coverage threshold for at least one variant in the group', default=10)
+    parser.add_argument('--coverage_tr', type=int, help='Coverage threshold for at least one variant in the group', default=10)
 
     args = parser.parse_args()
 
@@ -131,6 +131,7 @@ if __name__ == '__main__':
         ].copy(),
         min_samples=args.min_samples,
         min_groups_per_variant=args.min_groups,
+        coverage_tr=args.coverage_tr
     )
     if data_wrapper.get_testable_snps().empty:
         result = pd.DataFrame([], columns=result_columns)
