@@ -113,6 +113,7 @@ if __name__ == '__main__':
     input_df = pd.read_table(args.input_data)
     weights = pd.read_table(args.weights)
     input_df = input_df.merge(weights, on=['BAD', 'coverage'])
+    print(input_df.shape)
     data_wrapper = ANOVA(
         input_df[
             (input_df['BAD'] <= 1) # FIXME (<= 1.5?)
