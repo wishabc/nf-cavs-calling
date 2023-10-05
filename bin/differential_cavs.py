@@ -4,7 +4,7 @@ from statsmodels.stats.multitest import multipletests
 import numpy as np
 import pandas as pd
 
-def main(tested, pvals, fdr_tr=0.05):
+def main(tested, pvals, fdr_tr=0.1):
     constitutive_df = calc_fdr(
         aggregate_pvalues_df(tested)
     ).rename(
