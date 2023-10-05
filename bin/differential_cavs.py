@@ -29,23 +29,13 @@ def main(tested, pvals, max_cover_tr=15, fdr_tr=0.1):
     ).apply(
         aggregate_pvalues_df
     )
-    constitutive_df['min_pval_group'] = get_min_pval(
-        constitutive_df, 
+    differential_cavs['min_pval_group'] = get_min_pval(
+        differential_cavs, 
         cover_tr=max_cover_tr, 
         cover_col='max_cover',
         pval_cols=["pval_ref_combined", "pval_alt_combined"]
     )
     differential_cavs['min_fdr_group'] = calc_fdr_pd(differential_cavs['min_pval_group'])
-    differential_cavs = calc_fdr_pd(
-        tested[tested['differential_fdr'] <= fdr_tr].groupby(
-            'group_id',
-            as_index=False
-        ).apply(
-            aggregate_pvalues_df
-        )
-    ).rename(
-        columns={'min_fdr': 'min_fdr_group'}
-    )
 
     # Group-wise aggregation
     return pvals.merge(
