@@ -46,7 +46,7 @@ class ANOVA:
         es2 = aggregate_effect_size(df['es'], df['inverse_mse'])
         Qg = np.average(np.square(df['es_fraction'] - es2), weights=df['inverse_mse'])
         return pd.Series(
-            [es2, np.sqrt(Qg), Qg],
+            [es2, np.sqrt(Qg), Qg * df['inverse_mse'].sum()],
             ['group_es', 'group_es_std', 'per_group_Qg']
         )
 
@@ -56,7 +56,8 @@ class ANOVA:
         es_mean = aggregate_effect_size(df['es'], df['inverse_mse'])
         Q0 =  np.average(np.square(df['es_fraction'] - 0.5), weights=df['inverse_mse'])
         Qtotal =  np.average(np.square(df['es_fraction'] - es_mean), weights=df['inverse_mse'])
-        return pd.Series([es_mean, Qtotal, Q0, n_groups, N], ['overall_es', 'Qtotal', 'Q0', 'n_groups', 'N'])
+        Wsum = np.sum(df['inverse_mse'])
+        return pd.Series([es_mean, Qtotal, Q0, n_groups, N, Wsum], ['overall_es', 'Qtotal', 'Q0', 'n_groups', 'N', 'Wsum'])
 
     def find_testable_pairs(self, df):
         # # of samples for particular group with variant_id present
@@ -92,6 +93,8 @@ class ANOVA:
         ).join(
             res.groupby(starting_columns).agg(Qg=('per_group_Qg', 'sum'))
         ).reset_index().merge(res)
+
+        result['Qg'] = result['Qg'] / result['Wsum']
     
         assert len(result) == len(res)
 
