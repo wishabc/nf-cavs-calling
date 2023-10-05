@@ -1,20 +1,19 @@
 import argparse
-from aggregation import aggregate_pvalues_df, calc_fdr, starting_columns
-from statsmodels.stats.multitest import multipletests
+from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd
 import numpy as np
 import pandas as pd
 
-def main(tested, pvals, fdr_tr=0.05):
-    constitutive_df = calc_fdr(
-        aggregate_pvalues_df(tested)
-    ).rename(
-        columns={'min_fdr': 'min_fdr_overall'}
-    )[[*starting_columns, 'min_fdr_overall']]
+def main(tested, pvals, max_cover_tr=15, fdr_tr=0.1):
+    constitutive_df = aggregate_pvalues_df(tested)
+    constitutive_df['min_pval'] = get_min_pval(
+        constitutive_df, 
+        cover_tr=max_cover_tr, 
+        cover_col='max_cover',
+        pval_cols=["pval_ref_combined", "pval_alt_combined"]
+    )
+    constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
 
-    pvals['differential_fdr'] = multipletests(
-        np.exp(pvals['log_p_differential']),
-        method='fdr_bh'
-    )[1]
+    pvals['differential_fdr'] = calc_fdr_pd(np.exp(pvals['log_p_differential']))
     tested_length = len(tested.index)
     tested = tested.merge(
         pvals[[*starting_columns, 'group_id', 'differential_fdr']]
@@ -22,19 +21,28 @@ def main(tested, pvals, fdr_tr=0.05):
     assert len(tested.index) == tested_length
 
     # set default inividual fdr and find differential snps
-    differential_cavs = calc_fdr(
-        tested[tested['differential_fdr'] <= fdr_tr].groupby(
-            'group_id',
-            as_index=False
-        ).apply(
-            aggregate_pvalues_df
-        )
-    ).rename(
-        columns={'min_fdr': 'min_fdr_group'}
-    )[[*starting_columns, 'group_id', 'min_fdr_group']]
+
+    differential_cavs = tested[tested['differential_fdr'] <= fdr_tr].groupby(
+        'group_id',
+        as_index=False
+    ).apply(
+        aggregate_pvalues_df
+    )
+    differential_cavs['min_pval_group'] = get_min_pval(
+        differential_cavs, 
+        cover_tr=max_cover_tr, 
+        cover_col='max_cover',
+        pval_cols=["pval_ref_combined", "pval_alt_combined"]
+    )
+    differential_cavs['min_fdr_group'] = calc_fdr_pd(differential_cavs['min_pval_group'])
 
     # Group-wise aggregation
-    return pvals.merge(constitutive_df).merge(differential_cavs, how='left')
+    return pvals.merge(
+        constitutive_df[[*starting_columns, 'min_fdr_overall']]
+    ).merge(
+        differential_cavs[[*starting_columns, 'group_id', 'min_fdr_group']], 
+        how='left'
+    )
 
 
 if __name__ == '__main__':

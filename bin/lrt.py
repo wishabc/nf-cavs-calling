@@ -21,9 +21,10 @@ result_columns = [
 ]
 
 class ANOVA:
-    def __init__(self, melt, min_samples=3, min_groups_per_variant=2):
+    def __init__(self, melt, min_samples=3, min_groups_per_variant=2, coverage_tr=10):
         self.min_samples = min_samples
         self.min_groups_per_variant = min_groups_per_variant
+        self.coverage_tr = coverage_tr
 
         melt['variant_id'] = melt['#chr'] + "@" + melt['end'].astype(str) + "@" + melt['alt']       
 
@@ -35,7 +36,7 @@ class ANOVA:
             print('No variants for LRT')
         self.tested_melt.drop(columns='variant_id', inplace=True)
 
-        self.tested_melt['es_fraction'] = expit(melt['es'] * np.log(2))
+        self.tested_melt['es_fraction'] = expit(self.tested_melt['es'] * np.log(2))
     
     def get_testable_snps(self):
         return self.tested_melt
@@ -59,16 +60,19 @@ class ANOVA:
 
     def find_testable_pairs(self, df):
         # # of samples for particular group with variant_id present
-        samples_num = df.value_counts(['group_id', 'variant_id'])
+        max_cover = df[['variant_id', 'group_id', 'coverage']].groupby(['group_id', 'variant_id']).agg(
+            max_coverage=('coverage', 'max')
+        )
+        samples_num = pd.concat([df.value_counts(['group_id', 'variant_id']), max_cover], axis=1).rename(columns={0: "count"})
         # for each group, variant is present in >= 3 samples
-        samples_num = samples_num[samples_num >= self.min_samples]
+        samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & count >= {self.min_samples}")]
         # of variants for particular group
         groups_per_variant = samples_num.reset_index().value_counts('variant_id')
 
         # variants present in >=2 groups
         tested_ids = groups_per_variant[groups_per_variant >= self.min_groups_per_variant].index
 
-        testable_variant_group_pairs = samples_num.reset_index().drop(columns=0)
+        testable_variant_group_pairs = samples_num.reset_index()
 
         return testable_variant_group_pairs[
             testable_variant_group_pairs['variant_id'].isin(tested_ids)
@@ -113,12 +117,13 @@ if __name__ == '__main__':
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5) # FIXME not used
     parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
+    parser.add_argument('--coverage_tr', type=int, help='Coverage threshold for at least one variant in the group', default=10)
 
     args = parser.parse_args()
 
     input_df = pd.read_table(args.input_data)
     weights = pd.read_table(args.weights)
-    input_df = input_df.merge(weights, on=['BAD', 'coverage'])
+    input_df = input_df.merge(weights, on=['BAD', 'coverage'], how='left')
     print("Finished reading non-aggregated file, shape:", input_df.shape)
     print("Unique groups:", input_df['group_id'].unique())
     data_wrapper = ANOVA(
@@ -128,6 +133,7 @@ if __name__ == '__main__':
         ].copy(),
         min_samples=args.min_samples,
         min_groups_per_variant=args.min_groups,
+        coverage_tr=args.coverage_tr
     )
     if data_wrapper.get_testable_snps().empty:
         result = pd.DataFrame([], columns=result_columns)
