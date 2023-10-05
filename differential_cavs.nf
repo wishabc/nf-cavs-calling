@@ -92,9 +92,10 @@ workflow differentialCavs {
 }
 
 workflow {
+    params.mse_estimates = "${params.outdir}/mse_estimates.tsv"
     Channel.fromPath(params.nonagr_pvals)
         | combine(
-            Channel.fromPath("${outdir}/mse_estimates.tsv")
+            Channel.fromPath(params.mse_estimates)
         )
         | differentialCavs
 }
