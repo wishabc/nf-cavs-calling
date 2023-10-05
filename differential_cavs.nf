@@ -24,7 +24,7 @@ process anova {
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups} \
         --chrom ${chromosome} \
-        --weights ${weights}
+        --weights ${weights} \
         --coverage_tr ${params.fdr_coverage_filter}
     """
 }
