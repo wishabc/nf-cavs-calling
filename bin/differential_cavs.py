@@ -60,6 +60,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     tested = pd.read_table(args.tested_variants, low_memory=False)
     pvals = pd.read_table(args.pvals)
-    res_df = main(tested, pvals, args.fdr_tr)
+    res_df = main(tested, pvals, differential_fdr_tr=args.fdr, differential_es_tr=args.es)
     print(len(res_df.index), len(pvals.index))
     res_df.to_csv(args.outpath, sep='\t', index=False)
