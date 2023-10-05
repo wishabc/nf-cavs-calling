@@ -1,6 +1,5 @@
 import argparse
 from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd
-from statsmodels.stats.multitest import multipletests
 import numpy as np
 import pandas as pd
 

@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 tqdm.pandas()
 
-alleles = {'ref': 'alt', 'alt': 'ref'}
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 
@@ -59,7 +58,7 @@ def aggregate_pvalues_df(pval_df):
             if col not in pval_df.columns
         }
     )
-    snp_stats = pval_df.groupby(starting_columns).agg(
+    snp_stats = pval_df.groupby(starting_columns, group_keys=False).agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
         hotspots_n=('hotspots', calc_sum_if_not_minus),
@@ -72,7 +71,7 @@ def aggregate_pvalues_df(pval_df):
     )
     return snp_stats.join(
         pval_df[[*starting_columns, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
-            starting_columns
+            starting_columns, group_keys=False
         ).progress_apply(aggregate_pvals)
     ).reset_index()
 
