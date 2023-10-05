@@ -16,7 +16,8 @@ result_columns = [
     'group_id', 'n_groups',
     'log_p_overall',
     'log_p_differential',
-    'overall_es', 'group_es', 'group_es_std',
+    'overall_es', 'group_es', 'group_es_std', 'N',
+    'Q0', 'Qtotal', 'Qg',
     'F1', 'F2'
 ]
 
