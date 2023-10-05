@@ -23,7 +23,8 @@ process LRT {
         ${chromosome} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups} \
-        --chrom ${chromosome}
+        --chrom ${chromosome} \
+        --coverage_tr ${params.fdr_coverage_filter}
     """
 }
 
