@@ -10,7 +10,7 @@ process calc_enrichment {
     conda params.conda
 
     input:
-        tuple val(motif_id), path(pval_file), path(counts_file)
+        tuple val(motif_id), path(counts_file), path(pval_file)
 
     output:
         tuple val(motif_id), path(pval_file), path(name)
@@ -48,10 +48,7 @@ workflow cavsMotifEnrichment {
 workflow {
     params.motif_counts = "/net/seq/data2/projects/sabramov/ENCODE4/moods_scans.ref.0928/output/motif_counts"
     motif_counts = Channel.fromPath("${params.motif_counts}/*.counts.bed")
-        | map(it -> tuple(it.name.replaceAll(".counts.bed", ""), it))
-
-    data = Channel.fromPath(params.nonagr_pvals)
-        | combine(motif_counts)
+        | map(it -> tuple(it.name.replaceAll(".counts.bed", ""), it, file(params.nonagr_pvals)))
         | cavsMotifEnrichment
 
 }
