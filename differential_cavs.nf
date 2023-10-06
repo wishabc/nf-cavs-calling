@@ -44,6 +44,7 @@ process differential_cavs {
     pvals_new = "differential_pvals.${params.aggregation_key}.bed"
     tested_new = "differential_tested.${params.aggregation_key}.bed"
     """
+    # fixe
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
         ${pvals} \
