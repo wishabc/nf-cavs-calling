@@ -122,27 +122,57 @@ class MotifEnrichment:
 
     #Enrichment code
     def calc_enrichment(self, group_df, imbalanced):
+        n_shuffles = 1000
         bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
+
         n_all = np.histogram(group_df['offset'], bins=bins)[0]
         n_imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
-
+        
         all_inside = n_all[self.flank_width:-self.flank_width]
         imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
 
         total_inside = np.nansum(all_inside)
         total_imbalanced_inside = np.nansum(imbalanced_inside)
-        if total_imbalanced_inside == 0 or total_inside - total_imbalanced_inside == 0:
-            raise NoDataException()
 
         log_odds = np.log2(total_imbalanced_inside) - np.log2(total_inside - total_imbalanced_inside) - \
             np.log2(np.nansum(n_imbalanced) - total_imbalanced_inside) + \
                 np.log2(np.nansum(n_all) - np.nansum(n_imbalanced) - total_inside + total_imbalanced_inside)
-        pval = -stats.hypergeom.logsf(
-            total_imbalanced_inside,
-            np.nansum(n_all),
-            np.nansum(n_imbalanced),
-            total_inside
-        ) / np.log(10)
+    
+
+        perm = np.zeros(n_shuffles)
+        perm_per_nt = np.zeros((n_shuffles, len(bins)-1))
+
+        for i in range(n_shuffles):
+            n_exp_imbalanced = np.histogram(group_df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
+            n_exp_not_imbalanced = n_all - n_exp_imbalanced +1 
+
+            perm[i] = np.log2( (n_exp_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_imbalanced.sum()) / (n_exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_not_imbalanced.sum()) )
+            perm_per_nt[i,:] = np.log2( (n_exp_imbalanced / np.sum(n_exp_imbalanced)) / (n_exp_not_imbalanced / np.sum(n_exp_not_imbalanced)))
+
+        pval = -stats.norm.logsf(log_odds, loc=np.nanmean(perm, axis=0), scale=np.nanstd(perm, axis=0))/np.log(10)
+
+        # old
+        # bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
+        # n_all = np.histogram(group_df['offset'], bins=bins)[0]
+        # n_imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
+
+        # all_inside = n_all[self.flank_width:-self.flank_width]
+        # imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
+
+        # total_inside = np.nansum(all_inside)
+        # total_imbalanced_inside = np.nansum(imbalanced_inside)
+        # if total_imbalanced_inside == 0 or total_inside - total_imbalanced_inside == 0:
+        #     raise NoDataException()
+
+        # log_odds = np.log2(total_imbalanced_inside) - np.log2(total_inside - total_imbalanced_inside) - \
+        #     np.log2(np.nansum(n_imbalanced) - total_imbalanced_inside) + \
+        #         np.log2(np.nansum(n_all) - np.nansum(n_imbalanced) - total_inside + total_imbalanced_inside)
+        # pval = -stats.hypergeom.logsf(
+        #     total_imbalanced_inside,
+        #     np.nansum(n_all),
+        #     np.nansum(n_imbalanced),
+        #     total_inside
+        # ) / np.log(10)
 
         
         return [

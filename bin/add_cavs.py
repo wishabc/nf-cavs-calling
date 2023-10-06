@@ -8,7 +8,6 @@ def main(new_badmap, old_badmap, output):
     old_df = pd.read_table(old_badmap, low_memory=False)
     initial_columns = old_df.columns
     old_df.set_index(group_cols, inplace=True)
-    print(old_df.index)
     if new_badmap is None:
         old_df.to_csv(output, sep='\t', index=False)
         return
