@@ -50,7 +50,7 @@ class MotifEnrichment:
             )
     
         # Add imbalance data
-        self.data_df = variants_df[['logit_es_combined', 'group_id', 'min_fdr']].merge(motifs_df, on=['#chr', 'start', 'end', 'ref', 'alt'])
+        self.data_df = variants_df[['#chr', 'start', 'end', 'ref', 'alt', 'logit_es_combined', 'group_id', 'min_fdr']].merge(motifs_df, on=['#chr', 'start', 'end', 'ref', 'alt'])
 
         # Compute preferred allele
         self.data_df["prefered_allele"] = np.where(
