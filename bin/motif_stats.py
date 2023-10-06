@@ -37,10 +37,10 @@ class MotifEnrichment:
         self.flank_width = flank_width
         self.fdr_tr = fdr_tr
         print('Reading variants df')
-        variants_df = pd.read_table(variants_df_path).set_index(['#chr', 'start', 'end', 'ref', 'alt'])
+        variants_df = pd.read_table(variants_df_path)
         
         print('Reading motifs df')
-        motifs_df = pd.read_table(counts_df_path).set_index(['#chr', 'start', 'end', 'ref', 'alt'])
+        motifs_df = pd.read_table(counts_df_path)
         print('Adding fields')
         for key in ('ref', 'alt'):
             motifs_df[key] = np.where(
@@ -50,7 +50,7 @@ class MotifEnrichment:
             )
     
         # Add imbalance data
-        self.data_df = variants_df[['logit_es_combined', 'group_id', 'min_fdr']].join(motifs_df)
+        self.data_df = variants_df[['logit_es_combined', 'group_id', 'min_fdr']].merge(motifs_df, on=['#chr', 'start', 'end', 'ref', 'alt'])
 
         # Compute preferred allele
         self.data_df["prefered_allele"] = np.where(
@@ -70,14 +70,6 @@ class MotifEnrichment:
         diff = x - expected_es
         unmasked_values = (np.abs(diff) >= x_mar) & (y != 0)
         return ((y * diff > 0) & unmasked_values).sum() / unmasked_values.sum()
-
-    @staticmethod
-    def set_index(df):
-        if len(df.index) == 0:
-            return df
-        df['variant_id'] = df[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).agg('@'.join, axis=1)
-        return df.set_index('variant_id')
-
 
     def get_annotations(self, snvs):
 
