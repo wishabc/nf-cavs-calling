@@ -17,7 +17,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     pvals['differential_fdr'] = calc_fdr_pd(np.exp(pvals['log_p_differential']))
     tested_length = len(tested.index)
     tested = tested.merge(
-        pvals[[*starting_columns, 'group_id', 'differential_fdr']]
+        pvals
     )
     tested['differential_es'] = tested.eval('(F2 + 1) / (F2 + (N - n_groups + 1) / (n_groups - 1))')
     assert len(tested.index) == tested_length
