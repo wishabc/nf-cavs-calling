@@ -37,11 +37,10 @@ class MotifEnrichment:
         self.flank_width = flank_width
         self.fdr_tr = fdr_tr
         print('Reading variants df')
-        variants_df = self.set_index(
-            pd.read_table(variants_df_path)
-        )
+        variants_df = pd.read_table(variants_df_path).set_index(['#chr', 'start', 'end', 'ref', 'alt'])
+        
         print('Reading motifs df')
-        motifs_df = self.set_index(pd.read_table(counts_df_path))
+        motifs_df = pd.read_table(counts_df_path).set_index(['#chr', 'start', 'end', 'ref', 'alt'])
         print('Adding fields')
         for key in ('ref', 'alt'):
             motifs_df[key] = np.where(
@@ -51,11 +50,11 @@ class MotifEnrichment:
             )
     
         # Add imbalance data
-        self.data_df = variants_df[['es_weighted_mean', 'group_id', 'min_fdr']].join(motifs_df)
+        self.data_df = variants_df[['logit_es_combined', 'group_id', 'min_fdr']].join(motifs_df)
 
         # Compute preferred allele
         self.data_df["prefered_allele"] = np.where(
-            self.data_df['es_weighted_mean'] >= 0,
+            self.data_df['logit_es_combined'] >= 0,
             self.data_df["ref"],
             self.data_df["alt"])
         self.data_df['ddg'] = self.data_df.eval('ref_score - alt_score')
@@ -88,7 +87,7 @@ class MotifEnrichment:
             if len(snvs_in) == 0:
                 raise NoDataException()
 
-            predictor_array = snvs_in['es_weighted_mean'].to_numpy()
+            predictor_array = snvs_in['logit_es_combined'].to_numpy()
             expected_es = 0
 
             if (predictor_array == 0).all() == 0:
