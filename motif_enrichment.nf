@@ -8,6 +8,7 @@ params.conda = "$moduleDir/environment.yml"
 process calc_enrichment {
     tag "${motif_id}"
     conda params.conda
+    label "med_mem"
 
     input:
         tuple val(motif_id), path(counts_file), path(pval_file)
