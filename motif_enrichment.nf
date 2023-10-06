@@ -32,9 +32,7 @@ workflow cavsMotifEnrichment {
     take:
         data
     main:
-        out = data 
-            | motifCounts // motif_hits, motif_hits_index
-            | combine(Channel.fromPath(params.result_file))
+        out = data
             | calc_enrichment
             | map(it -> it[2])
             | collectFile(
