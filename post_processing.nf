@@ -169,15 +169,13 @@ workflow mutationRates {
 }
 
 workflow {
-    nonagr_files = Channel.fromPath(params.nonagr_pvals)
-
     sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
 
     data = sample_wise_pvals
         | collect(sort: true)
         | filter_tested_variants
     
-    annotateLD(sample_wise_pvals, data)
+    //annotateLD(sample_wise_pvals, data)
 
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
 
