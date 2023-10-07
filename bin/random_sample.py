@@ -1,10 +1,9 @@
 import pandas as pd
 import argparse
-import statsmodels.formula.api as smf
 import scipy.stats as st
 import numpy as np
 from tqdm import tqdm
-from aggregation import calc_fdr, starting_columns
+from aggregation import calc_fdr_pd, starting_columns, get_min_pval
 
 tqdm.pandas()
 
@@ -34,7 +33,7 @@ def wilson(p, n, z=1.96):
 
 def frac_bins_data(df):
     pos = (df['imbalanced']).sum()
-    n = len(df.index)
+    n = df['min_pval'].notna().sum()
     p = pos / n
     if n == 0:
         lb, ub = 0, 1
@@ -89,12 +88,11 @@ def sample_index(n_aggregated, random_state=42):
     return pd.MultiIndex.from_frame(sample_ind)
 
 
-def main(input_df, annotation_df, seed_start=20, seed_step=10):
+def main(input_df, annotation_df, seed_start=20, seed_step=10, min_fdr=0.1, coverage_tr=15):
     # sampling_df - df with 2-level index: [variant_id, count (0-based)]
     # This script can be further optimized by moving preprocessing
     # to a separate script
     print('Preprocessing df')
-    input_df = input_df[input_df['is_tested']].copy()
 
     input_df[['RAF', 'AAF']] = input_df[['RAF', 'AAF']].apply(
         lambda x: pd.to_numeric(x, errors='coerce')
@@ -105,16 +103,16 @@ def main(input_df, annotation_df, seed_start=20, seed_step=10):
     input_df['maf_bin'] = pd.cut(input_df['MAF'], bins=maf_bins_fr)
 
     es_mean = input_df.groupby(starting_columns)['es'].mean().reset_index().rename(
-        columns={'es': 'es_weighted_mean'}
+        columns={'es': 'logit_es_combined'}
     )
     input_df = input_df.merge(annotation_df).merge(es_mean)
     input_df['pref_orient'] = np.where(
         input_df['ref_orient'], 
-        input_df['es_weighted_mean'] > 0,
-        input_df['es_weighted_mean'] < 0
+        input_df['logit_es_combined'] > 0,
+        input_df['logit_es_combined'] < 0
     )
     input_df['variant_id'] = input_df[starting_columns].astype(str).agg('@'.join, axis=1)
-    
+    input_df['min_pval'] = get_min_pval(df, coverage_tr, 'coverage', ['pval_ref', 'pval_alt'])
     sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(input_df)
     print('Preprocessing finished')
 
@@ -126,8 +124,8 @@ def main(input_df, annotation_df, seed_start=20, seed_step=10):
             seed
         )
         sample_df = sampling_df.loc[sampled_variants_index.union(unique_index)]
-        sample_df = calc_fdr(sample_df, prefix='pval_')
-        sample_df['imbalanced'] = sample_df['min_fdr'] <= 0.05
+        sample_df['min_fdr'] = calc_fdr_pd(sample_df['min_pval'])
+        sample_df['imbalanced'] = sample_df['min_fdr'] <= min_fdr
         sample_df['imbalanced_numeric'] = sample_df['imbalanced'].astype(int)
     
         frac = get_fraction_trend_from_df(sample_df)
@@ -144,10 +142,11 @@ if __name__ == '__main__':
     parser.add_argument('--noncpg', help='Use only non-cpg', default=False, action="store_true")
     parser.add_argument('--start', type=int, help='Start value for seed', default=10)
     parser.add_argument('--step', type=int, help='Step size for seed values', default=10)
+    parser.add_argument('--fdr', type=float, help='FDR threshold for imbalanced', default=0.1)
 
     args = parser.parse_args()
 
     input_df = pd.read_table(args.I)
     annotation_df = pd.read_table(args.a)
-    df = main(input_df, annotation_df, seed_start=args.start, seed_step=args.step)
+    df = main(input_df, annotation_df, seed_start=args.start, seed_step=args.step, min_fdr=args.fdr)
     df.to_csv(args.O, sep='\t', index=False)
