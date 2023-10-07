@@ -179,9 +179,13 @@ workflow {
     data = Channel.fromPath("${params.data}")
     //annotateLD(sample_wise_pvals, data)
 
-    data | (annotate_with_phenotypes & cavsMotifEnrichment)
+    data | (annotate_with_phenotypes & extract_context & mutationRates)
 
-    merge_annotations(data, extract_context(data), mutationRates(data))
+    merge_annotations(
+        annotate_with_phenotypes.out, 
+        extract_context.out,
+        mutationRates.out
+    )
 
 }
 
