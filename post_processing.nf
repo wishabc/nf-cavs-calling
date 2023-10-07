@@ -4,6 +4,30 @@ include { annotateLD } from "./ld_scores"
 include { cavsMotifEnrichment } from "./motif_enrichment"
 
 
+process random_sample {
+    tag "seed:${step_start}-${step_start+params.samples_per_job}"
+    conda params.conda
+    label "sampling"
+
+    input:
+        tuple val(step_start), path(annotations_file), path(non_aggregated_file)
+
+    output:
+        path name
+
+    script:
+    name = "${step_start}.sampling.tsv"
+    """
+    python3 $moduleDir/bin/random_sample.py \
+        ${non_aggregated_file} \
+        ${annotations_file} \
+        ${name} \
+        --start ${step_start} \
+        --step ${params.samples_per_job}
+    """
+}
+
+
 // Put in the Apptainer
 params.conda = "$moduleDir/environment.yml"
 
@@ -107,29 +131,6 @@ process merge_annotations {
     """
 }
 
-process random_sample {
-    tag "seed:${step_start}-${step_start+params.samples_per_job}"
-    conda params.conda
-    label "sampling"
-
-    input:
-        tuple val(step_start), path(annotations_file), path(non_aggregated_file)
-
-    output:
-        path name
-
-    script:
-    name = "${step_start}.sampling.tsv"
-    """
-    python3 $moduleDir/bin/random_sample.py \
-        ${non_aggregated_file} \
-        ${annotations_file} \
-        ${name} \
-        --start ${step_start} \
-        --step ${params.samples_per_job}
-    """
-}
-
 workflow sampleVariants {
     take:
         data
@@ -152,6 +153,7 @@ workflow sampleVariants {
         
 }
 
+
 workflow mutationRates {
     take:
         data
@@ -171,10 +173,10 @@ workflow mutationRates {
 workflow {
     sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
 
-    data = sample_wise_pvals
-        | collect(sort: true)
-        | filter_tested_variants
-    
+    // data = sample_wise_pvals
+    //     | collect(sort: true)
+    //     | filter_tested_variants
+    data = Channel.fromPath("${params.data}")
     //annotateLD(sample_wise_pvals, data)
 
     data | (annotate_with_phenotypes & cavsMotifEnrichment)
