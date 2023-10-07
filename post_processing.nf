@@ -171,7 +171,7 @@ workflow mutationRates {
 }
 
 workflow {
-    sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
+    // sample_wise_pvals = Channel.fromPath("${params.raw_pvals_dir}/*.bed")
 
     // data = sample_wise_pvals
     //     | collect(sort: true)
