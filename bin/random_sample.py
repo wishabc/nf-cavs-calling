@@ -112,7 +112,7 @@ def main(input_df, annotation_df, seed_start=20, seed_step=10, min_fdr=0.1, cove
         input_df['logit_es_combined'] < 0
     )
     input_df['variant_id'] = input_df[starting_columns].astype(str).agg('@'.join, axis=1)
-    input_df['min_pval'] = get_min_pval(df, coverage_tr, 'coverage', ['pval_ref', 'pval_alt'])
+    input_df['min_pval'] = get_min_pval(input_df, coverage_tr, 'coverage', ['pval_ref', 'pval_alt'])
     sampling_df, non_unique_n_aggregated, unique_index = get_sampling_df(input_df)
     print('Preprocessing finished')
 
