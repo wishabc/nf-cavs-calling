@@ -32,7 +32,7 @@ class MotifEnrichment:
         bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
 
         n_all = np.histogram(group_df['offset'], bins=bins)[0]
-        all_inside = all[self.flank_width:-self.flank_width]
+        all_inside = n_all[self.flank_width:-self.flank_width]
 
         imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
         imbalanced_inside = imbalanced[self.flank_width:-self.flank_width]
