@@ -87,7 +87,7 @@ class MotifEnrichment:
 
 
     def get_motif_stats(self, data_df):
-        return data_df.groupby(['motif', 'group_id']).progress_apply(self.get_group_stats).reset_index()
+        return data_df.groupby(['motif_id', 'group_id']).progress_apply(self.get_group_stats).reset_index()
 
 
 def preprocess_dfs(variants_df, motifs_df):
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     variants_df = pd.read_table(args.variants)
     
     print('Reading motifs df')
-    motifs_df = pd.read_table(args.motifs)
+    motifs_df = pd.read_table(args.motifs).rename(columns={'motif': 'motif_id'})
     print('Adding fields')
     data_df = preprocess_dfs(variants_df, motifs_df)
     data_df['imbalanced'] = data_df['min_fdr'] <= args.fdr
