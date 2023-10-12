@@ -17,7 +17,7 @@ class NoDataException(Exception):
 class MotifEnrichment:
     columns = [
         "log_odds",
-        "pval",
+        "log10_pval",
         "total_inside",
         "imbalanced_inside",
         "imbalanced_inside_median",
