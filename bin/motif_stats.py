@@ -31,13 +31,13 @@ class MotifEnrichment:
     def calc_enrichment(self, group_df, imbalanced):
         bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
 
-        all = np.histogram(group_df['offset'], bins=bins)[0]
+        n_all = np.histogram(group_df['offset'], bins=bins)[0]
         all_inside = all[self.flank_width:-self.flank_width]
 
         imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
         imbalanced_inside = imbalanced[self.flank_width:-self.flank_width]
 
-        not_imbalanced = all - imbalanced
+        not_imbalanced = n_all - imbalanced
         not_imbalanced_inside = all_inside - imbalanced_inside
 
         log_odds = np.log2( (imbalanced_inside.sum() / imbalanced.sum()) / (not_imbalanced_inside.sum() / not_imbalanced.sum()) )
@@ -47,22 +47,24 @@ class MotifEnrichment:
         perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
 
         for i in range(self.n_shuffles):
-            exp_imbalanced = np.histogram(group_df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
-            exp_not_imbalanced = all - exp_imbalanced + 1 
+            n_exp_imbalanced = np.histogram(group_df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
+            n_exp_not_imbalanced = n_all - n_exp_imbalanced +1 
 
-            total_imbalanced = np.sum(exp_imbalanced)
-            total_not_imbalanced = np.sum(exp_not_imbalanced)
-
-            perm[i] = np.log2( (exp_imbalanced[self.flank_width:-self.flank_width].sum() / total_imbalanced) / (exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / total_not_imbalanced) )
-            perm_per_nt[i,:] = np.log2( 
-                (exp_imbalanced / total_imbalanced) / (exp_not_imbalanced / total_not_imbalanced))
+            perm[i] = np.log2( (n_exp_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_imbalanced.sum()) / (n_exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_not_imbalanced.sum()) )
+            perm_per_nt[i,:] = np.log2( (n_exp_imbalanced / np.sum(n_exp_imbalanced)) / (n_exp_not_imbalanced / np.sum(n_exp_not_imbalanced)))
+    
 
         pval = -stats.norm.logsf(
             log_odds,
             loc=np.nanmean(perm, axis=0),
-            scale=np.nanstd(perm, axis=0)) /np.log(10)
-        pvals_per_nt = -stats.norm.logsf(log_odds_per_nt, loc=np.nanmean(perm_per_nt, axis=0), scale=np.nanstd(perm_per_nt, axis=0))/np.log(10)
-    
+            scale=np.nanstd(perm, axis=0)
+            ) / np.log(10)
+
+        pvals_per_nt = -stats.norm.logsf(
+            log_odds_per_nt, 
+            loc=np.nanmean(perm_per_nt, axis=0),
+            scale=np.nanstd(perm_per_nt, axis=0)
+        ) / np.log(10)
         
         return pd.Series([
             log_odds,
