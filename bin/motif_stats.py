@@ -1,203 +1,102 @@
 #!/bin/which python3
-
 import argparse
 import pandas as pd
 import numpy as np
 import scipy.stats as stats
-import statsmodels.api as sm
 from tqdm import tqdm
-# import dask.dataframe as dd
 tqdm.pandas()
-
-# Params
-_complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-def complement(x):
-    return np.vectorize(_complement.get)(x)
+from aggregation import starting_columns
 
 
 class NoDataException(Exception):
     pass
 
+
 class MotifEnrichment:
-    result_columns =  [
-        'motifs_name',
-        'group_id',
+    columns = [
         "log_odds",
         "pval",
         "total_inside",
         "imbalanced_inside",
         "imbalanced_inside_median",
         "n_imbalanced_more_7",
-        'r2',
-        'concordance',
-        'ref_bias'
     ]
-
-    def __init__(self, variants_df_path, counts_df_path, flank_width=20, fdr_tr=0.05):
+    def __init__(self, flank_width=20, n_shuffles=1000):
         self.flank_width = flank_width
-        self.fdr_tr = fdr_tr
-        print('Reading variants df')
-        variants_df = pd.read_table(variants_df_path)
-        
-        print('Reading motifs df')
-        motifs_df = pd.read_table(counts_df_path)
-        print('Adding fields')
-        for key in ('ref', 'alt'):
-            motifs_df[key] = np.where(
-                motifs_df['strand'] == '-', 
-                complement(motifs_df[key]),
-                motifs_df[key]
-            )
-    
-        # Add imbalance data
-        self.data_df = variants_df[['#chr', 'start', 'end', 'ref', 'alt', 'logit_es_combined', 'group_id', 'min_fdr']].merge(motifs_df, on=['#chr', 'start', 'end', 'ref', 'alt'])
-
-        # Compute preferred allele
-        self.data_df["prefered_allele"] = np.where(
-            self.data_df['logit_es_combined'] >= 0,
-            self.data_df["ref"],
-            self.data_df["alt"])
-        self.data_df['ddg'] = self.data_df.eval('ref_score - alt_score')
-        
-        self.result_df = None
-
-    @staticmethod
-    def logtr(arr):
-        return 1 - 1 / (1 + np.power(2, np.array(arr)))
-
-    @staticmethod
-    def get_concordant(x, y, expected_es=0, x_mar=0):
-        diff = x - expected_es
-        unmasked_values = (np.abs(diff) >= x_mar) & (y != 0)
-        return ((y * diff > 0) & unmasked_values).sum() / unmasked_values.sum()
-
-    def get_annotations(self, snvs):
-
-        snvs_in = snvs[(snvs['within'] == 1)]
-
-        try:
-            if len(snvs_in) == 0:
-                raise NoDataException()
-
-            predictor_array = snvs_in['logit_es_combined'].to_numpy()
-            expected_es = 0
-
-            if (predictor_array == 0).all() == 0:
-                raise NoDataException()
-            
-            X = predictor_array
-            Y = snvs_in['ddg']
-
-            X = sm.add_constant(X)
-
-            model = sm.OLS(Y, X).fit()
-
-            outliers = model.get_influence().cooks_distance[0] > (4/X.shape[0])
-
-            model = sm.OLS(Y[~outliers], X[~outliers]).fit()
-            
-            r2 = model.rsquared
-
-            concordance = self.get_concordant(
-                predictor_array, 
-                snvs_in["ddg"], 
-                expected_es=expected_es
-            )
-            
-            ref_bias = (predictor_array > 0).sum() / (predictor_array != 0).sum()
-        except NoDataException:
-            r2, concordance, ref_bias = np.nan, np.nan, np.nan
-
-        return r2, concordance, ref_bias
+        self.n_shuffles = n_shuffles
 
 
-    #Enrichment code
     def calc_enrichment(self, group_df, imbalanced):
-        n_shuffles = 1000
         bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
 
-        n_all = np.histogram(group_df['offset'], bins=bins)[0]
-        n_imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
-        
-        all_inside = n_all[self.flank_width:-self.flank_width]
-        imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
+        all = np.histogram(group_df['offset'], bins=bins)[0]
+        all_inside = all[self.flank_width:-self.flank_width]
 
-        total_inside = np.nansum(all_inside)
-        total_imbalanced_inside = np.nansum(imbalanced_inside)
+        imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
+        imbalanced_inside = imbalanced[self.flank_width:-self.flank_width]
 
-        log_odds = np.log2(total_imbalanced_inside) - np.log2(total_inside - total_imbalanced_inside) - \
-            np.log2(np.nansum(n_imbalanced) - total_imbalanced_inside) + \
-                np.log2(np.nansum(n_all) - np.nansum(n_imbalanced) - total_inside + total_imbalanced_inside)
+        not_imbalanced = all - imbalanced
+        not_imbalanced_inside = all_inside - imbalanced_inside
+
+        log_odds = np.log2( (imbalanced_inside.sum() / imbalanced.sum()) / (not_imbalanced_inside.sum() / not_imbalanced.sum()) )
+        log_odds_per_nt = np.log2( (imbalanced / imbalanced.sum()) / (not_imbalanced / not_imbalanced.sum()) )
+
+        perm = np.zeros(self.n_shuffles)
+        perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
+
+        for i in range(self.n_shuffles):
+            exp_imbalanced = np.histogram(group_df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
+            exp_not_imbalanced = all - exp_imbalanced + 1 
+
+            total_imbalanced = np.sum(exp_imbalanced)
+            total_not_imbalanced = np.sum(exp_not_imbalanced)
+
+            perm[i] = np.log2( (exp_imbalanced[self.flank_width:-self.flank_width].sum() / total_imbalanced) / (exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / total_not_imbalanced) )
+            perm_per_nt[i,:] = np.log2( 
+                (exp_imbalanced / total_imbalanced) / (exp_not_imbalanced / total_not_imbalanced))
+
+        pval = -stats.norm.logsf(
+            log_odds,
+            loc=np.nanmean(perm, axis=0),
+            scale=np.nanstd(perm, axis=0)) /np.log(10)
+        pvals_per_nt = -stats.norm.logsf(log_odds_per_nt, loc=np.nanmean(perm_per_nt, axis=0), scale=np.nanstd(perm_per_nt, axis=0))/np.log(10)
     
-
-        perm = np.zeros(n_shuffles)
-        perm_per_nt = np.zeros((n_shuffles, len(bins)-1))
-
-        for i in range(n_shuffles):
-            n_exp_imbalanced = np.histogram(group_df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
-            n_exp_not_imbalanced = n_all - n_exp_imbalanced +1 
-
-            perm[i] = np.log2( (n_exp_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_imbalanced.sum()) / (n_exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_not_imbalanced.sum()) )
-            perm_per_nt[i,:] = np.log2( (n_exp_imbalanced / np.sum(n_exp_imbalanced)) / (n_exp_not_imbalanced / np.sum(n_exp_not_imbalanced)))
-
-        pval = -stats.norm.logsf(log_odds, loc=np.nanmean(perm, axis=0), scale=np.nanstd(perm, axis=0))/np.log(10)
-
-        # old
-        # bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
-        # n_all = np.histogram(group_df['offset'], bins=bins)[0]
-        # n_imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
-
-        # all_inside = n_all[self.flank_width:-self.flank_width]
-        # imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
-
-        # total_inside = np.nansum(all_inside)
-        # total_imbalanced_inside = np.nansum(imbalanced_inside)
-        # if total_imbalanced_inside == 0 or total_inside - total_imbalanced_inside == 0:
-        #     raise NoDataException()
-
-        # log_odds = np.log2(total_imbalanced_inside) - np.log2(total_inside - total_imbalanced_inside) - \
-        #     np.log2(np.nansum(n_imbalanced) - total_imbalanced_inside) + \
-        #         np.log2(np.nansum(n_all) - np.nansum(n_imbalanced) - total_inside + total_imbalanced_inside)
-        # pval = -stats.hypergeom.logsf(
-        #     total_imbalanced_inside,
-        #     np.nansum(n_all),
-        #     np.nansum(n_imbalanced),
-        #     total_inside
-        # ) / np.log(10)
-
         
-        return [
+        return pd.Series([
             log_odds,
             pval,
-            total_inside,
+            np.nansum(all_inside),
             np.nansum(imbalanced_inside),
             np.nanmedian(all_inside),
             np.nansum(imbalanced_inside >= 7)
-        ]
+        ], index=self.columns), (pvals_per_nt, log_odds_per_nt)
 
 
-    def get_stats(self, group_df):
-        imbalanced_index = group_df['min_fdr'] <= self.fdr_tr
+    # wrapper of calc_enrichment to handle no data
+    def get_group_stats(self, group_df):
+        imbalanced_index = group_df['imbalanced']
         try:
             if imbalanced_index.sum() == 0:
                 raise NoDataException()
 
-            lin_model_stats = self.get_annotations(group_df[imbalanced_index])
-
-            # log_odds, pval, n_inside, n_imb_inside, n_median_inside, n_inside_more_7
-            enrichment_stats = self.calc_enrichment(group_df, imbalanced_index)
-            data = [
-                *enrichment_stats,
-                *lin_model_stats
-            ]
+            data, _ = self.calc_enrichment(group_df, imbalanced_index)
         except NoDataException:
-            data = [np.nan] * (len(self.result_columns) - 2)
+            data = pd.Series([], index=self.columns)
+        return data
 
-        return pd.Series([group_df.name[0], group_df.name[1], *data], self.result_columns)
 
-    def get_motif_stats(self):
-        print('Grouping by and applying')
-        return self.data_df.groupby(['motif', 'group_id']).progress_apply(self.get_stats)
+    def get_motif_stats(self, data_df):
+        return data_df.groupby(['motif', 'group_id']).progress_apply(self.get_group_stats)
+
+
+def preprocess_df(data_df):
+    # Compute preferred allele
+    data_df["prefered_allele"] = np.where(
+        data_df['logit_es_combined'] >= 0,
+        data_df["ref"],
+        data_df["alt"])
+    data_df['ddg'] = data_df.eval('ref_score - alt_score')
+    return data_df
 
 
 if __name__ == '__main__':
@@ -209,9 +108,16 @@ if __name__ == '__main__':
     parser.add_argument('--fdr', help='FDR threshold for CAVs', type=float, default=0.05)
     args = parser.parse_args()
 
-    data_holder = MotifEnrichment(
-        args.variants, args.motifs,
-        fdr_tr=args.fdr,
-        flank_width=args.flank_width)
-    res_df = data_holder.get_motif_stats()
-    res_df.to_csv(args.outpath, index=False, sep='\t')
+    print('Reading variants df')
+    variants_df = pd.read_table(args.variants)
+    
+    print('Reading motifs df')
+    motifs_df = pd.read_table(args.motifs)
+    print('Adding fields')
+    data_df = variants_df[[*starting_columns, 'logit_es_combined', 'group_id', 'min_fdr']].merge(motifs_df, on=[starting_columns])
+
+    data_df = preprocess_df(data_df)
+    data_df['imbalanced'] = data_df['min_fdr'] <= args.fdr
+
+    me = MotifEnrichment(flank_width=args.flank_width, n_shuffles=1000)
+    me.get_motif_stats(data_df).to_csv(args.outpath, index=False, sep='\t')
