@@ -28,26 +28,21 @@ class MotifEnrichment:
         self.n_shuffles = n_shuffles
 
 
-    def calc_enrichment(self, group_df, imbalanced):
-        bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
+    def calc_enrichment(self, df, imbalanced):
+        bins = np.arange(df['offset'].min(), df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
 
-        n_all = np.histogram(group_df['offset'], bins=bins)[0]
-        all_inside = n_all[self.flank_width:-self.flank_width]
-
-        imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
-        imbalanced_inside = imbalanced[self.flank_width:-self.flank_width]
-
-        not_imbalanced = n_all - imbalanced
-        not_imbalanced_inside = all_inside - imbalanced_inside
-
-        log_odds = np.log2( (imbalanced_inside.sum() / imbalanced.sum()) / (not_imbalanced_inside.sum() / not_imbalanced.sum()) )
-        log_odds_per_nt = np.log2( (imbalanced / imbalanced.sum()) / (not_imbalanced / not_imbalanced.sum()) )
+        n_all = np.histogram(df['offset'], bins=bins)[0]
+        n_imbalanced = np.histogram(df['offset'][imbalanced], bins=bins)[0]
+        n_not_imbalanced = n_all - n_imbalanced
+        
+        log_odds = np.log2( (n_imbalanced[self.flank_width:-self.flank_width].sum() / n_imbalanced.sum()) / (n_not_imbalanced[self.flank_width:-self.flank_width].sum() / n_not_imbalanced.sum()) )
+        log_odds_per_nt = np.log2( (n_imbalanced / n_imbalanced.sum()) / (n_not_imbalanced / n_not_imbalanced.sum()) )
 
         perm = np.zeros(self.n_shuffles)
         perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
 
         for i in range(self.n_shuffles):
-            n_exp_imbalanced = np.histogram(group_df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
+            n_exp_imbalanced = np.histogram(df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
             n_exp_not_imbalanced = n_all - n_exp_imbalanced +1 
 
             perm[i] = np.log2( (n_exp_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_imbalanced.sum()) / (n_exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_not_imbalanced.sum()) )
@@ -66,13 +61,14 @@ class MotifEnrichment:
             scale=np.nanstd(perm_per_nt, axis=0)
         ) / np.log(10)
         
+        n_imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
         return pd.Series([
             log_odds,
             pval,
-            np.nansum(all_inside),
-            np.nansum(imbalanced_inside),
-            np.nanmedian(all_inside),
-            np.nansum(imbalanced_inside >= 7)
+            np.nansum(n_all[self.flank_width:-self.flank_width]),
+            np.nansum(n_imbalanced_inside),
+            np.nanmedian(n_imbalanced_inside),
+            np.nansum(n_imbalanced_inside >= 7)
         ], index=self.columns), (pvals_per_nt, log_odds_per_nt)
 
 
