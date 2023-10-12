@@ -88,7 +88,7 @@ class MotifEnrichment:
 
 
     def get_motif_stats(self, data_df):
-        return data_df.groupby(['motif', 'group_id']).progress_apply(self.get_group_stats)
+        return data_df.groupby(['motif', 'group_id']).progress_apply(self.get_group_stats).reset_index()
 
 
 def preprocess_dfs(variants_df, motifs_df):
