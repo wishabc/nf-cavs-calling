@@ -40,9 +40,10 @@ class MotifEnrichment:
 
         perm = np.zeros(self.n_shuffles)
         perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
-
+        
         for i in range(self.n_shuffles):
-            n_exp_imbalanced = np.histogram(df['offset'][np.random.permutation(imbalanced)], bins=bins)[0] + 1
+            rng = np.random.default_rng(seed=i)
+            n_exp_imbalanced = np.histogram(df['offset'][rng.permutation(imbalanced)], bins=bins)[0] + 1
             n_exp_not_imbalanced = n_all - n_exp_imbalanced +1 
 
             perm[i] = np.log2( (n_exp_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_imbalanced.sum()) / (n_exp_not_imbalanced[self.flank_width:-self.flank_width].sum() / n_exp_not_imbalanced.sum()) )
