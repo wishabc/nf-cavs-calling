@@ -7,6 +7,8 @@ from tqdm import tqdm
 tqdm.pandas()
 from aggregation import starting_columns
 
+_complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
+
 
 class NoDataException(Exception):
     pass
@@ -89,12 +91,19 @@ class MotifEnrichment:
         return data_df.groupby(['motif', 'group_id']).progress_apply(self.get_group_stats)
 
 
-def preprocess_df(data_df):
+def preprocess_dfs(variants_df, motifs_df):
     # Compute preferred allele
+    data_df = variants_df[[*starting_columns, 'logit_es_combined', 'group_id', 'min_fdr']].merge(
+        motifs_df,
+        on=starting_columns
+    )
+    for allele in ('ref', 'alt'):
+        data_df[f'{allele}_by_motif'] = np.where(data_df['strand'] == '-', data_df[allele].map(_complement), data_df[allele])
+
     data_df["prefered_allele"] = np.where(
         data_df['logit_es_combined'] >= 0,
-        data_df["ref"],
-        data_df["alt"])
+        data_df["ref_by_motif"],
+        data_df["alt_by_motif"])
     data_df['ddg'] = data_df.eval('ref_score - alt_score')
     return data_df
 
@@ -114,9 +123,7 @@ if __name__ == '__main__':
     print('Reading motifs df')
     motifs_df = pd.read_table(args.motifs)
     print('Adding fields')
-    data_df = variants_df[[*starting_columns, 'logit_es_combined', 'group_id', 'min_fdr']].merge(motifs_df, on=[starting_columns])
-
-    data_df = preprocess_df(data_df)
+    data_df = preprocess_dfs(variants_df, motifs_df)
     data_df['imbalanced'] = data_df['min_fdr'] <= args.fdr
 
     me = MotifEnrichment(flank_width=args.flank_width, n_shuffles=1000)
