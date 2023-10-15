@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
-include { filter_tested_variants } from "./main"
-include { annotateLD } from "./ld_scores"
-include { cavsMotifEnrichment } from "./motif_enrichment"
+
+// Put in the Apptainer
+params.conda = "$moduleDir/environment.yml"
 
 
 process random_sample {
@@ -26,10 +26,6 @@ process random_sample {
         --step ${params.samples_per_job}
     """
 }
-
-
-// Put in the Apptainer
-params.conda = "$moduleDir/environment.yml"
 
 
 workflow sampleVariants {
@@ -57,7 +53,7 @@ workflow sampleVariants {
 
 workflow {
     nonagr_files = Channel.fromPath(params.nonagr_pvals)
-    params.cavs_annotation = "${params.outdir}/cavs.annotations.bed.gz"
+    params.cavs_annotation = "/net/seq/data2/projects/sabramov/ENCODE4/dnase-genotypes-round2/output/snvs.annotations.bed.gz"
     Channel.fromPath(params.cavs_annotation)
         | combine(nonagr_files)
         | sampleVariants

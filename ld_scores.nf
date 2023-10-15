@@ -1,5 +1,27 @@
 #!/usr/bin/env nextflow
-include { filter_tested_variants } from "./main"
+
+
+process filter_tested_variants {
+    conda params.conda
+    scratch true
+
+    input:
+        path pval_files
+
+    output:
+        path name
+
+    script:
+    // Expected all files to be in the same format
+    command = pval_files[0].extension == 'gz' ? 'zcat' : 'cat'
+    name = pval_files.size() > 1 ? "unique_variants.bed" : "${pval_files[0].simpleName}.bed"
+    """
+    ${command} ${pval_files} \
+        | cut -f1-6 \
+        | sort-bed - \
+        | uniq >> ${name}
+    """
+}
 
 
 process ld_scores {
