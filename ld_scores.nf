@@ -1,7 +1,6 @@
 #!/usr/bin/env nextflow
 include { filter_tested_variants } from "./main"
 
-params.by_sample_dir = "/net/seq/data2/projects/sabramov/ENCODE4/dnase0620/dnase.auto/output/by_sample/"
 
 process ld_scores {
 	conda params.conda
@@ -107,6 +106,6 @@ workflow annotateLD {
 }
 
 workflow {
-    Channel.fromPath("${params.raw_pvals_dir}/*.bed") 
+    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed") 
         | annotateLD
 }
