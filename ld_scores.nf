@@ -108,7 +108,9 @@ workflow annotateLD {
 workflow {
     by_sample = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed") 
     annotateLD(
-        filter_tested_variants(by_sample),
+        by_sample
+            | filter_tested_variants
+            | collect(sort: true),
         by_sample
     )
 }
