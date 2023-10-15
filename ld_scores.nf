@@ -17,7 +17,7 @@ process ld_scores {
 	name = "${prefix}.geno.ld"
     additional_params = chrom == 'all' ? "" : "--chr ${chrom}"
  	"""
-    echo "chrom chromStart  chromEnd" > variants.bed
+    echo -e "chrom\tchromStart\tchromEnd" > variants.bed
     cat ${snps_positions} \
         | awk -v OFS='\t' '{ print \$1,\$2,\$3 }'  \
         | sort-bed - \
@@ -79,11 +79,12 @@ process intersect_with_tested_variants {
 
 workflow annotateLD {
     take:
+        data
         samples
     main:
         out = Channel.of(1..22)
             | map(it -> "chr${it}")
-            | combine(samples)
+            | combine(data)
             | ld_scores
             | collectFile(
                 keepHeader: true,
@@ -105,6 +106,9 @@ workflow annotateLD {
 }
 
 workflow {
-    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed") 
-        | annotateLD
+    by_sample = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed") 
+    annotateLD(
+        filter_tested_variants(by_sample),
+        by_sample
+    )
 }
