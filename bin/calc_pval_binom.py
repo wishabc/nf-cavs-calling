@@ -89,7 +89,7 @@ def calc_fdr(group_df):
 
 def main(df, coverage_tr=15, modify_w=False):
     # Remove already present columns
-    df = df[[x for x in df.columns if x not in updated_columns]]
+    df = df.drop(columns=updated_columns, errors='ignore')
     # Check if empty
     result_columns = [*df.columns, *updated_columns]
     if df.empty:
@@ -113,7 +113,7 @@ def main(df, coverage_tr=15, modify_w=False):
         result,
         cover_tr=coverage_tr,
         cover_col='coverage',
-        pval_cols=[['pval_ref', 'pval_alt']]
+        pval_cols=['pval_ref', 'pval_alt']
     )
     return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)[result_columns]
 
