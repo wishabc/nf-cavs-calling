@@ -1,6 +1,4 @@
 #!/usr/bin/env nextflow
-
-include { filter_tested_variants } from "./main"
 // Put in the Apptainer
 params.conda = "$moduleDir/environment.yml"
 
