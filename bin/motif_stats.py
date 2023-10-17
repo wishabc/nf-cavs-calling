@@ -61,7 +61,7 @@ class MotifEnrichment:
             log_odds,
             loc=np.nanmean(perm, axis=0),
             scale=np.nanstd(perm, axis=0)
-            ) / np.log(10)
+        ) / np.log(10)
 
         pvals_per_nt = -stats.norm.logsf(
             log_odds_per_nt, 
@@ -77,7 +77,7 @@ class MotifEnrichment:
             np.nansum(n_imbalanced_inside),
             np.nanmedian(n_imbalanced_inside),
             np.nansum(n_imbalanced_inside >= 7)
-        ], index=self.columns), (pvals_per_nt, log_odds_per_nt)
+        ], index=self.columns), (pvals_per_nt, log_odds_per_nt), (perm, perm_per_nt)
 
 
     # wrapper of calc_enrichment to handle no data
