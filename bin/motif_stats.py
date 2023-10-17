@@ -87,7 +87,7 @@ class MotifEnrichment:
             if imbalanced_index.sum() == 0:
                 raise NoDataException()
 
-            data, _ = self.calc_enrichment(group_df, imbalanced_index)
+            data, _, _ = self.calc_enrichment(group_df, imbalanced_index)
         except NoDataException:
             data = pd.Series(np.full(len(self.columns), pd.NA), index=self.columns)
         return data
