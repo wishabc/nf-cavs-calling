@@ -23,7 +23,7 @@ class MotifEnrichment:
         "imbalanced_inside_median",
         "n_imbalanced_more_7",
     ]
-    def __init__(self, flank_width=20, n_shuffles=10000):
+    def __init__(self, flank_width=20, n_shuffles=1000):
         self.flank_width = flank_width
         self.n_shuffles = n_shuffles
 
