@@ -18,6 +18,8 @@ class MotifEnrichment:
     columns = [
         "log_odds",
         "log10_pval",
+        "total",
+        "imbalanced",
         "total_inside",
         "imbalanced_inside",
         "imbalanced_inside_median",
@@ -73,6 +75,8 @@ class MotifEnrichment:
         return pd.Series([
             log_odds,
             pval,
+            np.nansum(n_all),
+            np.nansum(n_imbalanced),
             np.nansum(n_all[self.flank_width:-self.flank_width]),
             np.nansum(n_imbalanced_inside),
             np.nanmedian(n_imbalanced_inside),
