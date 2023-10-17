@@ -23,7 +23,7 @@ class MotifEnrichment:
         "imbalanced_inside_median",
         "n_imbalanced_more_7",
     ]
-    def __init__(self, flank_width=20, n_shuffles=1000):
+    def __init__(self, flank_width=20, n_shuffles=10000):
         self.flank_width = flank_width
         self.n_shuffles = n_shuffles
 
@@ -49,7 +49,7 @@ class MotifEnrichment:
         perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
         
         for i in range(self.n_shuffles):
-            rng = np.random.default_rng(seed=i)
+            rng = np.random.default_rng(seed=i * self.n_shuffles * 10)
             n_exp_imbalanced = np.histogram(df['offset'][rng.permutation(imbalanced)], bins=bins)[0] + 1
             n_exp_not_imbalanced = n_all - n_exp_imbalanced + 1
 
