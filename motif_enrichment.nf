@@ -26,7 +26,6 @@ process calc_enrichment {
     """
 }
 
-
 workflow cavsMotifEnrichment {
     take:
         data
