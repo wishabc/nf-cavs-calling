@@ -129,7 +129,7 @@ if __name__ == '__main__':
     print("Unique groups:", input_df['group_id'].unique())
     data_wrapper = ANOVA(
         input_df[
-            (input_df['BAD'] <= 1) # FIXME (<= 1.5?)
+            (input_df['BAD'] <= 1)
             & (True if args.chrom is None else input_df['#chr'] == args.chrom)
         ].copy(),
         min_samples=args.min_samples,

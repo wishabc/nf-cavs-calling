@@ -17,6 +17,7 @@ process filter_tested_variants {
     name = pval_files.size() > 1 ? "unique_variants.bed" : "${pval_files[0].simpleName}.bed"
     """
     ${command} ${pval_files} \
+        | grep -v '#' \
         | cut -f1-6 \
         | sort-bed - \
         | uniq >> ${name}

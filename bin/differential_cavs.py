@@ -1,5 +1,5 @@
 import argparse
-from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd
+from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd, logit_es
 import numpy as np
 import pandas as pd
 
@@ -48,6 +48,33 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
         differential_cavs[[*starting_columns, 'group_id', 'min_pval_group', 'min_fdr_group']], 
         how='left'
     )
+
+
+def get_category(anova_results):
+    cpy = anova_results.copy()
+    cpy['abs_max_group_es'] = cpy.groupby('variant_id')['group_es'].transform(lambda x: np.max(np.abs(logit_es(x))))
+    cpy['cell_selective'] = cpy.eval('differential_fdr <= 0.05 & differential_es >= 0.2 & abs_max_group_es >= 0.5')
+
+    result = cpy[cpy['cell_selective']][['variant_id', 'min_fdr_group', 'group_es']].groupby('variant_id').progress_apply(get_concordance)
+    result = cpy.loc[:, ['variant_id', 'min_fdr_overall', 'differential_fdr', 'differential_es', 'cell_selective']].drop_duplicates().merge(
+        result.reset_index(), how='left')
+    
+    result['overall_imbalanced'] = result['min_fdr_overall'] <= 0.05
+    
+    result['category'] = 'discordant'
+    result.loc[~result['overall_imbalanced'] & ~result['cell_selective'], 'category'] = 'not_imbalanced'
+    result.loc[~result['cell_selective'] & pd.isna(result['category']), 'category'] = 'not_cell_selective'
+    result.loc[result['concordant'] & pd.isna(result['category']), 'category'] = 'concordant'
+    
+    result = cpy.loc[:, ['variant_id']].merge(result.reset_index(), on='variant_id')
+    return result['category']
+
+
+def get_concordance(df, fdr_tr=0.05):
+    valid_es = df[df.eval(f'min_fdr_group <= {fdr_tr}').fillna(False)]['group_es']
+    is_discordant = (valid_es.shape[0] >= 2) and (valid_es.max() - 0.5) * (valid_es.min() - 0.5) < 0
+    df['concordant'] = ~is_discordant
+    return df[['concordant']].iloc[0]
 
 
 if __name__ == '__main__':

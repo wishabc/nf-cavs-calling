@@ -33,6 +33,10 @@ def parse_coverage(cov_string):
         raise
 
 
+def logit_es(es, d=1/100):
+    return np.log2(es + d) - np.log2(1 - es + d)
+
+
 def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
@@ -129,9 +133,7 @@ def main(pval_df, chrom=None, max_cover_tr=15):
         cover_col='max_cover',
         pval_cols=["pval_ref_combined", "pval_alt_combined"]
     )
-    pseudocount = 1/100
-    es = aggr_df['es_combined']
-    aggr_df['logit_es_combined'] = np.log2((es + pseudocount) / (1 - es + pseudocount))
+    aggr_df['logit_es_combined'] = logit_es(aggr_df['es_combined'], 1/100)
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 

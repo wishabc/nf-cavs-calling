@@ -25,6 +25,7 @@ class CalcImbalance:
             ws = self.modify_w_binom(k, n, p, ws)
         
         es = self.odds_es(k, n, BADs, ws)
+        es = expit(es * np.log(2))
         pval_ref = self.censored_binom_pvalue(k, n, p, ws, smooth=smooth)
         pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, smooth=smooth)
         return [ws, es, pval_ref, pval_alt]
