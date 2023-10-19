@@ -25,6 +25,7 @@ result_columns = [*starting_columns, 'AAF', 'RAF',
     ]
 
 
+
 def parse_coverage(cov_string):
     try:
         return int(cov_string) if cov_string != 'auto' else 'auto'
