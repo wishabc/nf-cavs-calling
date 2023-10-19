@@ -1,182 +1,121 @@
 #!/bin/which python3
-
 import argparse
 import pandas as pd
 import numpy as np
 import scipy.stats as stats
-import statsmodels.api as sm
 from tqdm import tqdm
-# import dask.dataframe as dd
 tqdm.pandas()
+from aggregation import starting_columns
 
-# Params
 _complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-def complement(x):
-    return np.vectorize(_complement.get)(x)
 
 
 class NoDataException(Exception):
     pass
 
+
 class MotifEnrichment:
-    result_columns =  [
-        'motifs_name',
-        'group_id',
+    columns = [
         "log_odds",
-        "pval",
+        "log10_pval",
+        "total",
+        "imbalanced",
         "total_inside",
         "imbalanced_inside",
         "imbalanced_inside_median",
         "n_imbalanced_more_7",
-        'r2',
-        'concordance',
-        'ref_bias'
     ]
-
-    def __init__(self, variants_df_path, counts_df_path, flank_width=20, fdr_tr=0.05):
+    def __init__(self, flank_width=20, n_shuffles=1000):
         self.flank_width = flank_width
-        self.fdr_tr = fdr_tr
-        print('Reading variants df')
-        variants_df = self.set_index(
-            pd.read_table(variants_df_path)
-        )
-        print('Reading motifs df')
-        motifs_df = self.set_index(pd.read_table(counts_df_path))
-        print('Adding fields')
-        for key in ('ref', 'alt'):
-            motifs_df[key] = np.where(
-                motifs_df['strand'] == '-', 
-                complement(motifs_df[key]),
-                motifs_df[key]
-            )
+        self.n_shuffles = n_shuffles
+
     
-        # Add imbalance data
-        self.data_df = variants_df[['es_weighted_mean', 'group_id', 'min_fdr']].join(motifs_df)
+    def calc_log_odds(self, imbalanced, not_imbalanced):
+        return np.log2(imbalanced[self.flank_width:-self.flank_width].sum()) \
+            - np.log2(imbalanced.sum()) \
+            - np.log2(not_imbalanced[self.flank_width:-self.flank_width].sum()) \
+            + np.log2(not_imbalanced.sum())
 
-        # Compute preferred allele
-        self.data_df["prefered_allele"] = np.where(
-            self.data_df['es_weighted_mean'] >= 0,
-            self.data_df["ref"],
-            self.data_df["alt"])
-        self.data_df['ddg'] = self.data_df.eval('ref_score - alt_score')
+
+    def calc_enrichment(self, df, imbalanced):
+        bins = np.arange(df['offset'].min(), df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
+
+        n_all = np.histogram(df['offset'], bins=bins)[0]
+        n_imbalanced = np.histogram(df['offset'][imbalanced], bins=bins)[0] + 1
+        n_not_imbalanced = n_all - n_imbalanced + 1
         
-        self.result_df = None
+        log_odds = self.calc_log_odds(n_imbalanced, n_not_imbalanced)
+        log_odds_per_nt = np.log2( (n_imbalanced / n_imbalanced.sum()) / (n_not_imbalanced / n_not_imbalanced.sum()) )
 
-    @staticmethod
-    def logtr(arr):
-        return 1 - 1 / (1 + np.power(2, np.array(arr)))
+        perm = np.zeros(self.n_shuffles)
+        perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
+        
+        for i in range(self.n_shuffles):
+            rng = np.random.default_rng(seed=i * self.n_shuffles * 10)
+            n_exp_imbalanced = np.histogram(df['offset'][rng.permutation(imbalanced)], bins=bins)[0] + 1
+            n_exp_not_imbalanced = n_all - n_exp_imbalanced + 1
 
-    @staticmethod
-    def get_concordant(x, y, expected_es=0, x_mar=0):
-        diff = x - expected_es
-        unmasked_values = (np.abs(diff) >= x_mar) & (y != 0)
-        return ((y * diff > 0) & unmasked_values).sum() / unmasked_values.sum()
+            perm[i] = self.calc_log_odds(n_exp_imbalanced, n_exp_not_imbalanced)
+            perm_per_nt[i,:] = np.log2( (n_exp_imbalanced / np.sum(n_exp_imbalanced)) / (n_exp_not_imbalanced / np.sum(n_exp_not_imbalanced)))
+    
 
-    @staticmethod
-    def set_index(df):
-        if len(df.index) == 0:
-            return df
-        df['variant_id'] = df[['#chr', 'start', 'end', 'ref', 'alt']].astype(str).agg('@'.join, axis=1)
-        return df.set_index('variant_id')
-
-
-    def get_annotations(self, snvs):
-
-        snvs_in = snvs[(snvs['within'] == 1)]
-
-        try:
-            if len(snvs_in) == 0:
-                raise NoDataException()
-
-            predictor_array = snvs_in['es_weighted_mean'].to_numpy()
-            expected_es = 0
-
-            if (predictor_array == 0).all() == 0:
-                raise NoDataException()
-            
-            X = predictor_array
-            Y = snvs_in['ddg']
-
-            X = sm.add_constant(X)
-
-            model = sm.OLS(Y, X).fit()
-
-            outliers = model.get_influence().cooks_distance[0] > (4/X.shape[0])
-
-            model = sm.OLS(Y[~outliers], X[~outliers]).fit()
-            
-            r2 = model.rsquared
-
-            concordance = self.get_concordant(
-                predictor_array, 
-                snvs_in["ddg"], 
-                expected_es=expected_es
-            )
-            
-            ref_bias = (predictor_array > 0).sum() / (predictor_array != 0).sum()
-        except NoDataException:
-            r2, concordance, ref_bias = np.nan, np.nan, np.nan
-
-        return r2, concordance, ref_bias
-
-
-    #Enrichment code
-    def calc_enrichment(self, group_df, imbalanced):
-        bins = np.arange(group_df['offset'].min(), group_df['offset'].max() + 2) # add 2 to length: one for '0' and one for last element
-        n_all = np.histogram(group_df['offset'], bins=bins)[0]
-        n_imbalanced = np.histogram(group_df['offset'][imbalanced], bins=bins)[0]
-
-        all_inside = n_all[self.flank_width:-self.flank_width]
-        imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
-
-        total_inside = np.nansum(all_inside)
-        total_imbalanced_inside = np.nansum(imbalanced_inside)
-        if total_imbalanced_inside == 0 or total_inside - total_imbalanced_inside == 0:
-            raise NoDataException()
-
-        log_odds = np.log2(total_imbalanced_inside) - np.log2(total_inside - total_imbalanced_inside) - \
-            np.log2(np.nansum(n_imbalanced) - total_imbalanced_inside) + \
-                np.log2(np.nansum(n_all) - np.nansum(n_imbalanced) - total_inside + total_imbalanced_inside)
-        pval = -stats.hypergeom.logsf(
-            total_imbalanced_inside,
-            np.nansum(n_all),
-            np.nansum(n_imbalanced),
-            total_inside
+        pval = -stats.norm.logsf(
+            log_odds,
+            loc=np.nanmean(perm, axis=0),
+            scale=np.nanstd(perm, axis=0)
         ) / np.log(10)
 
+        pvals_per_nt = -stats.norm.logsf(
+            log_odds_per_nt, 
+            loc=np.nanmean(perm_per_nt, axis=0),
+            scale=np.nanstd(perm_per_nt, axis=0)
+        ) / np.log(10)
         
-        return [
+        n_imbalanced_inside = n_imbalanced[self.flank_width:-self.flank_width]
+        return pd.Series([
             log_odds,
             pval,
-            total_inside,
-            np.nansum(imbalanced_inside),
-            np.nanmedian(all_inside),
-            np.nansum(imbalanced_inside >= 7)
-        ]
+            np.nansum(n_all),
+            np.nansum(n_imbalanced),
+            np.nansum(n_all[self.flank_width:-self.flank_width]),
+            np.nansum(n_imbalanced_inside),
+            np.nanmedian(n_imbalanced_inside),
+            np.nansum(n_imbalanced_inside >= 7)
+        ], index=self.columns), (pvals_per_nt, log_odds_per_nt), (perm, perm_per_nt)
 
 
-    def get_stats(self, group_df):
-        imbalanced_index = group_df['min_fdr'] <= self.fdr_tr
+    # wrapper of calc_enrichment to handle no data
+    def get_group_stats(self, group_df):
+        imbalanced_index = group_df['imbalanced']
         try:
             if imbalanced_index.sum() == 0:
                 raise NoDataException()
 
-            lin_model_stats = self.get_annotations(group_df[imbalanced_index])
-
-            # log_odds, pval, n_inside, n_imb_inside, n_median_inside, n_inside_more_7
-            enrichment_stats = self.calc_enrichment(group_df, imbalanced_index)
-            data = [
-                *enrichment_stats,
-                *lin_model_stats
-            ]
+            data, _, _ = self.calc_enrichment(group_df, imbalanced_index)
         except NoDataException:
-            data = [np.nan] * (len(self.result_columns) - 2)
+            data = pd.Series(np.full(len(self.columns), pd.NA), index=self.columns)
+        return data
 
-        return pd.Series([group_df.name[0], group_df.name[1], *data], self.result_columns)
 
-    def get_motif_stats(self):
-        print('Grouping by and applying')
-        return self.data_df.groupby(['motif', 'group_id']).progress_apply(self.get_stats)
+    def get_motif_stats(self, data_df):
+        return data_df.groupby(['motif_id', 'group_id']).progress_apply(self.get_group_stats).reset_index()
+
+
+def preprocess_dfs(variants_df, motifs_df):
+    # Compute preferred allele
+    data_df = variants_df[[*starting_columns, 'logit_es_combined', 'group_id', 'min_fdr']].merge(
+        motifs_df,
+        on=starting_columns
+    )
+    for allele in ('ref', 'alt'):
+        data_df[f'{allele}_by_motif'] = np.where(data_df['strand'] == '-', data_df[allele].map(_complement), data_df[allele])
+
+    data_df["prefered_allele"] = np.where(
+        data_df['logit_es_combined'] >= 0,
+        data_df["ref_by_motif"],
+        data_df["alt_by_motif"])
+    data_df['ddg'] = data_df.eval('ref_score - alt_score')
+    return data_df
 
 
 if __name__ == '__main__':
@@ -188,9 +127,14 @@ if __name__ == '__main__':
     parser.add_argument('--fdr', help='FDR threshold for CAVs', type=float, default=0.05)
     args = parser.parse_args()
 
-    data_holder = MotifEnrichment(
-        args.variants, args.motifs,
-        fdr_tr=args.fdr,
-        flank_width=args.flank_width)
-    res_df = data_holder.get_motif_stats()
-    res_df.to_csv(args.outpath, index=False, sep='\t')
+    print('Reading variants df')
+    variants_df = pd.read_table(args.variants)
+    
+    print('Reading motifs df')
+    motifs_df = pd.read_table(args.motifs).rename(columns={'motif': 'motif_id'})
+    print('Adding fields')
+    data_df = preprocess_dfs(variants_df, motifs_df)
+    data_df['imbalanced'] = data_df['min_fdr'] <= args.fdr
+
+    me = MotifEnrichment(flank_width=args.flank_width, n_shuffles=1000)
+    me.get_motif_stats(data_df).to_csv(args.outpath, index=False, sep='\t')

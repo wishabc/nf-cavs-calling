@@ -28,11 +28,11 @@ To run all stages of the pipeline use:
 nextflow run main.nf -profile Altius
 ```
 
-To run just the last aggregation step (expected to run previous command first):
+To run just the last, aggregation, step (expected to run previous command first):
 ```
-nextflow run main.nf -profile Altius -entry aggregatePvals --raw_pvals_dir <path to by_sample directory in the output folder of main.nf script>
+nextflow run aggregation.nf -profile Altius --main_run_outdir <path to output folder of main.nf script>
 ```
-The `--raw_pvals_dir` param can be omitted if you are running the pipeline in the same folder as `nextflow run main.nf -profile Altius`
+The `--main_run_outdir` param can be omitted if you are running the pipeline in the same folder as `nextflow run main.nf -profile Altius`
 
 ## Config
 There are two config files in the repository.
@@ -51,12 +51,12 @@ Following parameters should be present in ```params.config```. Each option can b
     - `hotspots_path` - (optional, not required for aggregation workflow) Path to bed-formatted peak calls
 
 - `aggregation_key` - column name in `samples_file`. Samples are grouped according to values in that columns and aggregated. Use `"all"` to aggregate all the data;
-- ```allele_tr``` - allelic reads threshold, SNVs with less than ```allele_tr``` reads on one of the alleles are filtered out;
 
-- ```coverage_tr``` - coverage threshold. SNPs with less than `coverage_tr` are not considered to be CAV candidates and excluded from aggregation. Use `"auto"` to choose threshold automaticly for each BAD.
+- ```max_coverage_tr``` - coverage threshold. SNPs with less than `max_coverage_tr` are not considered to be CAV candidates and excluded from aggregation.
 
-- ```exclude_fdr_tr``` - FDR threshold below which SNVs are called CAVs and excluded from the set of SNVs used for badmaps re-estimation
+- ```fdr_tr``` - FDR threshold below which SNVs are called CAVs and excluded from the set of SNVs used for badmaps re-estimation
 
 BABACHI params, change only if you know what you are doing
-- ```states, prior, geometric_prior```,  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/ for more details
-
+- ```states, prior, geometric_prior```  - allowed states, prior type and coefficient for geometric prior, see https://github.com/autosome-ru/BABACHI/ for more details
+- ```babachi_allele_tr``` - exclude SNPs with less than `alelle_tr` reads on each of the alleles for BAD maps estimation, tested on `allele_tr=5`
+- ```babachi_maf_tr``` - exclude SNPs with less than `babachi_maf_tr` AF on each of the alleles for BAD maps estimation, tested on `babachi_maf_tr=0.05`

@@ -1,7 +1,29 @@
 #!/usr/bin/env nextflow
-include { filter_tested_variants } from "./main"
 
-params.by_sample_dir = "/net/seq/data2/projects/sabramov/ENCODE4/dnase0620/dnase.auto/output/by_sample/"
+
+process filter_tested_variants {
+    conda params.conda
+    scratch true
+
+    input:
+        path pval_files
+
+    output:
+        path name
+
+    script:
+    // Expected all files to be in the same format
+    command = pval_files[0].extension == 'gz' ? 'zcat' : 'cat'
+    name = pval_files.size() > 1 ? "unique_variants.bed" : "${pval_files[0].simpleName}.bed"
+    """
+    ${command} ${pval_files} \
+        | grep -v '#' \
+        | cut -f1-6 \
+        | sort-bed - \
+        | uniq >> ${name}
+    """
+}
+
 
 process ld_scores {
 	conda params.conda
@@ -18,7 +40,7 @@ process ld_scores {
 	name = "${prefix}.geno.ld"
     additional_params = chrom == 'all' ? "" : "--chr ${chrom}"
  	"""
-    echo "chrom chromStart  chromEnd" > variants.bed
+    echo -e "chrom\tchromStart\tchromEnd" > variants.bed
     cat ${snps_positions} \
         | awk -v OFS='\t' '{ print \$1,\$2,\$3 }'  \
         | sort-bed - \
@@ -80,8 +102,8 @@ process intersect_with_tested_variants {
 
 workflow annotateLD {
     take:
-        samples
         data
+        samples
     main:
         out = Channel.of(1..22)
             | map(it -> "chr${it}")
@@ -107,6 +129,11 @@ workflow annotateLD {
 }
 
 workflow {
-    Channel.fromPath("${params.raw_pvals_dir}/*.bed") 
-        | annotateLD
+    by_sample = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed") 
+    annotateLD(
+        by_sample
+            | collect(sort: true)
+            | filter_tested_variants,
+        by_sample
+    )
 }

@@ -4,8 +4,14 @@ from scipy.special import betainc
 import argparse
 import numpy as np
 from scipy.special import expit
+from aggregation import calc_fdr_pd, parse_coverage, get_min_pval
 
-updated_columns = ['w', 'es', 'pval_ref', 'pval_alt', 'is_tested']
+from tqdm import tqdm
+
+tqdm.pandas()
+
+
+updated_columns = ['coverage', 'w', 'es', 'pval_ref', 'pval_alt', 'min_pval', 'FDR_sample']
 
 class CalcImbalance:
     def __init__(self, allele_tr, modify_w):
@@ -19,6 +25,7 @@ class CalcImbalance:
             ws = self.modify_w_binom(k, n, p, ws)
         
         es = self.odds_es(k, n, BADs, ws)
+        es = expit(es * np.log(2))
         pval_ref = self.censored_binom_pvalue(k, n, p, ws, smooth=smooth)
         pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, smooth=smooth)
         return [ws, es, pval_ref, pval_alt]
@@ -76,22 +83,21 @@ class CalcImbalance:
         return ws
 
 
-def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
-    df = df[df.eval(f'alt_counts >= {allele_tr} & ref_counts >= {allele_tr}')]
+def calc_fdr(group_df):
+    corrected_pvalues = calc_fdr_pd(group_df['min_pval'])
+    group_df.loc[:, 'FDR_sample'] = corrected_pvalues
+    return group_df
+
+def main(df, coverage_tr=15, modify_w=False):
     # Remove already present columns
-    df = df[[x for x in df.columns if x not in updated_columns]]
+    df = df.drop(columns=updated_columns, errors='ignore')
     # Check if empty
-    result_columns = [*df.columns, 'coverage', *updated_columns]
+    result_columns = [*df.columns, *updated_columns]
     if df.empty:
         return pd.DataFrame([], columns=result_columns)
 
-    imbalance_est = CalcImbalance(allele_tr=allele_tr, modify_w=modify_w)
+    imbalance_est = CalcImbalance(allele_tr=0, modify_w=modify_w)
     df['coverage'] = df.eval('ref_counts + alt_counts')
-    if coverage_tr == 'auto':
-        by_BAD_coverage_tr = {x: imbalance_est.calc_min_cover_by_BAD(x, pvalue_tr=0.05) for x in df['BAD'].unique()}
-        df['is_tested'] = df['coverage'] >= df['BAD'].map(by_BAD_coverage_tr)
-    else:    
-        df['is_tested'] = df.eval(f'coverage >= {coverage_tr}')
 
     result = imbalance_est.calc_pval(
         df['coverage'].to_numpy(), 
@@ -99,28 +105,33 @@ def main(df, coverage_tr='auto', allele_tr=5, modify_w=False):
         BADs=df['BAD'].to_numpy(),
         smooth=False
     )
-    return df.assign(**dict(zip(updated_columns, result)))[result_columns]
+    result = df.assign(
+        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result)),
+        min_pval=pd.NA, 
+        FDR_sample=pd.NA
+    )[result_columns]
+    result['min_pval'] = get_min_pval(
+        result,
+        cover_tr=coverage_tr,
+        cover_col='coverage',
+        pval_cols=['pval_ref', 'pval_alt']
+    )
+    return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)[result_columns]
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('-a', type=int, help='Allelic reads threshold', default=5)
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
-    parser.add_argument('--ct', type=str, help="""Coverage threshold for individual variants to be considered tested.
-                                        Expected to be "auto" or a positive integer""", default='auto')
+    parser.add_argument('--coverage_threhold', type=str, help="""Coverage threshold for variants to calculate per-sample q-values.
+                            Expected to be "auto" or a positive integer""", default=15)
     args = parser.parse_args()
-    try:
-        coverage_tr = int(args.ct) if args.ct != 'auto' else 'auto'
-    except ValueError:
-        print(f'Incorrect coverage threshold provided. {args.ct} not a positive integer or "auto"')
-        raise
+    coverage_tr = parse_coverage(args.coverage_threhold)
     input_df = pd.read_table(args.I, low_memory=False)
     modified_df = main(
         input_df,
-        allele_tr=args.a,
         modify_w=args.recalc_w,
         coverage_tr=coverage_tr
     )

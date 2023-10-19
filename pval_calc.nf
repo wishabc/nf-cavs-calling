@@ -7,7 +7,6 @@ process calc_pval_binom {
 
     input:
         tuple val(indiv_id), path(badmap_intersect_file)
-        val prefix
 
     output:
         tuple val(indiv_id), path(name)
@@ -18,30 +17,8 @@ process calc_pval_binom {
     python3 $moduleDir/bin/calc_pval_binom.py \
         -I ${badmap_intersect_file} \
         -O ${name} \
-        -a ${params.allele_tr} \
-        --ct ${params.coverage_tr} \
+        --coverage_threhold ${params.fdr_coverage_filter} \
         --recalc-w
-    """
-}
-
-
-process aggregate_pvals {
-    conda params.conda
-    tag "${indiv_id}"
-
-    input:
-        tuple val(indiv_id), path(pval_file)
-        val prefix
-
-    output:
-        tuple val(indiv_id), path(name)
-
-    script:
-    name = "${indiv_id}.aggregation.bed"
-    """
-    python3 $moduleDir/bin/aggregation.py \
-        -I ${pval_file} \
-        -O ${name}
     """
 }
 
@@ -50,7 +27,7 @@ process exclude_cavs {
     tag "${indiv_id}"
     
     input:
-        tuple val(indiv_id), path(aggregated_snps), path(bad_annotations)
+        tuple val(indiv_id), path(non_aggregated_snps)
 
     output:
         tuple val(indiv_id), path(name)
@@ -58,11 +35,11 @@ process exclude_cavs {
     script:
     name = "${indiv_id}.snps.bed"
     """
-    python3 $moduleDir/bin/filter_cavs.py \
-        -a ${aggregated_snps} \
-        -b ${bad_annotations} \
-        -O ${name} \
-        --fdr ${params.fdr_tr}
+    head -1 ${non_aggregated_snps} | cut -f1-12  > ${name}
+    cat ${non_aggregated_snps} \
+        | awk -v OFS='\t' '\$NF > ${params.fdr_tr} {print}' \
+        | cut -f1-12 \
+        | sort-bed - >> ${name}
     """
 }
 
@@ -73,53 +50,42 @@ process add_cavs {
     scratch true
 
     input:
-        tuple val(indiv_id), path(new_badmap), path(old_badmap)
+        tuple val(indiv_id), path(new_bad_annotated), path(old_badmap_annotated)
 
     output:
         tuple val(indiv_id), path(name)
 
     script:
     name = "${indiv_id}.added_cavs.intersect.bed"
-    n_badmap = new_badmap.name != 'empty' ? "-n ${new_badmap}" : ""
+    n_badmap = new_bad_annotated.name != 'empty' ? "-n ${new_bad_annotated}" : ""
     """
     python3 $moduleDir/bin/add_cavs.py \
-        -o ${old_badmap} \
+        -o ${old_badmap_annotated} \
         ${n_badmap} \
         --output not_sorted_cavs.bed
+
 
     head -1 not_sorted_cavs.bed > ${name}
     sort-bed not_sorted_cavs.bed >> ${name}
     """
 }
 
-workflow addExcludedCavs {
-    take:
-        data
-    main:
-        out = add_cavs(data)
-    emit:
-        out
-}
-
 workflow calcPvalBinom {
     take:
         data
-        prefix
     main:
-        pval_files = calc_pval_binom(data, prefix)
+        pval_files = data | calc_pval_binom
     emit:
         pval_files
 }
 
 
-workflow callCavsFromVcfsBinom {
+workflow callCavsFirstRound {
     take:
         bad_annotations
-        prefix
     main:
-        pval_files = calcPvalBinom(bad_annotations, prefix)
-        no_cavs_snps = aggregate_pvals(pval_files, prefix)
-            | join(bad_annotations)
+        no_cavs_snps = bad_annotations
+            | calcPvalBinom
             | exclude_cavs
     emit:
         no_cavs_snps
@@ -133,5 +99,5 @@ workflow {
         | unique()
         | map(indiv_id -> tuple(indiv_id, "${params.outdir}/snp_annotation/${indiv_id}*"))
         
-    callCavsFromVcfsBinom(extracted_vcfs, "")
+    callCavsFirstRound(extracted_vcfs, "")
 }

@@ -2,13 +2,13 @@
 params.conda = "$moduleDir/environment.yml"
 
 
-process LRT {
+process anova {
     conda params.conda
     tag "${chromosome}"
     label "high_mem"
 
     input:
-        tuple val(chromosome), path(input_data)
+        tuple val(chromosome), path(input_data), path(weights)
 
     output:
         tuple path(pvals), path(tested)
@@ -23,8 +23,9 @@ process LRT {
         ${chromosome} \
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups} \
-        --allele_tr ${params.allele_tr} \
-        --chrom ${chromosome}
+        --chrom ${chromosome} \
+        --weights ${weights} \
+        --coverage_tr ${params.fdr_coverage_filter}
     """
 }
 
@@ -47,7 +48,8 @@ process differential_cavs {
         ${tested_snps} \
         ${pvals} \
         tmp.bed \
-        --fdr ${params.fdr_tr}
+        --fdr ${params.diff_fdr_tr} \
+        --es ${params.es_tr}
 
     head -1 tmp.bed > ${pvals_new}
     sort-bed tmp.bed >> ${pvals_new}
@@ -65,7 +67,7 @@ workflow differentialCavs {
         out = Channel.of(1..22, 'X', 'Y')
             | map(it -> "chr${it}")
             | combine(data)
-            | LRT
+            | anova
 
         pvals = out 
             | map(it -> it[0]) 
@@ -91,6 +93,10 @@ workflow differentialCavs {
 }
 
 workflow {
+    params.mse_estimates = "${params.outdir}/mse_estimates.tsv"
     Channel.fromPath(params.nonagr_pvals)
+        | combine(
+            Channel.fromPath(params.mse_estimates)
+        )
         | differentialCavs
 }
