@@ -91,19 +91,13 @@ def qvalue(pvals, bootstrap=False):
     # Estimate proportion of features that are truly null.
     kappa = np.arange(0.05, 0.96, 0.01)
     pik = np.array([sum(pvals > k) / (m*(1-k)) for k in kappa])
+
     if bootstrap:
         minpi0 = np.quantile(pik, 0.1)
-        print(minpi0, pik)
         W = np.array([(pvals >= l).sum() for l in kappa])
-        mse = (W / (np.square(m^2) * np.square(1 - kappa))
-            ) * (1 - (W / m)) + np.square((pik - minpi0))
-        print(pvals)
-        
-        if pik.shape[0] > 0:
-            pi0 = pik[mse==mse.min()][0]
-        else:
-            print(mse, pik)
-            raise AssertionError
+        print(np.square(m^2))
+        mse = (W / (np.square(m^2) * np.square(1 - kappa))) * (1 - (W / m)) + np.square((pik - minpi0))
+        pi0 = pik[mse==mse.min()][0]
     else:
         cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
         pi0 = float(cs(1.))
