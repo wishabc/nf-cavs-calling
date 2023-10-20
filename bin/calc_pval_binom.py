@@ -3,8 +3,9 @@ from scipy.stats import binom
 from scipy.special import betainc
 import argparse
 import numpy as np
-from scipy.special import expit
-from aggregation import calc_fdr_pd, parse_coverage, get_min_pval
+
+from scipy.special import expit, logit
+from aggregation import calc_fdr_pd, parse_coverage, get_min_pval, logit_es
 
 from tqdm import tqdm
 
@@ -24,11 +25,11 @@ class CalcImbalance:
         if self.modify_w:
             ws = self.modify_w_binom(k, n, p, ws)
         
-        es = self.odds_es(k, n, BADs, ws)
-        es = expit(es * np.log(2))
+        fraction_es = self.odds_es(k, n, BADs, ws)
+
         pval_ref = self.censored_binom_pvalue(k, n, p, ws, smooth=smooth)
         pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, smooth=smooth)
-        return [ws, es, pval_ref, pval_alt]
+        return [ws, fraction_es, pval_ref, pval_alt]
 
     def calc_min_cover_by_BAD(self, BAD, pvalue_tr=0.05, cmax=1000):
         covs = np.arange(self.allele_tr * 2, cmax + 1)
@@ -69,7 +70,12 @@ class CalcImbalance:
     @staticmethod
     def odds_es(x, n, BAD, w):
         # w * np.log2(OR / BAD) + (1 - w) * np.log2(OR * BAD)
-        return np.log2(x) - np.log2(n - x) + (1 - 2 * w) * np.log2(BAD) 
+        x, n, BAD = map(np.asarray, [x, n, BAD])
+
+        b = np.log(BAD)
+        delta = b * (n - 2 * x)
+        p = x / n
+        return expit(expit(-delta) * (logit(p) - b) + expit(delta) * (logit(p) + b))
     
     @staticmethod
     def modify_w_binom(counts, n, p, ws):
@@ -88,6 +94,7 @@ def calc_fdr(group_df):
     group_df.loc[:, 'FDR_sample'] = corrected_pvalues
     return group_df
 
+
 def main(df, coverage_tr=15, modify_w=False):
     # Remove already present columns
     df = df.drop(columns=updated_columns, errors='ignore')
@@ -105,18 +112,20 @@ def main(df, coverage_tr=15, modify_w=False):
         BADs=df['BAD'].to_numpy(),
         smooth=False
     )
+
     result = df.assign(
-        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result)),
-        min_pval=pd.NA, 
-        FDR_sample=pd.NA
-    )[result_columns]
+        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result))
+    )
+    result['logit_es'] = logit_es(result['es'])
+
     result['min_pval'] = get_min_pval(
         result,
         cover_tr=coverage_tr,
         cover_col='coverage',
         pval_cols=['pval_ref', 'pval_alt']
     )
-    return result.groupby('sample_id', group_keys=True).progress_apply(calc_fdr).reset_index(drop=True)[result_columns]
+    result['FDR_sample'] = result.groupby('sample_id', group_keys=True)['min_pval'].transform(calc_fdr_pd)
+    return result.reset_index(drop=True)[result_columns]
 
 
 if __name__ == '__main__':
