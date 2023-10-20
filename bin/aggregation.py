@@ -96,8 +96,15 @@ def qvalue(pvals, bootstrap=False):
         minpi0 = np.quantile(pik, 0.1)
         W = np.array([(pvals >= l).sum() for l in kappa])
         mse = (W / (np.square(m^2) * np.square(1 - kappa))) * (1 - (W / m)) + np.square((pik - minpi0))
-        print(mse, mse.min())
-        pi0 = pik[mse==mse.min()][0]
+        
+        if np.any(np.isnan(mse)) or np.any(np.isinf(mse)):
+            # Case 1: mse contains NaN or Inf
+            mask = np.isnan(mse)  # This will return a boolean mask where True indicates NaN positions
+
+        else:
+            # Case 2: mse contains only finite values
+            mask = mse == mse.min()
+        pi0 = pik[mask][0]
     else:
         cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
         pi0 = float(cs(1.))
