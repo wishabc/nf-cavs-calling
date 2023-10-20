@@ -12,7 +12,7 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-updated_columns = ['coverage', 'w', 'es', 'pval_ref', 'pval_alt', 'min_pval', 'FDR_sample']
+updated_columns = ['coverage', 'w', 'es', 'logit_es', 'pval_ref', 'pval_alt', 'min_pval', 'FDR_sample']
 
 class CalcImbalance:
     def __init__(self, allele_tr, modify_w):
