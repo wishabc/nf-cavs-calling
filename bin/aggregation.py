@@ -94,9 +94,13 @@ def qvalue(pvals, bootstrap=False):
 
     if bootstrap:
         minpi0 = np.quantile(pik, 0.1)
-        W = np.array([(pvals>=l).sum() for l in kappa])
-        mse = (W / (np.square(m^2) * np.square(1-kappa))) * (1-(W/m)) + np.square((pik-minpi0))
-        pi0 = pik[mse==min(mse)][0]
+        W = np.array([(pvals >= l).sum() for l in kappa])
+        mse = (W / (np.square(m^2) * np.square(1 - kappa))) * (1 - (W / m)) + np.square((pik - minpi0))
+        if mse.shape[0] > 0:
+            pi0 = pik[mse==mse.min()][0]
+        else:
+            print(mse)
+            raise AssertionError
     else:
         cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
         pi0 = float(cs(1.))
@@ -104,9 +108,9 @@ def qvalue(pvals, bootstrap=False):
     pi0 = min(pi0, 1)
     # Compute the q-values.
     qvals = np.zeros(len(pvals))
-    qvals[-1] = pi0*pvals[-1]
-    for i in np.arange(m-2, -1, -1):
-        qvals[i] = min(pi0*m*pvals[i]/float(i+1), qvals[i+1])
+    qvals[-1] = pi0 * pvals[-1]
+    for i in np.arange(m - 2, -1, -1):
+        qvals[i] = min(pi0 * m * pvals[i]/float(i+1), qvals[i+1])
     qvals = qvals[rev_ind]
     return qvals
 
