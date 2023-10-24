@@ -164,5 +164,9 @@ if __name__ == '__main__':
 
     pval_df = pd.read_table(args.I, low_memory=False)
     weights = pd.read_table(args.weights)
+    initial_length = pval_df.shape[0]
     pval_df = pval_df.merge(weights, on=['BAD', 'coverage'])
+    if pval_df.shape[0] == initial_length:
+        print(f'Some BAD/coverages are not present in weights_file {args.weights}')
+        raise AssertionError
     main(pval_df, args.chrom, max_cover_tr=coverage_tr).to_csv(args.O, sep='\t', index=False)
