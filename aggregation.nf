@@ -13,7 +13,7 @@ process aggregate_pvals {
     tag "${indiv_id}"
 
     input:
-        tuple val(indiv_id), path(pval_file), path(weights)
+        tuple val(indiv_id), path(pval_file)
 
     output:
         tuple val(indiv_id), path(name)
@@ -87,7 +87,6 @@ process pack_data {
 workflow aggregation {
     take:
         sample_split_pvals
-        mse_estimates
     main:
         params.aggregation_key = params.aggregation_key ?: "all"
         if (params.aggregation_key != 'all') {
@@ -116,7 +115,6 @@ workflow aggregation {
 
         aggregated_merged = pvals
             | merge_files
-            | combine(mse_estimates)
             | aggregate_pvals
             | map(it -> it[1])
             | collectFile(
@@ -141,7 +139,6 @@ workflow aggregation {
 workflow {
     by_sample_pvals = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
-    
-    mse_estimates = Channel.fromPath("${params.main_run_outdir}/mse_estimates.tsv")
-    aggregation(by_sample_pvals, mse_estimates)
+
+    aggregation(by_sample_pvals)
 }

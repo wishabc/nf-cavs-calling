@@ -140,26 +140,7 @@ process annotate_variants {
 
     echo -e "`head -1 ${pval_file}`\tfootprints\thotspots" > ${name}
     paste pval_f.bed footprints.txt hotspots.txt >> ${name}
-    """
-}
-
-
-process estimate_mse {
-    conda params.conda
-    scratch true
-    publishDir params.outdir
-    label "high_mem"
-
-    input:
-        path all_pvals
-    
-    output:
-        path name
-    
-    script:
-    name = "mse_estimates.tsv"
-    """
-    python3 $moduleDir/bin/estimate_mse.py ${all_pvals} ${name}
+    python3 $moduleDir/bin/estimate_mse.py ${name}
     """
 }
 
@@ -217,13 +198,8 @@ workflow {
         | flatten()
         | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
         | annotateWithFootprints
-
-    mse = out
-        | map(it -> it[1])
-        | collectFile(name: "all_pvals.bed", skip: 1, keepHeader: true)
-        | estimate_mse
     
-    aggregation(out, mse)
+    aggregation(out)
 }  
 
 workflow annotateWithFootprints {

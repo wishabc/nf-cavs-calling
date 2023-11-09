@@ -3,7 +3,6 @@ import pandas as pd
 import scipy.stats as st
 from scipy import interpolate
 import numpy as np
-from scipy.special import expit
 from tqdm import tqdm
 
 
@@ -132,7 +131,7 @@ def get_min_pval(df, cover_tr, cover_col, pval_cols):
     min_pval[ind] = np.nan
     return min_pval.to_numpy()
 
-def main(pval_df, chrom=None, max_cover_tr=15):
+def main(pval_df, chrom=None, max_cover_tr=10):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
@@ -153,7 +152,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('--weights', help='Weights file')
     parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
     parser.add_argument('--max_coverage_tr', type=str, help="""Threshold for the maximum
                             of coverages of variants aggregated at the same genomic position.
@@ -163,10 +161,4 @@ if __name__ == '__main__':
     coverage_tr = parse_coverage(args.max_coverage_tr)
 
     pval_df = pd.read_table(args.I, low_memory=False)
-    weights = pd.read_table(args.weights)
-    initial_length = pval_df.shape[0]
-    pval_df = pval_df.merge(weights, on=['BAD', 'coverage'])
-    if pval_df.shape[0] == initial_length:
-        print(f'Some BAD/coverages are not present in weights_file {args.weights}')
-        raise AssertionError
     main(pval_df, args.chrom, max_cover_tr=coverage_tr).to_csv(args.O, sep='\t', index=False)

@@ -8,7 +8,7 @@ process anova {
     label "high_mem"
 
     input:
-        tuple val(chromosome), path(input_data), path(weights)
+        tuple val(chromosome), path(input_data)
 
     output:
         tuple path(pvals), path(tested)
@@ -24,7 +24,6 @@ process anova {
         --min_samples ${params.min_samples} \
         --min_groups ${params.min_groups} \
         --chrom ${chromosome} \
-        --weights ${weights} \
         --coverage_tr ${params.fdr_coverage_filter}
     """
 }
@@ -93,10 +92,6 @@ workflow differentialCavs {
 }
 
 workflow {
-    params.mse_estimates = "${params.outdir}/mse_estimates.tsv"
     Channel.fromPath(params.nonagr_pvals)
-        | combine(
-            Channel.fromPath(params.mse_estimates)
-        )
         | differentialCavs
 }
