@@ -25,7 +25,6 @@ process aggregate_pvals {
         -I ${pval_file} \
         -O ${name} \
         --max_coverage_tr ${params.fdr_coverage_filter} \
-        --weights ${weights}
     """
 }
 
