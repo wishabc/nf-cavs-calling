@@ -21,12 +21,13 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     tested = tested.merge(pvals)
     assert len(tested.index) == tested_length
 
+    pvals.to_csv('pvals.tsv', sep='\t', index=False)
     # set default inividual fdr and find differential snps
 
     differential_cavs = tested[
         tested.eval(f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr}')
     ]
-    print(differential_cavs.columns)
+    print(differential_cavs, tested_length)
     differential_cavs = aggregate_pvalues_df(
         differential_cavs, 
         groupby_cols=[*starting_columns, 'group_id']
