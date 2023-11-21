@@ -76,7 +76,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
         'RAF': ('RAF', 'first')
     }
     for col in groupby_cols:
-        if col not in agg_dict:
+        if col in agg_dict:
             del agg_dict[col]
 
     snp_stats = pval_df.groupby(groupby_cols, group_keys=False).agg(agg_dict)
