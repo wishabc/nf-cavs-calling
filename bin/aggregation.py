@@ -56,7 +56,7 @@ def aggregate_pvals(df):
         )
 
     
-def aggregate_pvalues_df(pval_df):
+def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
     pval_df = pval_df.assign(
         **{
             col: pd.NA for col in 
@@ -64,7 +64,7 @@ def aggregate_pvalues_df(pval_df):
             if col not in pval_df.columns
         }
     )
-    snp_stats = pval_df.groupby(starting_columns, group_keys=False).agg(
+    snp_stats = pval_df.groupby(groupby_cols, group_keys=False).agg(
         nSNPs=('coverage', 'count'),
         max_cover=('coverage', 'max'),
         hotspots_n=('hotspots', calc_sum_if_not_minus),
@@ -76,8 +76,8 @@ def aggregate_pvalues_df(pval_df):
         RAF=('RAF', 'first')
     )
     return snp_stats.join(
-        pval_df[[*starting_columns, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']]
-        .groupby(starting_columns, group_keys=False)
+        pval_df[[*groupby_cols, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']]
+        .groupby(groupby_cols, group_keys=False)
         .progress_apply(aggregate_pvals)
     ).reset_index()
 
