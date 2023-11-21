@@ -80,11 +80,13 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
             del agg_dict[col]
 
     snp_stats = pval_df.groupby(groupby_cols, group_keys=True).agg(**agg_dict)
-    return snp_stats.join(
-        pval_df[[*groupby_cols, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']]
-        .groupby(groupby_cols, group_keys=True)
-        .progress_apply(aggregate_pvals)
-    ).reset_index()
+
+    agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 
+        'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
+        groupby_cols, group_keys=True
+    ).progress_apply(aggregate_pvals)
+    print(agg_pvals)
+    return snp_stats.join(agg_pvals).reset_index()
 
 
 def qvalue(pvals, bootstrap=False):
