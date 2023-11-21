@@ -27,13 +27,12 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     differential_cavs = tested[
         tested.eval(f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr}')
     ]
-    print(differential_cavs, tested_length)
+
     differential_cavs = aggregate_pvalues_df(
         differential_cavs, 
         groupby_cols=[*starting_columns, 'group_id']
     )
 
-    print(differential_cavs.columns)
     differential_cavs['min_pval_group'] = get_min_pval(
         differential_cavs, 
         cover_tr=max_cover_tr, 

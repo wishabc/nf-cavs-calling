@@ -85,7 +85,6 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
         'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
-    print(agg_pvals)
     return snp_stats.join(agg_pvals).reset_index()
 
 
