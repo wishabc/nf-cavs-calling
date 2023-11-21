@@ -42,39 +42,48 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     differential_cavs['min_fdr_group'] = calc_fdr_pd(differential_cavs['min_pval_group'])
 
     # Group-wise aggregation
-    return pvals.merge(
+    result = pvals.merge(
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
     ).merge(
         differential_cavs[[*starting_columns, 'group_id', 'min_pval_group', 'min_fdr_group']], 
         how='left'
     )
+    initial_len = len(result.index)
+    result = result.merge(get_category(result).reset_index(), differential_fdr_tr=0.05, differential_es_tr=0.15)
+    assert len(result.index) == initial_len
+
+    return result
 
 
-def get_category(anova_results):
+def get_category(anova_results, differential_fdr_tr=0.05, differential_es_tr=0.15, aggregation_fdr=0.1, max_logit_es_by_group=0.5):
     cpy = anova_results.copy()
-    cpy['abs_max_group_es'] = cpy.groupby('variant_id')['group_es'].transform(lambda x: np.max(np.abs(logit_es(x))))
-    cpy['cell_selective'] = cpy.eval('differential_fdr <= 0.05 & differential_es >= 0.2 & abs_max_group_es >= 0.5')
+    cpy['abs_logit_es'] = np.abs(logit_es(cpy['group_es']))
+    max_logit_by_group = cpy[['variant_id', 'abs_logit_es']].groupby('variant_id')['abs_logit_es'].transform('max')
+    cpy['has_strong_effect'] = max_logit_by_group >= max_logit_es_by_group
+    cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr} & has_strong_effect')
+    result = cpy[cpy.eval(f'cell_selective & min_fdr_group <= {aggregation_fdr}')].groupby('variant_id').agg(
+        min_es=('group_es', 'min'),
+        max_es=('group_es', 'max')
+    )
+    result['concordant'] = result.eval('(max_es - 0.5) * (min_es - 0.5) >= 0')
+    result = cpy.loc[:, ['variant_id', 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates(
+        ).set_index('variant_id').join(result)
+    result['overall_imbalanced'] = result['min_fdr_overall'] <= aggregation_fdr
+    
+    conditions = [
+        ~result['overall_imbalanced'] & ~result['cell_selective'], # not_imbalanced
+        ~result['cell_selective'],                                 # not_cell_selective
+        result['concordant'].fillna(True)                          # concordant
+    ]
 
-    result = cpy[cpy['cell_selective']][['variant_id', 'min_fdr_group', 'group_es']].groupby('variant_id').progress_apply(get_concordance)
-    result = cpy.loc[:, ['variant_id', 'min_fdr_overall', 'differential_fdr', 'differential_es', 'cell_selective']].drop_duplicates().merge(
-        result.reset_index(), how='left')
+    choices = [
+        'not_imbalanced',
+        'not_cell_selective',
+        'concordant'
+    ]
     
-    result['overall_imbalanced'] = result['min_fdr_overall'] <= 0.05
-    
-    result['category'] = 'discordant'
-    result.loc[~result['overall_imbalanced'] & ~result['cell_selective'], 'category'] = 'not_imbalanced'
-    result.loc[~result['cell_selective'] & pd.isna(result['category']), 'category'] = 'not_cell_selective'
-    result.loc[result['concordant'] & pd.isna(result['category']), 'category'] = 'concordant'
-    
-    result = cpy.loc[:, ['variant_id']].merge(result.reset_index(), on='variant_id')
+    result['category'] = np.select(conditions, choices, default='discordant')
     return result['category']
-
-
-def get_concordance(df, fdr_tr=0.05):
-    valid_es = df[df.eval(f'min_fdr_group <= {fdr_tr}').fillna(False)]['group_es']
-    is_discordant = (valid_es.shape[0] >= 2) and (valid_es.max() - 0.5) * (valid_es.min() - 0.5) < 0
-    df['concordant'] = ~is_discordant
-    return df[['concordant']].iloc[0]
 
 
 if __name__ == '__main__':
