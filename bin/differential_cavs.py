@@ -49,7 +49,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
         how='left'
     )
     initial_len = len(result.index)
-    result = result.merge(get_category(result).reset_index(), differential_fdr_tr=0.05, differential_es_tr=0.15)
+    result = result.merge(get_category(result), differential_fdr_tr=0.05, differential_es_tr=0.15)
     assert len(result.index) == initial_len
 
     return result
@@ -58,16 +58,17 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
 def get_category(anova_results, differential_fdr_tr=0.05, differential_es_tr=0.15, aggregation_fdr=0.1, max_logit_es_by_group=0.5):
     cpy = anova_results.copy()
     cpy['abs_logit_es'] = np.abs(logit_es(cpy['group_es']))
-    max_logit_by_group = cpy[['variant_id', 'abs_logit_es']].groupby('variant_id')['abs_logit_es'].transform('max')
+    max_logit_by_group = cpy[[*starting_columns, 'abs_logit_es']].groupby(starting_columns)['abs_logit_es'].transform('max')
     cpy['has_strong_effect'] = max_logit_by_group >= max_logit_es_by_group
     cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr} & has_strong_effect')
-    result = cpy[cpy.eval(f'cell_selective & min_fdr_group <= {aggregation_fdr}')].groupby('variant_id').agg(
+    result = cpy[cpy.eval(f'cell_selective & min_fdr_group <= {aggregation_fdr}')].groupby(starting_columns).agg(
         min_es=('group_es', 'min'),
         max_es=('group_es', 'max')
     )
     result['concordant'] = result.eval('(max_es - 0.5) * (min_es - 0.5) >= 0')
-    result = cpy.loc[:, ['variant_id', 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates(
-        ).set_index('variant_id').join(result)
+    result = cpy.loc[:, [*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates().set_index(
+        starting_columns
+    ).join(result)
     result['overall_imbalanced'] = result['min_fdr_overall'] <= aggregation_fdr
     
     conditions = [
@@ -83,7 +84,7 @@ def get_category(anova_results, differential_fdr_tr=0.05, differential_es_tr=0.1
     ]
     
     result['category'] = np.select(conditions, choices, default='discordant')
-    return result['category']
+    return result['category'].reset_index()
 
 
 if __name__ == '__main__':
