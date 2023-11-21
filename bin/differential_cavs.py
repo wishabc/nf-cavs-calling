@@ -31,8 +31,6 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     print(differential_cavs.columns)
     differential_cavs = differential_cavs.groupby(
         'group_id',
-        as_index=False,
-        group_keys=True
     ).apply(aggregate_pvalues_df)
 
     print(differential_cavs.columns)
@@ -91,6 +89,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     tested = pd.read_table(args.tested_variants, low_memory=False)
     pvals = pd.read_table(args.pvals)
+    pvals = pvals[pvals['#chr'] == 'chr12'].copy()
     res_df = main(tested, pvals, differential_fdr_tr=args.fdr, differential_es_tr=args.es)
     print(len(res_df.index), len(pvals.index))
     res_df.to_csv(args.outpath, sep='\t', index=False)
