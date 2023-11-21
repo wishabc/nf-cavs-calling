@@ -64,17 +64,22 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
             if col not in pval_df.columns
         }
     )
-    snp_stats = pval_df.groupby(groupby_cols, group_keys=False).agg(
-        nSNPs=('coverage', 'count'),
-        max_cover=('coverage', 'max'),
-        hotspots_n=('hotspots', calc_sum_if_not_minus),
-        footprints_n=('footprints', calc_sum_if_not_minus),
-        mean_cover=('coverage', 'mean'),
-        mean_BAD=('BAD', 'mean'),
-        group_id=('group_id', 'first'),
-        AAF=('AAF', 'first'),
-        RAF=('RAF', 'first')
-    )
+    agg_dict = {
+        'nSNPs': ('coverage', 'count'),
+        'max_cover': ('coverage', 'max'),
+        'hotspots_n': ('hotspots', calc_sum_if_not_minus),
+        'footprints_n': ('footprints', calc_sum_if_not_minus),
+        'mean_cover': ('coverage', 'mean'),
+        'mean_BAD': ('BAD', 'mean'),
+        'group_id': ('group_id', 'first'),
+        'AAF': ('AAF', 'first'),
+        'RAF': ('RAF', 'first')
+    }
+    for col in groupby_cols:
+        if col not in agg_dict:
+            del agg_dict[col]
+
+    snp_stats = pval_df.groupby(groupby_cols, group_keys=False).agg(agg_dict)
     return snp_stats.join(
         pval_df[[*groupby_cols, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']]
         .groupby(groupby_cols, group_keys=False)

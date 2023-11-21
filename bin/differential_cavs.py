@@ -18,9 +18,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     pvals['differential_es'] = pvals.eval('(F2 + 1) / (F2 + (N - n_groups + 1) / (n_groups - 1))')
 
     tested_length = len(tested.index)
-    tested = tested.merge(
-        pvals
-    )
+    tested = tested.merge(pvals)
     assert len(tested.index) == tested_length
 
     # set default inividual fdr and find differential snps
@@ -90,8 +88,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     tested = pd.read_table(args.tested_variants, low_memory=False)
     pvals = pd.read_table(args.pvals)
-    tested = tested[tested['#chr'] == 'chr12'].copy()
-    pvals = pvals[pvals['#chr'] == 'chr12'].copy()
+
     res_df = main(tested, pvals, differential_fdr_tr=args.fdr, differential_es_tr=args.es)
     print(len(res_df.index), len(pvals.index))
     res_df.to_csv(args.outpath, sep='\t', index=False)
