@@ -49,7 +49,9 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
         how='left'
     )
     initial_len = len(result.index)
-    result = result.merge(get_category(result), differential_fdr_tr=0.05, differential_es_tr=0.15)
+    result = result.merge(
+        get_category(result, differential_fdr_tr=0.05, differential_es_tr=0.15)
+    )
     assert len(result.index) == initial_len
 
     return result
