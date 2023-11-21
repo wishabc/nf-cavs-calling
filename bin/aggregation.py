@@ -76,7 +76,9 @@ def aggregate_pvalues_df(pval_df):
         RAF=('RAF', 'first')
     )
     return snp_stats.join(
-        pval_df[[*starting_columns, 'BAD', 'es', 'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
+        pval_df[[*starting_columns,
+                'BAD', 'es', 'pval_ref', 'pval_alt',
+                'inverse_mse', 'coverage']].groupby(
             starting_columns, group_keys=False
         ).progress_apply(aggregate_pvals)
     ).reset_index()
