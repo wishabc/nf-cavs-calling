@@ -19,6 +19,7 @@ dependencies:
   - tqdm
   - pip
   - vcftools
+  - tectonic
   - pip:
     - babachi
 prefix: /home/sabramov/miniconda3/envs/cavs-calling
