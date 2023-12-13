@@ -22,8 +22,8 @@ result_columns = [
 ]
 
 class ANOVA:
-    def __init__(self, melt, min_samples=3, min_groups_per_variant=2, coverage_tr=10):
-        self.min_samples = min_samples
+    def __init__(self, melt, min_indivs_per_group=3, min_groups_per_variant=2, coverage_tr=10):
+        self.min_indivs_per_group = min_indivs_per_group
         self.min_groups_per_variant = min_groups_per_variant
         self.coverage_tr = coverage_tr
 
@@ -59,13 +59,15 @@ class ANOVA:
         return pd.Series([es_mean, Qtotal, Q0, n_groups, N, Wsum], ['overall_es', 'Qtotal', 'Q0', 'n_groups', 'N', 'Wsum'])
 
     def find_testable_pairs(self, df):
-        # # of samples for particular group with variant_id present
-        max_cover = df[['variant_id', 'group_id', 'coverage']].groupby(['group_id', 'variant_id']).agg(
-            max_coverage=('coverage', 'max')
+        # number of samples for particular group with variant_id present
+        samples_num = df[['variant_id', 'group_id', 'indiv_id', 'coverage']].groupby(
+            ['group_id', 'variant_id']
+        ).agg(
+            max_coverage=('coverage', 'max'),
+            indiv_count=('indiv_id', 'nunique')
         )
-        samples_num = pd.concat([df.value_counts(['group_id', 'variant_id']), max_cover], axis=1).rename(columns={0: "count"})
-        # for each group, variant is present in >= 3 samples
-        samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & count >= {self.min_samples}")]
+        # for each group, variant is present in >= 3 indivs and max_coverage >= 10
+        samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & indiv_count >= {self.min_indivs}")]
         # of variants for particular group
         groups_per_variant = samples_num.reset_index().value_counts('variant_id')
 
@@ -111,8 +113,9 @@ class ANOVA:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
     parser.add_argument('input_data', help='Non-aggregated file with tested CAVs')
+    parser.add_argument('metadata', help='Samples metadata with ag_id to indiv_id correspondence')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
-    parser.add_argument('--min_samples', type=int, help='Number of samples in each group for the variant', default=3)
+    parser.add_argument('--min_indivs_per_group', type=int, help='Number of indivs in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
     parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5) # FIXME not used
     parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
@@ -120,15 +123,21 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    input_df = pd.read_table(args.input_data)
+    input_df = pd.read_table(args.input_data).query('BAD <= 1')
+    if args.chrom is not None:
+        input_df = input_df[input_df['#chr'] == args.chrom].copy()
+    
+    ag_id2indiv_id = pd.read_table(args.metadata).set_index('ag_id')['indiv_id'].to_dict()
+    input_df['indiv_id'] = input_df['ag_id'].map(ag_id2indiv_id)
+
     print("Finished reading non-aggregated file, shape:", input_df.shape)
     print("Unique groups:", input_df['group_id'].unique())
+    if len(input_df['group_id'].unique()) == 1:
+        raise AssertionError("Only one group, LRT is not applicable")
+
     data_wrapper = ANOVA(
-        input_df[
-            (input_df['BAD'] <= 1)
-            & (True if args.chrom is None else input_df['#chr'] == args.chrom)
-        ].copy(),
-        min_samples=args.min_samples,
+        input_df,
+        min_samples=args.min_indivs_per_group,
         min_groups_per_variant=args.min_groups,
         coverage_tr=args.coverage_tr
     )
