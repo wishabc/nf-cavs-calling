@@ -1,145 +1,170 @@
 import argparse
 import pandas as pd
-from helpers import alleles, starting_columns
-from scipy.stats import combine_pvalues
-from statsmodels.stats.multitest import multipletests
+import scipy.stats as st
+from scipy import interpolate
 import numpy as np
-import multiprocessing as mp
-import math
+from tqdm import tqdm
 
 
-keep_columns = [*starting_columns, 'AAF', 'RAF']
-result_columns = keep_columns + ['mean_BAD', 
-    'nSNPs', 'max_cover', 'mean_cover',
+tqdm.pandas()
+
+starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
+
+
+result_columns = [*starting_columns, 'AAF', 'RAF',
+    'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
-    'es_weighted_mean', 'es_mean', 
-    'logit_pval_ref', 'logit_pval_alt'
+    'group_id',
+    'pval_ref_combined',
+    'pval_alt_combined',
+    'es_combined',
+    'logit_es_combined',
+    'min_pval',
+    'min_fdr'
     ]
 
 
-def calc_sum_if_exists(snp_df, column):
-    return sum([int(x) for x in snp_df[column].tolist() if x != '-']) if column in snp_df.columns else '-'
 
-def aggregate_snp(snp_df):
-    pvals = {allele: logit_aggregate_pvalues(snp_df[f'pval_{allele}']) for allele in alleles}
-    effect_sizes = aggregate_es(snp_df['es'],
-                                snp_df[['pval_ref', 'pval_alt']].min(axis=1),
-                                snp_df['coverage'])
-    return snp_df['BAD'].mean(), pvals, effect_sizes, calc_sum_if_exists(snp_df, 'hotspots'), calc_sum_if_exists(snp_df, 'footprints')
+def parse_coverage(cov_string):
+    try:
+        return int(cov_string) if cov_string != 'auto' else 'auto'
+    except ValueError:
+        print(f'Incorrect coverage threshold provided. {args.max_coverage_tr} not a positive integer or "auto"')
+        raise
 
 
-def expit(x):                                        
-   return 1 / (1 + np.exp(-x))
-
-def logit(x):
-    return np.log(x) - np.log(1 - x)
-
-def aggregate_es(es_array, p_array, n_array):
-    res = [(x, y, n) for x, y, n in zip(es_array, p_array, n_array)
-             if y != 1 and not pd.isna(y) and y != 0]
-    if len(res) > 0:
-        es, p, n = zip(*res)
-        weights = [-1 * np.log10(x) for x in p]
-        es_weighted_mean = np.average(es, weights=weights)
-
-        sigmas = expit(np.array(es))
-        es_mean = logit(np.average(sigmas, weights=n))
-    else:
-        es_mean = np.nan
-        es_weighted_mean = np.nan
-    return es_mean, es_weighted_mean
+def logit_es(es, d=1/100):
+    return np.log2(es + d) - np.log2(1 - es + d)
 
 
-def logit_aggregate_pvalues(pval_list):
-    pvalues = np.array([pvalue for pvalue in pval_list if 1 > pvalue > 0])
-    if len(pvalues) == 0:
-        return 1
-    elif len(pvalues) == 1:
-        return pvalues[0]
-    return combine_pvalues(pvalues, method='mudholkar_george')[1]
+def calc_sum_if_not_minus(df_column):
+    non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
+    return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
 
-def df_to_group(df):
-    return df.groupby(starting_columns, as_index=False)
-
-def aggregate_apply(df):
-    new_df = df.loc[:, keep_columns].head(1)
-    mean_BAD, pvals, effect_sizes, hotspots_n, footprints_n = aggregate_snp(df)
-    es_mean, es_weighted_mean = effect_sizes
-    new_df['mean_BAD'] = mean_BAD
-    new_df['footprints_n'] = footprints_n
-    new_df['hotspots_n'] = hotspots_n
-    for allele in alleles:
-        new_df[f'logit_pval_{allele}'] = pvals[allele]
-    new_df['es_mean'] = es_mean
-    new_df['es_weighted_mean'] = es_weighted_mean
-    new_df['nSNPs'] = len(df.index)
-    new_df['max_cover'] = df['coverage'].max()
-    new_df['mean_cover'] = df['coverage'].mean()
-    for extra_column in ('variant_id', 'group_id'):
-        if extra_column in df.columns:
-            new_df[extra_column] = df.iloc[0].loc[extra_column]
-    return new_df
+def aggregate_effect_size(es, weights):
+    return np.average(es, weights=weights)
 
 
-def aggregate_subgroup(subgroup):
-    return pd.concat([aggregate_apply(x) for x in subgroup])
-
-def aggregate_pvalues_df(pval_df, jobs, cover_tr):
-    pval_df['coverage'] = pval_df.eval('ref_counts + alt_counts')
-    if not pval_df.empty:
-        pval_df = pval_df[pval_df.eval(f'coverage >= {cover_tr}')]
-    if pval_df.empty:
-        for column in result_columns:
-            if column not in pval_df.columns:
-                pval_df[column] = None
-        return pval_df[result_columns]
-
-    groups = df_to_group(pval_df)
-    groups_list = list(groups.groups)
-    j = min(
-            jobs,
-            mp.cpu_count()
+def aggregate_pvals(df):
+    weights = df['inverse_mse']
+    pval_ref_combined = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
+    pval_alt_combined = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
+    es_combined = aggregate_effect_size(df['es'], weights=weights)
+    return pd.Series(
+        [pval_ref_combined, pval_alt_combined, es_combined],
+        ["pval_ref_combined", "pval_alt_combined", "es_combined"]
         )
-    n = math.ceil(len(groups_list) / j)
-    subgroups = [[groups.get_group(x) for x in groups_list[i: i+n]] for i in range(0, len(groups_list), n)]
-    snps = []
-    if j > 1:
-        ctx = mp.get_context('forkserver')
-        with ctx.Pool(j) as pool:
-            results = [pool.apply_async(aggregate_subgroup, (g, )) for g in subgroups]
-            for r in results:
-                snps.append(r.get())
-    else:
-        for subgroup in subgroups:
-            snps.append(aggregate_subgroup(subgroup=subgroup))
-    return pd.concat(snps)
-    
-def calc_fdr(aggr_df):
-    for allele in alleles:
-        if aggr_df.empty:
-            fdr_arr = None
-        else:
-            _, fdr_arr, _, _ = multipletests(
-                aggr_df[f'logit_pval_{allele}'],
-                alpha=0.05,
-                method='fdr_bh'
-            )
-        aggr_df[f"fdrp_bh_{allele}"] = fdr_arr
-    aggr_df['min_fdr'] = aggr_df[[f'fdrp_bh_{x}' for x in alleles]].min(axis=1)
-    return aggr_df
 
-def main(input_path, out_path, cover_tr=10, jobs=1):
-    pval_df = pd.read_table(input_path)
-    aggr_df = aggregate_pvalues_df(pval_df, jobs, cover_tr)
-    fdr_df = calc_fdr(aggr_df)
-    fdr_df.to_csv(out_path, sep='\t', index=False)
+    
+def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
+    pval_df = pval_df.assign(
+        **{
+            col: pd.NA for col in 
+            ['footprints', 'group_id', 'hotspots'] 
+            if col not in pval_df.columns
+        }
+    )
+    agg_dict = {
+        'nSNPs': ('coverage', 'count'),
+        'max_cover': ('coverage', 'max'),
+        'hotspots_n': ('hotspots', calc_sum_if_not_minus),
+        'footprints_n': ('footprints', calc_sum_if_not_minus),
+        'mean_cover': ('coverage', 'mean'),
+        'mean_BAD': ('BAD', 'mean'),
+        'group_id': ('group_id', 'first'),
+        'AAF': ('AAF', 'first'),
+        'RAF': ('RAF', 'first')
+    }
+    for col in groupby_cols:
+        if col in agg_dict:
+            del agg_dict[col]
+
+    snp_stats = pval_df.groupby(groupby_cols, group_keys=True).agg(**agg_dict)
+
+    agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 
+        'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
+        groupby_cols, group_keys=True
+    ).progress_apply(aggregate_pvals)
+    return snp_stats.join(agg_pvals).reset_index()
+
+
+def qvalue(pvals, bootstrap=False):
+    m, pvals = len(pvals), np.asarray(pvals)
+    ind = np.argsort(pvals)
+    rev_ind = np.argsort(ind)
+    pvals = pvals[ind]
+    # Estimate proportion of features that are truly null.
+    kappa = np.arange(0.05, 0.96, 0.01)
+    pik = np.array([sum(pvals > k) / (m*(1-k)) for k in kappa])
+
+    if bootstrap:
+        minpi0 = np.quantile(pik, 0.1)
+        W = np.array([(pvals >= l).sum() for l in kappa])
+        mse = (W / (np.square(m^2) * np.square(1 - kappa))) * (1 - (W / m)) + np.square((pik - minpi0))
+        
+        if np.any(np.isnan(mse)) or np.any(np.isinf(mse)):
+            # Case 1: mse contains NaN or Inf
+            mask = np.isnan(mse)  # This will return a boolean mask where True indicates NaN positions
+
+        else:
+            # Case 2: mse contains only finite values
+            mask = mse == mse.min()
+        pi0 = pik[mask][0]
+    else:
+        cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
+        pi0 = float(cs(1.))
+    
+    pi0 = min(pi0, 1)
+    # Compute the q-values.
+    qvals = np.zeros(len(pvals))
+    qvals[-1] = pi0 * pvals[-1]
+    for i in np.arange(m - 2, -1, -1):
+        qvals[i] = min(pi0 * m * pvals[i]/float(i+1), qvals[i+1])
+    qvals = qvals[rev_ind]
+    return qvals
+
+def calc_fdr_pd(pd_series):
+    result = np.full(pd_series.shape[0], np.nan)
+    ind = pd_series.notna()
+    
+    if pd_series[ind].shape[0] > 0:  # check if any non-NA p-values exist
+        result[ind] = qvalue(pd_series[ind].to_numpy(), bootstrap=True)
+    return result
+
+def get_min_pval(df, cover_tr, cover_col, pval_cols):
+    min_pval = df[pval_cols].min(axis=1) * 2
+    ind = (df[cover_col] < cover_tr) | (min_pval > 1)
+    min_pval[ind] = np.nan
+    return min_pval.to_numpy()
+
+def main(pval_df, chrom=None, max_cover_tr=10):
+    if chrom is not None:
+        pval_df = pval_df[pval_df['#chr'] == args.chrom]
+    if pval_df.empty:
+        return pd.DataFrame([], columns=result_columns)
+    aggr_df = aggregate_pvalues_df(pval_df)
+    aggr_df['min_pval'] = get_min_pval(
+        aggr_df, 
+        cover_tr=max_cover_tr, 
+        cover_col='max_cover',
+        pval_cols=["pval_ref_combined", "pval_alt_combined"]
+    )
+    aggr_df['logit_es_combined'] = logit_es(aggr_df['es_combined'], 1/100)
+    aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
+    return aggr_df[result_columns]
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
-    parser.add_argument('--ct', type=int, help='Cover threshold for fdr', default=10)
-    parser.add_argument('--jobs', type=int, help='Number of jobs', default=1)
+    parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
+    parser.add_argument('--max_coverage_tr', type=str, help="""Threshold for the maximum
+                            of coverages of variants aggregated at the same genomic position.
+                            Expected to be "auto" or a positive integer""", default='auto')
     args = parser.parse_args()
-    main(args.I, args.O, args.ct, args.jobs)
+
+    coverage_tr = parse_coverage(args.max_coverage_tr)
+
+    pval_df = pd.read_table(args.I, low_memory=False)
+    main(pval_df, args.chrom, max_cover_tr=coverage_tr).to_csv(args.O, sep='\t', index=False)

@@ -1,23 +1,39 @@
 #!/usr/bin/env nextflow
-include { callCavsFromVcfsBinom; calcPvalBinom; addExcludedCavs; aggregate_pvals } from "./pval_calc"
+include { callCavsFirstRound; calcPvalBinom; add_cavs } from "./pval_calc"
+include { aggregation } from "./aggregation"
 
 params.conda = "$moduleDir/environment.yml"
 
 
-def set_key_for_group_tuple(ch) {
-  ch.groupTuple()
-  | map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
-  | transpose()
-}
-
-def check_var(var) {
+def check_var(var, prefix) {
     if (var) {
         if (file(var).exists()) {
             return file(var)
         }
     } 
-    return ""  
+    return file("${prefix}.empty") 
 }
+
+process collect_files {
+    conda params.conda
+    tag "${badmap_id}"
+
+    input:
+        tuple val(badmap_id), path(babachi_files)
+
+    output:
+        tuple val(badmap_id), path(name)
+    
+    script:
+    name = "${badmap_id}.bed"
+    """
+    head -n 1 ${babachi_files[0]} > ${name}
+    tail -n +2 -q ${babachi_files} \
+        | awk '\$7+\$8 >= ${params.initial_coverage_filter} {print;}' \
+        | sort-bed - >> ${name}
+    """
+}
+
 
 
 process apply_babachi {
@@ -40,7 +56,12 @@ process apply_babachi {
     prior_params = params.prior == 'geometric' ? "--geometric-prior ${params.geometric_prior}" : ""
 	"""
     head -n 1 ${snps_file} > header.txt
-    tail -n +2 ${snps_file} | awk '((\$10 >= 0.05) && (\$10 != "None")) { print; }' > snps.common.bed
+    tail -n +2 ${snps_file} | awk '( \
+        (\$10 >= ${params.babachi_maf_tr}) \
+            && (\$10 != "None") \
+            && (\$11 >= ${params.babachi_maf_tr}) \
+            && (\$11 != "None") \
+    ) { print; }' > snps.common.bed
     if [[ `wc -l < snps.common.bed` -le ${params.min_snps_count} ]]; then
 	    touch ${name}
         touch ${badmap_file}
@@ -53,7 +74,7 @@ process apply_babachi {
         -p ${params.prior} \
         ${prior_params} \
         -s ${params.states} \
-        -a ${params.allele_tr}
+        -a ${params.babachi_allele_tr}
 
 
     head -1 ${badmap_file} | xargs -I % echo "`cat header.txt`\t%" > ${name}
@@ -64,27 +85,6 @@ process apply_babachi {
     fi
 	"""
 }
-
-
-process merge_files {
-    conda params.conda
-    scratch true
-    tag "${group_key}"
-
-    input:
-        tuple val(group_key), path(files)
-
-    output:
-        tuple val(group_key), path(name)
-
-    script:
-    name = "${group_key}.sorted.bed"
-    """
-    echo "`head -n 1 ${files[0]}`\tgroup_id" > ${name}
-    tail -n +2 -q ${files} | sed "s/\$/\t${group_key}/" | sort-bed - >> ${name}
-    """
-}
-
 
 process split_into_samples {
     tag "${indiv_id}"
@@ -111,7 +111,7 @@ process annotate_variants {
     scratch true
 
     input:
-        tuple val(sample_id), path(pval_file), val(hotspots_file), val(footprint_file)
+        tuple val(sample_id), path(pval_file), path(hotspots_file), path(footprint_file)
 
     output:
         tuple val(sample_id), path(name)
@@ -122,7 +122,7 @@ process annotate_variants {
     sort-bed ${pval_file} > pval_f.bed
 
     # Add footprints
-    if [[ "${footprint_file}" == "" ]]; then
+    if [[ "${footprint_file.name}" == "fp.empty" ]]; then
         cat pval_f.bed | awk '{ print "-" }' > footprints.txt
     else
         bedmap --header \
@@ -130,7 +130,7 @@ process annotate_variants {
             ${footprint_file} > footprints.txt
     fi
 
-    if [[ "${hotspots_file}" == "" ]]; then
+    if [[ "${hotspots_file.name}" == "hp.empty" ]]; then
         cat pval_f.bed | awk '{ print "-" }' > hotspots.txt
     else
         bedmap --header \
@@ -140,27 +140,7 @@ process annotate_variants {
 
     echo -e "`head -1 ${pval_file}`\tfootprints\thotspots" > ${name}
     paste pval_f.bed footprints.txt hotspots.txt >> ${name}
-    """
-}
-
-
-process collect_files {
-    conda params.conda
-    tag "${badmap_id}"
-
-    input:
-        tuple val(badmap_id), path(babachi_files)
-
-    output:
-        tuple val(badmap_id), path(name)
-    
-    script:
-    name = "${badmap_id}.bed"
-    """
-    head -n 1 ${babachi_files[0]} > ${name}
-    tail -n +2 -q ${babachi_files} \
-        | awk '((\$7 >= ${params.allele_tr}) && (\$8 >= ${params.allele_tr})) {print;}' \
-        | sort-bed - >> ${name}
+    python3 $moduleDir/bin/estimate_mse.py ${name}
     """
 }
 
@@ -179,14 +159,13 @@ workflow estimateBAD {
         out
 }
 
-workflow estimateBADByIndiv {
+workflow combineFilesAndEstimateBAD {
     take:
+        data
         prefix
     main:
-        babachi_files = Channel.fromPath(params.samples_file)
-            | splitCsv(header: true, sep: '\t')
-            | map(row -> tuple(row.indiv_id, file(row.snps_file)))
-            | groupTuple
+        babachi_files = data
+            | groupTuple()
             | collect_files
 
         out = estimateBAD(babachi_files, prefix) 
@@ -195,49 +174,33 @@ workflow estimateBADByIndiv {
         out
 }
 
-workflow aggregation {
-    take:
-        sample_split_pvals
-    main:
-        params.aggregation_key = params.aggregation_key ?: "all"
-        if (params.aggregation_key != 'all') {
-            sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                    | splitCsv(header: true, sep: '\t')
-                    | map(row -> tuple(row.ag_id, row[params.aggregation_key]))
+workflow {
+    // Estimate BAD and call 1-st round CAVs
+
+    bads = Channel.of(params.states.tokenize(','))
+    input_data = Channel.fromPath(params.samples_file)
+        | splitCsv(header: true, sep: '\t')
+        | map(row -> tuple(row.indiv_id, file(row.snps_file)))
+
+    intersect_files = combineFilesAndEstimateBAD(input_data, 'iter1')[1]
+    // Calculate P-value + exclude 1-st round CAVs 
+    no_cavs_snps = callCavsFirstRound(intersect_files)
+
+    // Reestimate BAD, and add excluded SNVs
+    all_snps = estimateBAD(no_cavs_snps, 'final')
+        | join(intersect_files, remainder: true)
+        | map(it -> tuple(it[0], it[1] != null ? it[1] : file('empty'), it[2]))
+        | add_cavs
+
+    // Annotate with footprints and hotspots + aggregate by provided aggregation key
+    out = calcPvalBinom(all_snps)
+        | split_into_samples
+        | flatten()
+        | map(it -> tuple(it.name.replaceAll('.sample_split.bed', ''), it))
+        | annotateWithFootprints
     
-            pvals = sample_split_pvals
-                | join(sample_cl_correspondence)
-                | filter(it -> !it[2].isEmpty())
-                | map(it -> tuple(it[2], it[1]))
-                | set_key_for_group_tuple 
-                | groupTuple() 
-        } else {
-            pvals = sample_split_pvals
-                | map(it -> it[1])
-                | collect(sort: true)
-                | map(it -> tuple('all', it)) 
-        }
-        iter2_prefix = 'final'
-
-        merged = merge_files(pvals)
-        out = aggregate_pvals(merged, iter2_prefix)
-        
-        out.map(it -> it[1])
-            | collectFile(
-                storeDir: params.outdir,
-                name: "aggregated.${params.aggregation_key}.bed",
-            )
-        non_aggregated_merged = merged
-            | map(it -> it[1])
-            | collectFile(
-                storeDir: params.outdir,
-                name: "non_aggregated.${params.aggregation_key}.bed",
-            )
-    emit:
-        out
-        non_aggregated_merged
-}
-
+    aggregation(out)
+}  
 
 workflow annotateWithFootprints {
     take:
@@ -246,8 +209,8 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(row.ag_id,
-                    check_var(row?.hotspots_file), 
-                    check_var(row?.footprints_file)
+                    check_var(row?.hotspot_peaks_point1per, 'hp'), 
+                    check_var(row?.footprints_path, 'fp')
                     )
                 )
         out = pval_files
@@ -258,37 +221,8 @@ workflow annotateWithFootprints {
 }
 
 
-workflow {
-    // Estimate BAD and call 1-st round CAVs
-    iter1_prefix = 'iter1'
-
-    bads = Channel.of(params.states.tokenize(','))
-    babachi_files = estimateBADByIndiv(iter1_prefix)
-    filtered_vcfs = babachi_files[0]
-    intersect_files = babachi_files[1]
-    // Calculate P-value + exclude 1-st round CAVs 
-    no_cavs_snps = callCavsFromVcfsBinom(intersect_files, iter1_prefix)
-
-    iter2_prefix = 'final'
-    // Reestimate BAD, and add excluded SNVs
-    all_snps = estimateBAD(no_cavs_snps, iter2_prefix)
-        | join(intersect_files, remainder: true)
-        | map(it -> tuple(it[0], it[1] ?: file('empty'), it[2]))
-        | addExcludedCavs
-
-    // Annotate with footprints and hotspots + aggregate by provided aggregation key
-    agg_files = calcPvalBinom(all_snps, iter2_prefix)
-        | split_into_samples
-        | flatten()
-        | map(it -> tuple(it.simpleName, it))
-        | annotateWithFootprints
-        | aggregation
-}   
-
-
-// Aggregation only workflow
-workflow aggregatePvals {
+workflow tmp {
     Channel.fromPath("${params.raw_pvals_dir}/*.bed")
-        | map(it -> tuple(it.simpleName, it))
-        | aggregation
+        | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
+        | annotateWithFootprints
 }
