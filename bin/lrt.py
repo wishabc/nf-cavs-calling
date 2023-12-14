@@ -67,7 +67,7 @@ class ANOVA:
             indiv_count=('indiv_id', 'nunique')
         )
         # for each group, variant is present in >= 3 indivs and max_coverage >= 10
-        samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & indiv_count >= {self.min_indivs}")]
+        samples_num = samples_num[samples_num.eval(f"max_coverage >= {self.coverage_tr} & indiv_count >= {self.min_indivs_per_group}")]
         # of variants for particular group
         groups_per_variant = samples_num.reset_index().value_counts('variant_id')
 
