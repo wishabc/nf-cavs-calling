@@ -21,7 +21,6 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     tested = tested.merge(pvals)
     assert len(tested.index) == tested_length
 
-    pvals.to_csv('pvals.tsv', sep='\t', index=False)
     # set default inividual fdr and find differential snps
 
     differential_cavs = tested[
@@ -71,7 +70,7 @@ def get_category(anova_results, differential_fdr_tr=0.05, differential_es_tr=0.1
     result = cpy.loc[:, [*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates().set_index(
         starting_columns
     ).join(result)
-    result['overall_imbalanced'] = result['min_fdr_overall'] <= aggregation_fdr
+    result['overall_imbalanced'] = result.eval(f'min_fdr_overall <= {aggregation_fdr} & overall_es >= {max_logit_es_by_group}')
     
     conditions = [
         ~result['overall_imbalanced'] & ~result['cell_selective'], # not_imbalanced
