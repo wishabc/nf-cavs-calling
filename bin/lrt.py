@@ -128,7 +128,7 @@ if __name__ == '__main__':
         input_df = input_df[input_df['#chr'] == args.chrom].copy()
     
     ag_id2indiv_id = pd.read_table(args.metadata).set_index('ag_id')['indiv_id'].to_dict()
-    input_df['indiv_id'] = input_df['ag_id'].map(ag_id2indiv_id)
+    input_df['indiv_id'] = input_df['sample_id'].map(ag_id2indiv_id)
 
     print("Finished reading non-aggregated file, shape:", input_df.shape)
     print("Unique groups:", input_df['group_id'].unique())
