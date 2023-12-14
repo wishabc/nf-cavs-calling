@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
     data_wrapper = ANOVA(
         input_df,
-        min_samples=args.min_indivs_per_group,
+        min_indivs_per_group=args.min_indivs_per_group,
         min_groups_per_variant=args.min_groups,
         coverage_tr=args.coverage_tr
     )
