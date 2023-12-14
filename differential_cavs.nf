@@ -5,7 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 process anova {
     conda params.conda
     tag "${chromosome}"
-    label "high_mem"
+    label "med_mem"
 
     input:
         tuple val(chromosome), path(input_data)
@@ -32,6 +32,7 @@ process anova {
 process differential_cavs {
     conda params.conda
     publishDir "${params.outdir}"
+    label "high_mem"
 
     input:
         path pvals
