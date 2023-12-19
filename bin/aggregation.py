@@ -88,6 +88,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
     return snp_stats.join(agg_pvals).reset_index()
 
 
+# implementation of Storey method for FDR estimation
 def qvalue(pvals, bootstrap=False):
     m, pvals = len(pvals), np.asarray(pvals)
     ind = np.argsort(pvals)

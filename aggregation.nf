@@ -11,7 +11,6 @@ def set_key_for_group_tuple(ch) {
 process aggregate_pvals {
     conda params.conda
     tag "${indiv_id}"
-    label "high_mem"
 
     input:
         tuple val(indiv_id), path(pval_file)
@@ -33,7 +32,6 @@ process merge_files {
     conda params.conda
     scratch true
     tag "${group_key}"
-    label "high_mem"
 
     input:
         tuple val(group_key), path(files)
