@@ -33,7 +33,7 @@ def parse_coverage(cov_string):
         raise
 
 
-def logit_es(es, d=1/100):
+def logit_es(es, d=1/128):
     return np.log2(es + d) - np.log2(1 - es + d)
 
 
@@ -95,7 +95,7 @@ def qvalue(pvals, bootstrap=False):
     pvals = pvals[ind]
     # Estimate proportion of features that are truly null.
     kappa = np.arange(0.05, 0.96, 0.01)
-    pik = np.array([sum(pvals > k) / (m*(1-k)) for k in kappa])
+    pik = np.array([sum(pvals > k) / (m * (1-k)) for k in kappa])
 
     if bootstrap:
         minpi0 = np.quantile(pik, 0.1)
@@ -124,17 +124,12 @@ def qvalue(pvals, bootstrap=False):
     return qvals
 
 def calc_fdr_pd(pd_series):
-    result = np.full(pd_series.shape[0], np.nan)
-    ind = pd_series.notna()
-    
-    if pd_series[ind].shape[0] > 0:  # check if any non-NA p-values exist
-        result[ind] = qvalue(pd_series[ind].to_numpy(), bootstrap=True)
-    return result
+    return qvalue(pd_series.to_numpy(), bootstrap=True)
 
 def get_min_pval(df, cover_tr, cover_col, pval_cols):
     min_pval = df[pval_cols].min(axis=1) * 2
     ind = (df[cover_col] < cover_tr) | (min_pval > 1)
-    min_pval[ind] = np.nan
+    min_pval[ind] = 1
     return min_pval.to_numpy()
 
 def main(pval_df, chrom=None, max_cover_tr=10):
@@ -149,7 +144,7 @@ def main(pval_df, chrom=None, max_cover_tr=10):
         cover_col='max_cover',
         pval_cols=["pval_ref_combined", "pval_alt_combined"]
     )
-    aggr_df['logit_es_combined'] = logit_es(aggr_df['es_combined'], 1/100)
+    aggr_df['logit_es_combined'] = logit_es(aggr_df['es_combined'])
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 

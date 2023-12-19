@@ -124,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('motifs', help='Path to file with motif hits at variants')
     parser.add_argument('outpath', help='Path to output file')
     parser.add_argument('--flank_width', help='Width of flanks', type=int, default=20)
-    parser.add_argument('--fdr', help='FDR threshold for CAVs', type=float, default=0.05)
+    parser.add_argument('--fdr', help='FDR threshold for CAVs', type=float, default=0.1)
     args = parser.parse_args()
 
     print('Reading variants df')
