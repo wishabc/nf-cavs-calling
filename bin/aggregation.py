@@ -133,7 +133,7 @@ def calc_fdr_pd(pd_series):
     return result
 
 def get_min_pval(df, cover_tr, cover_col, pval_cols):
-    min_pval = df[pval_cols].min(axis=1) * 2
+    min_pval = np.minimum(df[pval_cols].min(axis=1) * 2, 1)
     ind = (df[cover_col] < cover_tr)
     min_pval[ind] = np.nan
     return min_pval.to_numpy()
