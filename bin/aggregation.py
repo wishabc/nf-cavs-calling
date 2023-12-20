@@ -125,12 +125,17 @@ def qvalue(pvals, bootstrap=False):
     return qvals
 
 def calc_fdr_pd(pd_series):
-    return qvalue(pd_series.to_numpy(), bootstrap=True)
+    ind = pd_series.notna()
+    result = np.full_like(pd_series, np.nan, dtype=np.float64)
+    if not ind.any():
+        return pd_series # all values are NaN
+    result[ind] = qvalue(pd_series[ind].to_numpy(), bootstrap=True)
+    return result
 
 def get_min_pval(df, cover_tr, cover_col, pval_cols):
     min_pval = df[pval_cols].min(axis=1) * 2
-    ind = (df[cover_col] < cover_tr) | (min_pval > 1)
-    min_pval[ind] = 1
+    ind = (df[cover_col] < cover_tr)
+    min_pval[ind] = np.nan
     return min_pval.to_numpy()
 
 def main(pval_df, chrom=None, max_cover_tr=10):
