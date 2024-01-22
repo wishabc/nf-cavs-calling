@@ -110,7 +110,7 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
         group_es_std=NA_real_,
         indiv_id_rand_var=NA_real_,
         chisq=NA_real_,
-        chi_df=NA_integer_,
+        chi_df=NA_real_,
         p_differential=NA_real_,
         var_indiv_id = NA_real_,
         var_group_id = NA_real_,
