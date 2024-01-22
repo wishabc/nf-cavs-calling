@@ -104,7 +104,16 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
     print(paste("Error in model fitting:", e$message))
     print("Subset of data causing the error:")
     # Return NULL to skip this variant
-    return(NA)
+    placeholder_df <- data.frame(
+        indiv_id_rand_var=NA,
+        chisq=NA,
+        chi_df=NA,
+        p_differential=NA,
+        var_indiv_id = NA,
+        var_group_id = NA,
+        var_residuals = NA)
+
+    return(cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df))
   })
   
 }
