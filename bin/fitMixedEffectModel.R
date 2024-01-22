@@ -67,7 +67,7 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   coef_df$p_differential <- rep(p_value, nrow(coef_df))
 
   # Calculating variance components
-  fit <- reduced_model
+  fit <- full_model
   varComp <- lapply(lme4::VarCorr(fit), function(fit) attr(fit, "stddev")^2)
   varComp$Residuals <- sigma(fit)^2
 
