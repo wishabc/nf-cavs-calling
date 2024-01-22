@@ -14,8 +14,8 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     )
     constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
 
-    pvals['differential_fdr'] = calc_fdr_pd(np.exp(pvals['log_p_differential']))
-    pvals['differential_es'] = pvals.eval('(F2 + 1) / (F2 + (N - n_groups + 1) / (n_groups - 1))')
+    pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
+    pvals['differential_es'] = pvals.eval('var_group_id / (var_residuals + var_group_id + var_indiv_id)')
 
     tested_length = len(tested.index)
     tested = tested.merge(pvals)

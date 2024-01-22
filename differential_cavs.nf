@@ -2,7 +2,7 @@
 params.conda = "$moduleDir/environment.yml"
 
 
-process anova {
+process filter_testable_snps {
     conda params.conda
     tag "${chromosome}"
     label "med_mem"
@@ -11,10 +11,9 @@ process anova {
         tuple val(chromosome), path(input_data)
 
     output:
-        tuple path(pvals), path(tested)
+        tuple val(chromosome), path(tested)
 
     script:
-    pvals = "${chromosome}.pvals.bed"
     tested = "${chromosome}.tested.bed"
     """
     
@@ -26,6 +25,26 @@ process anova {
         --min_groups ${params.min_groups} \
         --chrom ${chromosome} \
         --coverage_tr ${params.fdr_coverage_filter}
+    """
+}
+
+process fit_random_effects_model {
+    conda "/home/sabramov/miniconda3/envs/condR"
+    tag "${chromosome}"
+    label "med_mem"
+
+    input:
+        tuple val(chromosome), path(input_data)
+
+    output:
+        tuple path(name)
+
+    script:
+    name = "${chromosome}.result.bed"
+    """
+    Rscript $moduleDir/bin/fitMixedEffectModel.R \
+        ${input_data} \
+        ${name}
     """
 }
 
@@ -68,10 +87,10 @@ workflow differentialCavs {
         out = Channel.of(1..22, 'X', 'Y')
             | map(it -> "chr${it}")
             | combine(data)
-            | anova
+            | filter_testable_snps
+            | fit_random_effects_model
 
-        pvals = out 
-            | map(it -> it[0]) 
+        pvals = out
             | collectFile(
                 name: "${params.aggregation_key}.pvals.bed",
                 sort: true,
@@ -79,7 +98,7 @@ workflow differentialCavs {
                 skip: 1
             )
         
-        tested = out 
+        tested = filter_testable_snps.out 
             | map(it -> it[1]) 
             | collectFile(
                 name: "${params.aggregation_key}.tested.bed",
