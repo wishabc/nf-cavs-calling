@@ -34,10 +34,15 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   # Calculate weights within the group
   w <- current_data$inverse_mse / mean(current_data$inverse_mse)
 
-  # Fit the linear mixed-effects models
-  full_model <- lme4::lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-  reduced_model <- lme4::lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-
+  tryCatch({
+    # Fit the linear mixed-effects models
+    full_model <- lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
+    reduced_model <- lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
+  }, error = function(e) {
+    print(paste("Error in model fitting:", e$message))
+    print("Subset of data causing the error:")
+    print(current_data)
+  })
   # Extract fixed effects coefficients and standard errors
   coefficients <- fixef(full_model)
   se <- summary(full_model)$coefficients[, "Std. Error"]
