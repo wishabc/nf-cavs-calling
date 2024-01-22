@@ -31,6 +31,7 @@ vpcontrol <- lme4::lmerControl(
 )
 
 process_group <- function(current_data, starting_columns_names, vpcontrol) {
+  print(names(current_data))
   # Calculate weights within the group
   w <- current_data$inverse_mse / mean(current_data$inverse_mse)
 
@@ -72,10 +73,10 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   varComp$Residuals <- sigma(fit)^2
 
   idx <- which(colnames(fit@pp$X) != "(Intercept)")
-    print(paste("Length of idx:", length(idx)))
-    if (length(idx) == 0) {
-        print("No fixed effects other than intercept found.")
-    }
+    # print(paste("Length of idx:", length(idx)))
+    # if (length(idx) == 0) {
+    #     print("No fixed effects other than intercept found.")
+    # }
   fxeff <- sapply(idx, function(i) {
     fit@pp$X[, i] * fixef(fit)[i]
   })
