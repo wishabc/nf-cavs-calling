@@ -38,13 +38,8 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
     # Fit the linear mixed-effects models
     full_model <- lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
     reduced_model <- lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-  }, error = function(e) {
-    print(paste("Error in model fitting:", e$message))
-    print("Subset of data causing the error:")
-    # Return NULL to skip this variant
-    return(NA)
-  })
-  # Extract fixed effects coefficients and standard errors
+
+    # Extract fixed effects coefficients and standard errors
   coefficients <- fixef(full_model)
   se <- summary(full_model)$coefficients[, "Std. Error"]
   names(coefficients) <- gsub("group_id", "", names(coefficients))
@@ -105,6 +100,13 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   combined_df <- cbind(current_data[1, starting_columns_names, with = FALSE], coef_df)
 
   return(combined_df)
+  }, error = function(e) {
+    print(paste("Error in model fitting:", e$message))
+    print("Subset of data causing the error:")
+    # Return NULL to skip this variant
+    return(NA)
+  })
+  
 }
 
 args=(commandArgs(TRUE))
