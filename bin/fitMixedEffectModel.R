@@ -31,7 +31,6 @@ vpcontrol <- lme4::lmerControl(
 )
 
 process_group <- function(current_data, starting_columns_names, vpcontrol) {
-  print(current_data[, get(starting_columns_names[1])])
   # Calculate weights within the group
   w <- current_data$inverse_mse / mean(current_data$inverse_mse)
 
