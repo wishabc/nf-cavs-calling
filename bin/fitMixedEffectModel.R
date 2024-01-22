@@ -130,7 +130,7 @@ if (length(args)==0) {
   outpath <- args[2]
 }
 
-snps_df <- fread(inpath)
+snps_df <- fread(inpath)[]
 
 # Define the starting columns for grouping
 starting_columns_names <- names(snps_df)[1:6]
