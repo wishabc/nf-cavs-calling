@@ -116,7 +116,8 @@ snps_df <- fread(inpath)
 starting_columns_names <- names(snps_df)[1:6]
 
 # Split the data by the grouping columns
-results <- snps_df[, process_group(.SD, starting_columns_names, vpcontrol), by = starting_columns_names]
+results <- snps_df[, process_group(.SD, starting_columns_names, vpcontrol), 
+    by=starting_columns_names, .SDcols=names(snps_df)]  
 
 # Combine all the results into one dataframe
 final_df <- bind_rows(results)
