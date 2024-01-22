@@ -139,9 +139,5 @@ starting_columns_names <- names(snps_df)[1:6]
 results <- snps_df[, process_group(.SD, starting_columns_names, vpcontrol), 
     by=starting_columns_names, .SDcols=names(snps_df)]  
 
-# Combine all the results into one dataframe
-final_df <- bind_rows(results)
-names(final_df)[1] <- '#chr'
-
 # Write the final dataframe to a file
-write.table(final_df, file = outpath, sep = "\t", row.names = FALSE, quote = FALSE)
+fwrite(final_df, file=outpath, sep = "\t", row.names = FALSE, quote = FALSE)
