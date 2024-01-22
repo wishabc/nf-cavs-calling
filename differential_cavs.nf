@@ -5,7 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 process filter_testable_snps {
     conda params.conda
     tag "${chromosome}"
-    label "med_mem"
+    label "high_mem"
 
     input:
         tuple val(chromosome), path(input_data)
@@ -16,7 +16,6 @@ process filter_testable_snps {
     script:
     tested = "${chromosome}.tested.bed"
     """
-    
     python3 $moduleDir/bin/lrt.py \
         ${input_data} \
         ${params.samples_file} \
@@ -84,7 +83,7 @@ workflow differentialCavs {
     take:
         data
     main:
-        out = Channel.of(1..22, 'X', 'Y')
+        out = Channel.of(1..22, 'X')
             | map(it -> "chr${it}")
             | combine(data)
             | filter_testable_snps

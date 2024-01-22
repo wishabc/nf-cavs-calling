@@ -127,7 +127,8 @@ if __name__ == '__main__':
     testable_snps = find_testable_pairs(
         input_df,
         min_indivs_per_group=args.min_indivs_per_group,
-        min_groups_per_variant=args.min_groups
+        min_groups_per_variant=args.min_groups,
+        coverage_tr=args.coverage_tr
     )
 
     testable_snps.to_csv(
