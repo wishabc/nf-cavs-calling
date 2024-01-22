@@ -140,4 +140,4 @@ results <- snps_df[, process_group(.SD, starting_columns_names, vpcontrol),
     by=starting_columns_names, .SDcols=names(snps_df)]  
 
 # Write the final dataframe to a file
-fwrite(final_df, file=outpath, sep = "\t", row.names = FALSE, quote = FALSE)
+fwrite(results, file=outpath, sep = "\t", row.names = FALSE, quote = FALSE)
