@@ -1,9 +1,8 @@
 library(lme4)
 library(lmerTest)
 library(variancePartition)
-library(dplyr)
-library(tidyr)
-library(purrr)
+library(data.table)
+
 
 weighted.var <- function(x, w, na.rm = FALSE) {
   if (missing(w)) {
@@ -31,36 +30,13 @@ vpcontrol <- lme4::lmerControl(
   check.conv.singular = lme4::.makeCC("ignore", tol = 1e-4)
 )
 
-args=(commandArgs(TRUE))
-if (length(args)==0) {
-  stop("No arguments supplied.")
-} else {
-  inpath <- args[1]
-  outpath <- args[2]
-}
-
-snps_df <- read.delim(inpath)
-snps_df
-
-# Define the starting columns for grouping
-starting_columns_names <- names(snps_df)[1:6]
-
-# Split the data by the grouping columns
-split_data <- split(snps_df, snps_df[, starting_columns_names])
-
-split_data <- snps_df %>%
-  group_by(across(all_of(starting_columns_names))) %>%
-  group_split()
-
-# Process each group
-results <- map(split_data, ~ {
-  current_data <- .x
-
+process_group <- function(current_data, starting_columns_names, vpcontrol) {
   # Calculate weights within the group
   w <- current_data$inverse_mse / mean(current_data$inverse_mse)
 
-  # Fit the linear mixed-effects model
-  full_model <- lme4::lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML=FALSE, control=vpcontrol)
+  # Fit the linear mixed-effects models
+  full_model <- lme4::lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
+  reduced_model <- lme4::lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
 
   # Extract fixed effects coefficients and standard errors
   coefficients <- fixef(full_model)
@@ -74,16 +50,14 @@ results <- map(split_data, ~ {
   random_effect_variance_indiv_id <- VarCorr(full_model)$indiv_id[1,1]
 
   # Extract residual variance
-  residual_variance <- attr(VarCorr(full_model), "sc")^2
+  residual_variance <- attr(lme4::VarCorr(full_model), "sc")^2
 
   # Add random effect variance, standard deviation, and residual variance to the dataframe
   coef_df$indiv_id_rand_var <- rep(random_effect_variance_indiv_id, nrow(coef_df))
 
-  # Fit the linear mixed-effects model
-  reduced_model <- lme4::lmer(es ~ (1 | indiv_id), data = current_data, weights=w, REML=FALSE, control=vpcontrol)
+  # ANOVA between full and reduced models
   anova_result <- anova(reduced_model, full_model)
-
-  chisq <- anova_result$"Chisq"[2]  
+  chisq <- anova_result$"Chisq"[2]
   df <- anova_result$"Df"[2]
   p_value <- anova_result$"Pr(>Chisq)"[2]
 
@@ -92,17 +66,14 @@ results <- map(split_data, ~ {
   coef_df$chi_df <- rep(df, nrow(coef_df))
   coef_df$p_differential <- rep(p_value, nrow(coef_df))
 
+  # Calculating variance components
   fit <- reduced_model
-  #fit <- refit(fit, control = vpcontrol)
-  # summary(fit)
-
   varComp <- lapply(lme4::VarCorr(fit), function(fit) attr(fit, "stddev")^2)
   varComp$Residuals <- sigma(fit)^2
-  # varComp
 
   idx <- which(colnames(fit@pp$X) != "(Intercept)")
   fxeff <- sapply(idx, function(i) {
-    fit@pp$X[, i] * lme4::fixef(fit)[i]
+    fit@pp$X[, i] * fixef(fit)[i]
   })
   colnames(fxeff) <- colnames(fit@pp$X)[idx]
 
@@ -121,10 +92,26 @@ results <- map(split_data, ~ {
   coef_df$var_residuals <- res[['Residuals']]
 
   # Combine the first row of original data with the coefficients dataframe
-  combined_df <- cbind(current_data[1, starting_columns_names, drop = FALSE], coef_df)
+  combined_df <- cbind(current_data[1, starting_columns_names, with = FALSE], coef_df)
 
   return(combined_df)
-})
+}
+
+args=(commandArgs(TRUE))
+if (length(args)==0) {
+  stop("No arguments supplied.")
+} else {
+  inpath <- args[1]
+  outpath <- args[2]
+}
+
+snps_df <- fread(inpath)
+
+# Define the starting columns for grouping
+starting_columns_names <- names(snps_df)[1:6]
+
+# Split the data by the grouping columns
+results <- snps_df[, process_group(.SD, starting_columns_names, vpcontrol), by = starting_columns_names]
 
 # Combine all the results into one dataframe
 final_df <- bind_rows(results)
