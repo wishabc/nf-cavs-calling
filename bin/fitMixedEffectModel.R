@@ -72,9 +72,10 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   varComp$Residuals <- sigma(fit)^2
 
   idx <- which(colnames(fit@pp$X) != "(Intercept)")
-if (length(idx) == 1) {
-    print(current_data)  # Print the current subset of the data frame
-  }
+    print(paste("Length of idx:", length(idx)))
+    if (length(idx) == 0) {
+        print("No fixed effects other than intercept found.")
+    }
   fxeff <- sapply(idx, function(i) {
     fit@pp$X[, i] * fixef(fit)[i]
   })
