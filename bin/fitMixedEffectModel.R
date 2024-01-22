@@ -105,6 +105,9 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
     print("Subset of data causing the error:")
     # Return NULL to skip this variant
     placeholder_df <- data.frame(
+        group_id=NA,
+        group_es=NA,
+        group_es_std=NA,
         indiv_id_rand_var=NA,
         chisq=NA,
         chi_df=NA,
