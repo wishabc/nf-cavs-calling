@@ -41,8 +41,6 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   }, error = function(e) {
     print(paste("Error in model fitting:", e$message))
     print("Subset of data causing the error:")
-    globalenv()$skipped_variants_count <<- globalenv()$skipped_variants_count + 1
-    
     # Return NULL to skip this variant
     return(NA)
   })
