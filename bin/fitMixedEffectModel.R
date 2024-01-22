@@ -29,7 +29,7 @@ vpcontrol <- lme4::lmerControl(
   check.rankX = "stop.deficient",
   check.conv.singular = lme4::.makeCC("ignore", tol = 1e-4)
 )
-globalenv()$skipped_variants_count <- 0
+skipped_variants_count <- 0
 process_group <- function(current_data, starting_columns_names, vpcontrol) {
   # Calculate weights within the group
   w <- current_data$inverse_mse / mean(current_data$inverse_mse)
@@ -44,7 +44,7 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
     globalenv()$skipped_variants_count <<- globalenv()$skipped_variants_count + 1
     
     # Return NULL to skip this variant
-    return(NULL)
+    return(NA)
   })
   # Extract fixed effects coefficients and standard errors
   coefficients <- fixef(full_model)
