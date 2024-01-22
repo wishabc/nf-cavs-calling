@@ -98,25 +98,25 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
 
   # Combine the first row of original data with the coefficients dataframe
   combined_df <- cbind(current_data[1, starting_columns_names, with = FALSE], coef_df)
-  print(colnames(combined_df))
+  #print(colnames(combined_df))
   return(combined_df)
   }, error = function(e) {
     print(paste("Error in model fitting:", e$message))
     print("Subset of data causing the error:")
     # Return NULL to skip this variant
     placeholder_df <- data.frame(
-        group_id=NA,
-        group_es=NA,
-        group_es_std=NA,
-        indiv_id_rand_var=NA,
-        chisq=NA,
-        chi_df=NA,
-        p_differential=NA,
-        var_indiv_id = NA,
-        var_group_id = NA,
-        var_residuals = NA)
+        group_id=NA_character_,
+        group_es=NA_real_,
+        group_es_std=NA_real_,
+        indiv_id_rand_var=NA_real_,
+        chisq=NA_real_,
+        chi_df=NA_integer_,
+        p_differential=NA_real_,
+        var_indiv_id = NA_real_,
+        var_group_id = NA_real_,
+        var_residuals = NA_real_)
     result <- cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df)
-    print(colnames(result))
+    #print(colnames(result))
     return(result)
   })
   
