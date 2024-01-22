@@ -98,7 +98,7 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
 
   # Combine the first row of original data with the coefficients dataframe
   combined_df <- cbind(current_data[1, starting_columns_names, with = FALSE], coef_df)
-
+  print(colnames(combined_df))
   return(combined_df)
   }, error = function(e) {
     print(paste("Error in model fitting:", e$message))
@@ -112,8 +112,9 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
         var_indiv_id = NA,
         var_group_id = NA,
         var_residuals = NA)
-
-    return(cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df))
+    result <- cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df)
+    print(colnames(result))
+    return(result)
   })
   
 }
