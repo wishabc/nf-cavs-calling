@@ -37,7 +37,7 @@ process fit_random_effects_model {
         tuple val(chromosome), path(input_data)
 
     output:
-        tuple path(name)
+        path name
 
     script:
     name = "${chromosome}.result.bed"
