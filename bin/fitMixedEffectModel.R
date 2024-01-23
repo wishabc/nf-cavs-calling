@@ -5,37 +5,39 @@ library(data.table)
 
 
 weighted.var <- function(x, w, na.rm = FALSE) {
-  if (missing(w)) {
+    if (missing(w)) {
     w <- rep.int(1, length(x))
-  } else if (length(w) != length(x)) {
+    } else if (length(w) != length(x)) {
     stop("x and w must have the same length")
-  }
-  if (min(w) < 0) {
+    }
+    if (min(w) < 0) {
     stop("there are negative weights")
-  }
-  if (is.integer(w)) {
+    }
+    if (is.integer(w)) {
     w <- as.numeric(w)
-  }
-  if (na.rm) {
+    }
+    if (na.rm) {
     w <- w[obs.ind <- !is.na(x)]
     x <- x[obs.ind]
-  }
-  w <- w * length(w) / sum(w)
-  return(sum(w * (x - weighted.mean(x, w))^2) / (sum(w) - 1))
+    }
+    w <- w * length(w) / sum(w)
+    return(sum(w * (x - weighted.mean(x, w))^2) / (sum(w) - 1))
 }
 
 vpcontrol <- lme4::lmerControl(
-  calc.derivs = FALSE,
-  check.rankX = "stop.deficient",
-  check.conv.singular = lme4::.makeCC("ignore", tol = 1e-4)
+    calc.derivs = FALSE,
+    check.rankX = "stop.deficient",
+    check.conv.singular = lme4::.makeCC("ignore", tol = 1e-4)
 )
-skipped_variants_count <- 0
-process_group <- function(current_data, starting_columns_names, vpcontrol) {
-  # Calculate weights within the group
-  w <- current_data$inverse_mse / mean(current_data$inverse_mse)
 
-    placeholder_df <- data.frame(
-        group_id=NA_character_,
+process_group <- function(current_data, vpcontrol) {
+    # Calculate weights within the group
+    current_data$w <- current_data$inverse_mse / mean(current_data$inverse_mse)
+
+    full_variance <- weighted.var(current_data$es, current_data$w)
+
+    placeholder_df <- expand.grid(
+        group_id=unique(current_data$group_id),
         group_es=NA_real_,
         group_es_std=NA_real_,
         indiv_id_rand_var=NA_real_,
@@ -44,93 +46,110 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
         p_differential=NA_real_,
         var_indiv_id = NA_real_,
         var_group_id = NA_real_,
-        var_residuals = NA_real_)
-    placeholder_df <- cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df)
+        var_residuals = NA_real_,
+        es_var = NA_real_,
+        samples_count = NA_integer_,
+        full_variance = full_variance
+    )
 
-  tryCatch({
-    # Fit the linear mixed-effects models
-    full_model <- lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-    reduced_model <- lmer(es ~ 1 + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-    print("Model fitting successful")
-    # Extract fixed effects coefficients and standard errors
-  coefficients <- fixef(full_model)
-  se <- summary(full_model)$coefficients[, "Std. Error"]
-  names(coefficients) <- gsub("group_id", "", names(coefficients))
+    tryCatch({
+        # Fit the linear mixed-effects models
+        full_model <- lmer(es ~ 0 + group_id + (1 | indiv_id), 
+            data = current_data, weights=w, REML=FALSE,
+            control=vpcontrol
+        )
 
-  # Create a dataframe for coefficients and standard errors
-  coef_df <- data.frame(group_id = names(coefficients), group_es = coefficients, group_es_std = se)
+        reduced_model <- lmer(es ~ 1 + (1 | indiv_id),
+            data = current_data, weights=w, REML=FALSE,
+            control=vpcontrol
+        )
+        # Extract fixed effects coefficients and standard errors
+        coefficients <- fixef(full_model)
+        se <- summary(full_model)$coefficients[, "Std. Error"]
+        names(coefficients) <- gsub("group_id", "", names(coefficients))
 
-  # Extract variance and standard deviation of random effect for indiv_id
-  random_effect_variance_indiv_id <- VarCorr(full_model)$indiv_id[1,1]
+        # Create a dataframe for coefficients and standard errors
+        coef_df <- data.frame(
+            group_id=names(coefficients), 
+            group_es=coefficients,
+            group_es_std=se
+        )
+        merged_data <- merge(current_data, coef_df, by="group_id")
 
-  # Extract residual variance
-  residual_variance <- attr(lme4::VarCorr(full_model), "sc")^2
+        merged_data$es_diff <- merged_data$es - merged_data$group_es
+        es_var <- aggregated(
+            merged_data[c('es_diff', 'w')],
+            list(merged_data$group_id),
+            FUN=function(x) {
+                w_var = weighted.var(x$es_diff, x$w)
+                count = length(x$es_diff)
+                        return(c(weighted_variance, count))
+                return(c(w_var, count))
+            }
+        )
+        colnames(es_var) <- c("group_id", "es_var", "samples_count")
+        coef_df <- merge(coef_df, es_var, by="group_id")
 
-  # Add random effect variance, standard deviation, and residual variance to the dataframe
-  coef_df$indiv_id_rand_var <- rep(random_effect_variance_indiv_id, nrow(coef_df))
+        # Extract variance and standard deviation of random effect for indiv_id
+        random_effect_variance_indiv_id <- VarCorr(full_model)$indiv_id[1,1]
 
-  # ANOVA between full and reduced models
-  anova_result <- anova(reduced_model, full_model)
-  chisq <- anova_result$"Chisq"[2]
-  df <- anova_result$"Df"[2]
-  p_value <- anova_result$"Pr(>Chisq)"[2]
+        # Extract residual variance
+        residual_variance <- attr(lme4::VarCorr(full_model), "sc")^2
 
-  # Add these values as new columns to coef_df, repeated for each row
-  coef_df$chisq <- rep(chisq, nrow(coef_df))
-  coef_df$chi_df <- rep(df, nrow(coef_df))
-  coef_df$p_differential <- rep(p_value, nrow(coef_df))
+        # Add random effect variance, standard deviation, and residual variance to the dataframe
+        coef_df$indiv_id_rand_var <- rep(random_effect_variance_indiv_id, nrow(coef_df))
 
-  # Calculating variance
-  fit <- full_model
-  varComp <- lapply(lme4::VarCorr(fit), function(fit) attr(fit, "stddev")^2)
-  varComp$Residuals <- sigma(fit)^2
+        # ANOVA between full and reduced models
+        anova_result <- anova(reduced_model, full_model)
+        chisq <- anova_result$"Chisq"[2]
+        df <- anova_result$"Df"[2]
+        p_value <- anova_result$"Pr(>Chisq)"[2]
 
-  idx <- which(colnames(fit@pp$X) != "(Intercept)")
-    # print(paste("Length of idx:", length(idx)))
-    # if (length(idx) == 0) {
-    #     print("No fixed effects other than intercept found.")
-    # }
-  fxeff <- sapply(idx, function(i) {
-    fit@pp$X[, i] * fixef(fit)[i]
-  })
-  colnames(fxeff) <- colnames(fit@pp$X)[idx]
+        # Add these values as new columns to coef_df, repeated for each row
+        coef_df$chisq <- rep(chisq, nrow(coef_df))
+        coef_df$chi_df <- rep(df, nrow(coef_df))
+        coef_df$p_differential <- rep(p_value, nrow(coef_df))
 
-  N <- nrow(fxeff)
-  varFixedTotal <- weighted.var(rowSums(fxeff), w) * (N - 1) / N
-  varComp[['group_id']] <- varFixedTotal
+        # Calculating variance
+        fit <- full_model
+        varComp <- lapply(lme4::VarCorr(fit), function(fit) attr(fit, "stddev")^2)
+        varComp$Residuals <- sigma(fit)^2
 
-  vc <- unlist(varComp)
-  res <- vc / sum(vc)
+        idx <- which(colnames(fit@pp$X) != "(Intercept)")
+            # print(paste("Length of idx:", length(idx)))
+            # if (length(idx) == 0) {
+            #     print("No fixed effects other than intercept found.")
+            # }
+        fxeff <- sapply(idx, function(i) {
+            fit@pp$X[, i] * fixef(fit)[i]
+        })
+        colnames(fxeff) <- colnames(fit@pp$X)[idx]
 
-  # remove ".(Intercept)" string
-  names(res) <- gsub("\\.\\(Intercept\\)", "", names(res))
+        N <- nrow(fxeff)
+        varFixedTotal <- weighted.var(rowSums(fxeff), w) * (N - 1) / N
+        varComp[['group_id']] <- varFixedTotal
 
-  coef_df$var_indiv_id <- res[['indiv_id']]
-  coef_df$var_group_id <- res[['group_id']]
-  coef_df$var_residuals <- res[['Residuals']]
+        vc <- unlist(varComp)
+        res <- vc / sum(vc)
 
-  # Combine the first row of original data with the coefficients dataframe
-  combined_df <- cbind(current_data[1, starting_columns_names, with = FALSE], coef_df)
-  #print(colnames(combined_df))
-  return(combined_df)
-  }, warning = function(w) {
-    # Handle the warning
-    print(paste("Warning in model fitting:", w$message))
-    # Optionally, take additional actions based on the warning
-    # ...
+        # remove ".(Intercept)" string
+        names(res) <- gsub("\\.\\(Intercept\\)", "", names(res))
 
-    # Continue with the analysis or return a specific value
-    # Return combined_df or a placeholder for warnings
-    return(placeholder_df)
-  }, error = function(e) {
-    print(paste("Error in model fitting:", e$message))
-    print("Subset of data causing the error:")
-    # Return NULL to skip this variant
+        coef_df$var_indiv_id <- res[['indiv_id']]
+        coef_df$var_group_id <- res[['group_id']]
+        coef_df$var_residuals <- res[['Residuals']]
+        coef_df$full_variance <- full_variance
 
-    #print(colnames(result))
-    return(placeholder_df)
-  })
-  
+        return(coef_df)
+    }, warning = function(w) {
+
+        print(paste("Warning in model fit:", w$message))
+        return(placeholder_df)
+    }, error = function(e) {
+
+        print(paste("Error in model fit:", e$message))
+        return(placeholder_df)
+    })
 }
 
 args=(commandArgs(TRUE))
@@ -149,8 +168,7 @@ snps_df$group_id <- as.factor(snps_df$group_id)
 starting_columns_names <- names(snps_df)[1:6]
 
 # Split the data by the grouping columns
-results <- snps_df[, process_group(.SD, starting_columns_names, vpcontrol), 
-    by=starting_columns_names, .SDcols=names(snps_df)]  
+results <- snps_df[, process_group(.SD, vpcontrol), by=starting_columns_names]  
 
 # Write the final dataframe to a file
 fwrite(results, file=outpath, sep = "\t", row.names = FALSE, quote = FALSE)

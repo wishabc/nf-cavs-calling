@@ -101,6 +101,16 @@ if __name__ == '__main__':
     tested = pd.read_table(args.tested_variants, low_memory=False)
     pvals = pd.read_table(args.pvals)
 
-    res_df = main(tested, pvals, differential_fdr_tr=args.fdr, differential_es_tr=args.es)
+    dropped_na_variants = pvals[pvals['p_differential'].isna()]['variant_id'].unique()
+    
+    tested = tested[~tested['variant_id'].isin(dropped_na_variants)]
+    pvals = pvals[pvals['p_differential'].notna()]
+
+
+    res_df = main(
+        tested, pvals, 
+        differential_fdr_tr=args.fdr,
+        differential_es_tr=args.es
+    )
     print(len(res_df.index), len(pvals.index))
     res_df.to_csv(args.outpath, sep='\t', index=False)
