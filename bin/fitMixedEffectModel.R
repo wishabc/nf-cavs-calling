@@ -142,8 +142,8 @@ if (length(args)==0) {
 }
 
 snps_df <- fread(inpath)
-snps_df['indiv_id'] <- as.factor(snps_df['indiv_id'])
-snps_df['group_id'] <- as.factor(snps_df['group_id'])
+snps_df$indiv_id <- as.factor(snps_df$indiv_id)
+snps_df$group_id <- as.factor(snps_df$group_id)
 
 # Define the starting columns for grouping
 starting_columns_names <- names(snps_df)[1:6]
