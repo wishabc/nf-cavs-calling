@@ -63,16 +63,12 @@ process_group <- function(current_data, vpcontrol) {
             data = current_data, weights=w, REML=FALSE,
             control=vpcontrol
         )
-        # Extract fixed effects coefficients and standard errors
-        coefficients <- fixef(full_model)
-        se <- summary(full_model)$coefficients[, "Std. Error"]
-        names(coefficients) <- gsub("group_id", "", names(coefficients))
 
         # Create a dataframe for coefficients and standard errors
         coef_df <- data.frame(
-            group_id=names(coefficients), 
-            group_es=coefficients,
-            group_es_std=se
+            group_id=gsub("group_id", "", names(coefficients)), 
+            group_es=fixef(full_model),
+            group_es_std=summary(full_model)$coefficients[, "Std. Error"]
         )
         merged_data <- merge(current_data, coef_df, by="group_id")
 
