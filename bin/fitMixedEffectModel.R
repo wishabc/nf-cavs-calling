@@ -50,8 +50,8 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   tryCatch({
     # Fit the linear mixed-effects models
     full_model <- lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-    reduced_model <- 1 + lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-
+    reduced_model <- lmer(es ~ 1 + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
+    print("Model fitting successful")
     # Extract fixed effects coefficients and standard errors
   coefficients <- fixef(full_model)
   se <- summary(full_model)$coefficients[, "Std. Error"]
