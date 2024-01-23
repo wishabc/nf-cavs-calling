@@ -34,10 +34,23 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   # Calculate weights within the group
   w <- current_data$inverse_mse / mean(current_data$inverse_mse)
 
+    placeholder_df <- data.frame(
+        group_id=NA_character_,
+        group_es=NA_real_,
+        group_es_std=NA_real_,
+        indiv_id_rand_var=NA_real_,
+        chisq=NA_real_,
+        chi_df=NA_real_,
+        p_differential=NA_real_,
+        var_indiv_id = NA_real_,
+        var_group_id = NA_real_,
+        var_residuals = NA_real_)
+    placeholder_df <- cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df)
+
   tryCatch({
     # Fit the linear mixed-effects models
     full_model <- lmer(es ~ 0 + group_id + (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
-    reduced_model <- lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
+    reduced_model <- 1 + lmer(es ~ (1 | indiv_id), data = current_data, weights = w, REML = FALSE, control = vpcontrol)
 
     # Extract fixed effects coefficients and standard errors
   coefficients <- fixef(full_model)
@@ -67,7 +80,7 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   coef_df$chi_df <- rep(df, nrow(coef_df))
   coef_df$p_differential <- rep(p_value, nrow(coef_df))
 
-  # Calculating variance components
+  # Calculating variance
   fit <- full_model
   varComp <- lapply(lme4::VarCorr(fit), function(fit) attr(fit, "stddev")^2)
   varComp$Residuals <- sigma(fit)^2
@@ -100,24 +113,22 @@ process_group <- function(current_data, starting_columns_names, vpcontrol) {
   combined_df <- cbind(current_data[1, starting_columns_names, with = FALSE], coef_df)
   #print(colnames(combined_df))
   return(combined_df)
+  }, warning = function(w) {
+    # Handle the warning
+    print(paste("Warning in model fitting:", w$message))
+    # Optionally, take additional actions based on the warning
+    # ...
+
+    # Continue with the analysis or return a specific value
+    # Return combined_df or a placeholder for warnings
+    return(placeholder_df)
   }, error = function(e) {
     print(paste("Error in model fitting:", e$message))
     print("Subset of data causing the error:")
     # Return NULL to skip this variant
-    placeholder_df <- data.frame(
-        group_id=NA_character_,
-        group_es=NA_real_,
-        group_es_std=NA_real_,
-        indiv_id_rand_var=NA_real_,
-        chisq=NA_real_,
-        chi_df=NA_real_,
-        p_differential=NA_real_,
-        var_indiv_id = NA_real_,
-        var_group_id = NA_real_,
-        var_residuals = NA_real_)
-    result <- cbind(current_data[1, starting_columns_names, with = FALSE], placeholder_df)
+
     #print(colnames(result))
-    return(result)
+    return(placeholder_df)
   })
   
 }
@@ -130,7 +141,9 @@ if (length(args)==0) {
   outpath <- args[2]
 }
 
-snps_df <- fread(inpath)[]
+snps_df <- fread(inpath)
+snps_df['indiv_id'] <- as.factor(snps_df['indiv_id'])
+snps_df['group_id'] <- as.factor(snps_df['group_id'])
 
 # Define the starting columns for grouping
 starting_columns_names <- names(snps_df)[1:6]

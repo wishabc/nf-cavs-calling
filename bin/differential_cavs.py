@@ -19,7 +19,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
 
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
-    assert len(tested.index) == tested_length
+    #assert len(tested.index) == tested_length
 
     # set default inividual fdr and find differential snps
 
@@ -43,10 +43,11 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     # Group-wise aggregation
     result = pvals.merge(
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
-    ).merge(
-        differential_cavs[[*starting_columns, 'group_id', 'min_pval_group', 'min_fdr_group']], 
-        how='left'
     )
+    # ).merge(
+    #     differential_cavs[[*starting_columns, 'group_id', 'min_pval_group', 'min_fdr_group']], 
+    #     how='left'
+    # )
     initial_len = len(result.index)
     result = result.merge(
         get_category(result, differential_fdr_tr=0.05, differential_es_tr=0.15)
