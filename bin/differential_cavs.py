@@ -32,6 +32,8 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
 
     differential_cavs['fdr_group'] = calc_fdr_pd(differential_cavs['Pr(>|t|)'])
 
+    print(pvals)
+    print(constitutive_df)
     # Group-wise aggregation
     result = pvals.merge(
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
