@@ -54,6 +54,7 @@ process_group <- function(current_data, vpcontrol) {
         samples_count = NA_integer_,
         full_variance = full_variance
     )
+    print(placeholder_df)
 
     tryCatch({
         # Fit the linear mixed-effects models
