@@ -5,7 +5,7 @@ import pandas as pd
 import scipy.stats as st
 
 def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_es_tr=0.15):
-    constitutive_df = aggregate_pvalues_df(tested)
+    constitutive_df = aggregate_pvalues_df(tested,)
     constitutive_df['min_pval'] = get_min_pval(
         constitutive_df, 
         cover_tr=max_cover_tr, 
@@ -15,7 +15,6 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
-    pvals['differential_es'] = pvals.eval('var_group_id / (var_residuals + var_group_id + var_indiv_id)')
 
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
@@ -23,14 +22,12 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
 
     # set default inividual fdr and find differential snps
 
-    differential_cavs = tested.query(
-        f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr}'
-    )
+    differential_cavs = tested.query(f'differential_fdr <= {differential_fdr_tr}')
 
-    differential_cavs = aggregate_pvalues_df(
-        differential_cavs, 
-        groupby_cols=[*starting_columns, 'group_id']
-    )
+    # differential_cavs = aggregate_pvalues_df(
+    #     differential_cavs, 
+    #     groupby_cols=[*starting_columns, 'group_id']
+    # )
 
     differential_cavs['fdr_group'] = calc_fdr_pd(differential_cavs['pval_group'])
 
