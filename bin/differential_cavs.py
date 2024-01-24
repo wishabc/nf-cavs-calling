@@ -75,7 +75,7 @@ def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     conditions = [
         ~per_variant['overall_imbalanced'] & ~per_variant['cell_selective'], # not_imbalanced
         ~per_variant['cell_selective'],                                 # not_cell_selective
-        ~per_variant['strong_cell_selective'],
+        ~per_variant['strong_cell_selective'].fillna(True),
         per_variant['concordant'].fillna(True)                          # concordant
     ]
 
