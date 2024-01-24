@@ -100,7 +100,7 @@ if __name__ == '__main__':
     pvals = pd.read_table(args.pvals)
 
     dropped_na_variants = pvals[pvals['p_differential'].isna()]['variant_id'].unique()
-    
+    print(dropped_na_variants)
     tested = tested[~tested['variant_id'].isin(dropped_na_variants)]
     pvals = pvals[pvals['p_differential'].notna()]
 
