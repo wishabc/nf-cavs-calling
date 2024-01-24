@@ -64,12 +64,10 @@ process_group <- function(current_data, vpcontrol) {
             control=vpcontrol
         )
 
-        # Create a dataframe for coefficients and standard errors
-        coef_df <- data.frame(
-            group_id=gsub("group_id", "", names(coefficients)), 
-            group_es=fixef(full_model),
-            group_es_std=summary(full_model)$coefficients[, "Std. Error"]
-        )
+        coef_df <- as.data.frame(summary(full_model)$coefficients)
+
+        # Add group_id column based on the names of the coefficients
+        coef_df$group_id <- gsub("group_id", "", rownames(coef_df))
         merged_data <- merge(current_data, coef_df, by="group_id")
 
         merged_data$es_diff <- merged_data$es - merged_data$group_es
