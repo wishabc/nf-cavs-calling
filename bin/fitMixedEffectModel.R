@@ -36,7 +36,7 @@ process_group <- function(current_data, vpcontrol) {
 
     full_variance <- weighted.var(current_data$es, current_data$w)
 
-    placeholder_df <- setDT(expand.grid(
+    placeholder_df <- expand.grid(
         group_id=unique(current_data$group_id),
         group_es=NA_real_,
         group_es_std=NA_real_,
@@ -53,7 +53,7 @@ process_group <- function(current_data, vpcontrol) {
         var_group_id = NA_real_,
         var_residuals = NA_real_,
         full_variance = full_variance
-    ))
+    )
     placeholder_df$group_id <- as.factor(placeholder_df$group_id)
 
     tryCatch({
