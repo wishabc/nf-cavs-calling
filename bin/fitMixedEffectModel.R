@@ -64,7 +64,7 @@ process_group <- function(current_data, vpcontrol) {
             control=vpcontrol
         )
 
-        coef_df <- setDT(summary(full_model)$coefficients)
+        coef_df <- setDT(as.data.frame(summary(full_model)$coefficients))
 
         # Add group_id column based on the names of the coefficients
         coef_df$group_id <- gsub("group_id", "", rownames(coef_df))
