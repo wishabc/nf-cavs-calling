@@ -59,13 +59,12 @@ def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
         0
     )
 
-    cpy['cs'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
+    cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
     
     cpy['significant_group'] = cpy.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
 
     per_variant = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
         strong_cell_selective=('significant_group', 'any'),
-        cell_selective=('cs', 'any'),
         min_es=('logit_group_es', 'min'),
         max_es=('logit_group_es', 'max'),
     )
