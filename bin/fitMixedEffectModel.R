@@ -71,7 +71,7 @@ process_group <- function(current_data, vpcontrol) {
         merged_data <- as.data.frame(merge(current_data, coef_df, by="group_id"))
         print(str(merged_data))
         merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
-        #print(merged_data[c('es_diff', 'w')])
+        print(merged_data[c('es_diff', 'w')])
         es_var <- aggregate(
             cbind(es_diff, w) ~ group_id, 
             data = merged_data,
