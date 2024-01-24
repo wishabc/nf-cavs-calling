@@ -43,6 +43,8 @@ process_group <- function(current_data, vpcontrol) {
         df=NA_real_,    
         "t value"=NA_real_,
         "Pr(>|t|)"=NA_real_,
+        es_var = NA_real_,
+        samples_count = NA_integer_,
         indiv_id_rand_var=NA_real_,
         chisq=NA_real_,
         chi_df=NA_real_,
@@ -50,8 +52,6 @@ process_group <- function(current_data, vpcontrol) {
         var_indiv_id = NA_real_,
         var_group_id = NA_real_,
         var_residuals = NA_real_,
-        es_var = NA_real_,
-        samples_count = NA_integer_,
         full_variance = full_variance
     ))
     placeholder_df$group_id <- as.factor(placeholder_df$group_id)
