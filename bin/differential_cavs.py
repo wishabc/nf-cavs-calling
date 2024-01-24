@@ -2,7 +2,7 @@ import argparse
 from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd, logit_es
 import numpy as np
 import pandas as pd
-
+import scipy.stats as st
 
 def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_es_tr=0.15):
     constitutive_df = aggregate_pvalues_df(tested)
@@ -19,69 +19,80 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
 
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
-    #assert len(tested.index) == tested_length
+    assert len(tested.index) == tested_length
 
     # set default inividual fdr and find differential snps
 
-    differential_cavs = tested[
-        tested.eval(f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr}')
-    ]
+    differential_cavs = tested.query(
+        f'differential_fdr <= {differential_fdr_tr} 
+        & differential_es >= {differential_es_tr}'
+    )
 
     differential_cavs = aggregate_pvalues_df(
         differential_cavs, 
         groupby_cols=[*starting_columns, 'group_id']
     )
 
-    differential_cavs['min_pval_group'] = get_min_pval(
-        differential_cavs, 
-        cover_tr=max_cover_tr, 
-        cover_col='max_cover',
-        pval_cols=["pval_ref_combined", "pval_alt_combined"]
+    differential_cavs['pval_group'] = st.t.sf(
+        abs(differential_cavs.eval('(group_es - 0.5)/group_es_std**2')),
+        df=differential_cavs['samples_count']
     )
-    differential_cavs['min_fdr_group'] = calc_fdr_pd(differential_cavs['min_pval_group'])
+
+    differential_cavs['fdr_group'] = calc_fdr_pd(differential_cavs['pval_group'])
 
     # Group-wise aggregation
     result = pvals.merge(
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
     )
-    # ).merge(
-    #     differential_cavs[[*starting_columns, 'group_id', 'min_pval_group', 'min_fdr_group']], 
-    #     how='left'
-    # )
+
     initial_len = len(result.index)
     result = result.merge(
-        get_category(result, differential_fdr_tr=0.05, differential_es_tr=0.15)
+        get_category(result, differential_fdr_tr=0.05)
     )
     assert len(result.index) == initial_len
 
     return result
 
 
-def get_category(anova_results, differential_fdr_tr=0.05, differential_es_tr=0.15, aggregation_fdr=0.1, max_logit_es_by_group=0.5):
+def get_category(anova_results, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     cpy = anova_results.copy()
-    cpy['abs_logit_es'] = np.abs(logit_es(cpy['group_es']))
-    max_logit_by_group = cpy[[*starting_columns, 'abs_logit_es']].groupby(starting_columns)['abs_logit_es'].transform('max')
-    cpy['has_strong_effect'] = max_logit_by_group >= max_logit_es_by_group
-    cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr} & has_strong_effect')
-    result = cpy[cpy.eval(f'cell_selective & min_fdr_group <= {aggregation_fdr}')].groupby(starting_columns).agg(
-        min_es=('group_es', 'min'),
-        max_es=('group_es', 'max')
+
+    cpy['logit_group_es'] = logit_es(cpy['group_es'])
+    cpy['logit_group_es'] = np.where(
+        cpy['fdr_group'].notna(),
+        cpy['group_es'],
+        0
     )
-    result['concordant'] = result.eval('(max_es - 0.5) * (min_es - 0.5) >= 0')
-    result = cpy.loc[:, [*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates().set_index(
-        starting_columns
-    ).join(result)
-    result['overall_imbalanced'] = result.eval(f'min_fdr_overall <= {aggregation_fdr} & overall_es >= {max_logit_es_by_group}')
+    cpy['abs_logit_es'] = np.abs(cpy['logit_group_es'])
+
+    cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
+    
+    cpy['significant_group'] = cpy.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
+
+    result = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
+        strong_cell_selective=('significant_group', 'any'),
+        cell_selective=('cell_selective', 'any'),
+        min_es=('logit_group_es', 'min'),
+        max_es=('logit_group_es', 'max'),
+    )
+    result['concordant'] = result.eval('strong_cell_selective & min_es * max_es >= 0')
+    result = cpy[[*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates(
+        ).set_index(
+            starting_columns
+        ).join(result)
+    result['overall_imbalanced'] = result.eval(f'min_fdr_overall <= {aggregation_fdr}')
     
     conditions = [
         ~result['overall_imbalanced'] & ~result['cell_selective'], # not_imbalanced
         ~result['cell_selective'],                                 # not_cell_selective
+        ~result['strong_cell_selective'],
         result['concordant'].fillna(True)                          # concordant
     ]
 
     choices = [
         'not_imbalanced',
         'not_cell_selective',
+        'weak_cell_selective',
         'concordant'
     ]
     
