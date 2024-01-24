@@ -40,7 +40,9 @@ process_group <- function(current_data, vpcontrol) {
         group_id=unique(current_data$group_id),
         group_es=NA_real_,
         group_es_std=NA_real_,
-
+        df=NA_real_,    
+        "t value"=NA_real_,
+        "Pr(>|t|)"=NA_real_,
         indiv_id_rand_var=NA_real_,
         chisq=NA_real_,
         chi_df=NA_real_,
