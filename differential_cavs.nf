@@ -67,8 +67,8 @@ process differential_cavs {
         ${tested_snps} \
         ${pvals} \
         tmp.bed \
-        --fdr ${params.diff_fdr_tr} \
-        --es ${params.es_tr}
+        --fdr ${params.diff_fdr_tr} 
+        #--es ${params.es_tr}
 
     head -1 tmp.bed > ${pvals_new}
     sort-bed tmp.bed >> ${pvals_new}
