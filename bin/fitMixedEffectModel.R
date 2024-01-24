@@ -140,7 +140,7 @@ process_group <- function(current_data, vpcontrol) {
     }, error = function(e) {
 
         print(paste("Error in model fit:", e$message))
-        print(placeholder_df)
+        print(str(placeholder_df))
         return(placeholder_df)
     })
 }
