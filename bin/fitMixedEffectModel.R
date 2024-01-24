@@ -69,6 +69,7 @@ process_group <- function(current_data, vpcontrol) {
         # Add group_id column based on the names of the coefficients
         coef_df$group_id <- gsub("group_id", "", rownames(coef_df))
         merged_data <- merge(current_data, coef_df, by="group_id")
+         print(merged_data[c('es', 'w')])
         merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
         print(merged_data[c('es_diff', 'w')])
         es_var <- aggregate(
@@ -77,7 +78,6 @@ process_group <- function(current_data, vpcontrol) {
             FUN=function(x) {
                 w_var = weighted.var(x$es_diff, x$w)
                 count = length(x$es_diff)
-                        return(c(weighted_variance, count))
                 return(c(w_var, count))
             }
         )
