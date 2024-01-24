@@ -59,13 +59,13 @@ def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
         0
     )
 
-    cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
+    cpy['cs'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
     
     cpy['significant_group'] = cpy.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
 
     per_variant = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
         strong_cell_selective=('significant_group', 'any'),
-        cell_selective=('cell_selective', 'any'),
+        cell_selective=('cs', 'any'),
         min_es=('logit_group_es', 'min'),
         max_es=('logit_group_es', 'max'),
     )
@@ -88,7 +88,7 @@ def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     ]
     
     per_variant['category'] = np.select(conditions, choices, default='discordant')
-    return cpy.merge(per_variant['category'].reset_index())
+    return cpy.drop(columns=['cl']).merge(per_variant['category'].reset_index())
 
 
 if __name__ == '__main__':
