@@ -77,8 +77,6 @@ process_group <- function(current_data, vpcontrol) {
                           samples_count = .N),
                       by = .(group_id)]
         print(es_var)
-        colnames(es_var) <- c("group_id", "es_var", "samples_count")
-        print(es_var)
         coef_df <- merge(coef_df, es_var, by="group_id")
         print(coef_df)
         # Extract variance and standard deviation of random effect for indiv_id
@@ -117,7 +115,7 @@ process_group <- function(current_data, vpcontrol) {
         colnames(fxeff) <- colnames(fit@pp$X)[idx]
 
         N <- nrow(fxeff)
-        varFixedTotal <- weighted.var(rowSums(fxeff), w) * (N - 1) / N
+        varFixedTotal <- weighted.var(rowSums(fxeff), current_data$w) * (N - 1) / N
         varComp[['group_id']] <- varFixedTotal
 
         vc <- unlist(varComp)
