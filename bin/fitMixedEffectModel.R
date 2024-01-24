@@ -155,7 +155,7 @@ snps_df <- fread(inpath)
 snps_df$indiv_id <- as.factor(snps_df$indiv_id)
 snps_df$group_id <- as.factor(snps_df$group_id)
 
-grouping_columns <- c(colnames(snps_df)[1:6], 'variant_id', )
+grouping_columns <- c(colnames(snps_df)[1:6], 'variant_id')
 # Split the data by the grouping columns
 results <- snps_df[, process_group(.SD, vpcontrol), by=grouping_columns]  
 
