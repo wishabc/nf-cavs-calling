@@ -41,7 +41,6 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05):
     result = pvals.merge(
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
     )
-
     initial_len = len(result.index)
     result = result.merge(
         get_category(result, differential_fdr_tr=0.05)
@@ -71,7 +70,7 @@ def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
         max_es=('logit_group_es', 'max'),
     )
     per_variant['concordant'] = per_variant.eval('strong_cell_selective & min_es * max_es >= 0')
-    per_variant = cpy[[*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates().set_index(starting_columns).join(per_variant)
+    per_variant = cpy[[*starting_columns, 'cell_selective', 'min_fdr_overall']].drop_duplicates().set_index(starting_columns).join(per_variant)
     per_variant['overall_imbalanced'] = per_variant.eval(f'min_fdr_overall <= {aggregation_fdr}')
     
     conditions = [
