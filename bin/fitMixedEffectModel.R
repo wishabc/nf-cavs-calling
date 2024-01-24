@@ -74,6 +74,10 @@ process_group <- function(current_data, vpcontrol) {
                           samples_count = .N),
                       by = .(group_id)]
         coef_df <- merge(coef_df, es_var, by="group_id")
+
+        names(coef_df)[names(coef_df) == "Estimate"] <- "group_es"
+        names(coef_df)[names(coef_df) == "Std. Error"] <- "group_es_std"
+
         # Extract variance and standard deviation of random effect for indiv_id
         random_effect_variance_indiv_id <- VarCorr(full_model)$indiv_id[1,1]
 
