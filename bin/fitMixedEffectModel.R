@@ -131,7 +131,6 @@ process_group <- function(current_data, vpcontrol) {
         coef_df$var_group_id <- res[['group_id']]
         coef_df$var_residuals <- res[['Residuals']]
         coef_df$full_variance <- full_variance
-        print(str(coef_df))
         return(coef_df)
     }, warning = function(w) {
 
@@ -140,7 +139,6 @@ process_group <- function(current_data, vpcontrol) {
     }, error = function(e) {
 
         print(paste("Error in model fit:", e$message))
-        print(str(placeholder_df))
         return(placeholder_df)
     })
 }
