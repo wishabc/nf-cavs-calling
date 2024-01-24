@@ -68,17 +68,12 @@ process_group <- function(current_data, vpcontrol) {
 
         # Add group_id column based on the names of the coefficients
         coef_df$group_id <- gsub("group_id", "", rownames(summary(full_model)$coefficients))
-        print(coef_df)
         merged_data <- merge(current_data, coef_df, by="group_id")
-        print(merged_data)
         merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
-        print(merged_data)
         es_var <- merged_data[, .(es_var = weighted.var(es_diff, w),
                           samples_count = .N),
                       by = .(group_id)]
-        print(es_var)
         coef_df <- merge(coef_df, es_var, by="group_id")
-        print(coef_df)
         # Extract variance and standard deviation of random effect for indiv_id
         random_effect_variance_indiv_id <- VarCorr(full_model)$indiv_id[1,1]
 
