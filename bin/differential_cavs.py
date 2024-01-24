@@ -5,7 +5,8 @@ import pandas as pd
 import scipy.stats as st
 
 def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_es_tr=0.15):
-    constitutive_df = aggregate_pvalues_df(tested,)
+    print(tested.columns)
+    constitutive_df = aggregate_pvalues_df(tested, starting_columns)
     constitutive_df['min_pval'] = get_min_pval(
         constitutive_df, 
         cover_tr=max_cover_tr, 
@@ -102,7 +103,6 @@ if __name__ == '__main__':
     
     tested = tested[~tested['variant_id'].isin(dropped_na_variants)]
     pvals = pvals[pvals['p_differential'].notna()]
-
 
     res_df = main(
         tested, pvals, 
