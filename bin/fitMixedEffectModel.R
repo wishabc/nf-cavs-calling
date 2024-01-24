@@ -55,7 +55,6 @@ process_group <- function(current_data, vpcontrol) {
         full_variance = full_variance
     ))
     placeholder_df$group_id <- as.factor(placeholder_df$group_id)
-    print(placeholder_df)
 
     tryCatch({
         # Fit the linear mixed-effects models
@@ -132,7 +131,7 @@ process_group <- function(current_data, vpcontrol) {
         coef_df$var_group_id <- res[['group_id']]
         coef_df$var_residuals <- res[['Residuals']]
         coef_df$full_variance <- full_variance
-
+        print(coef_df)
         return(coef_df)
     }, warning = function(w) {
 
@@ -141,6 +140,7 @@ process_group <- function(current_data, vpcontrol) {
     }, error = function(e) {
 
         print(paste("Error in model fit:", e$message))
+        print(placeholder_df)
         return(placeholder_df)
     })
 }
