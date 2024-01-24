@@ -54,6 +54,7 @@ process_group <- function(current_data, vpcontrol) {
         samples_count = NA_integer_,
         full_variance = full_variance
     )
+    placeholder_df$group_id <- as.factor(placeholder_df$group_id)
     print(placeholder_df)
 
     tryCatch({
