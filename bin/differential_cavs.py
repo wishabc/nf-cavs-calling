@@ -24,8 +24,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     # set default inividual fdr and find differential snps
 
     differential_cavs = tested.query(
-        f'differential_fdr <= {differential_fdr_tr} 
-        & differential_es >= {differential_es_tr}'
+        f'differential_fdr <= {differential_fdr_tr} & differential_es >= {differential_es_tr}'
     )
 
     differential_cavs = aggregate_pvalues_df(
