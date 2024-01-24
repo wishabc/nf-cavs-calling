@@ -72,8 +72,8 @@ process_group <- function(current_data, vpcontrol) {
         merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
         print(merged_data[c('es_diff', 'w')])
         es_var <- aggregate(
-            merged_data[c('es_diff', 'w')],
-            list(merged_data$group_id),
+            cbind(es_diff, w) ~ group_id, 
+            data = merged_data,
             FUN=function(x) {
                 w_var = weighted.var(x$es_diff, x$w)
                 count = length(x$es_diff)
