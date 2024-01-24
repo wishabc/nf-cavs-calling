@@ -54,7 +54,7 @@ process_group <- function(current_data, vpcontrol) {
         var_residuals = NA_real_,
         full_variance = full_variance
     )
-    placeholder_df$group_id <- as.factor(placeholder_df$group_id)
+    placeholder_df$group_id <- as.character(placeholder_df$group_id)
 
     tryCatch({
         # Fit the linear mixed-effects models
@@ -81,7 +81,7 @@ process_group <- function(current_data, vpcontrol) {
 
         names(coef_df)[names(coef_df) == "Estimate"] <- "group_es"
         names(coef_df)[names(coef_df) == "Std. Error"] <- "group_es_std"
-        print(str(coef_df))
+
         # Extract variance and standard deviation of random effect for indiv_id
         random_effect_variance_indiv_id <- VarCorr(full_model)$indiv_id[1,1]
 
@@ -131,7 +131,7 @@ process_group <- function(current_data, vpcontrol) {
         coef_df$var_group_id <- res[['group_id']]
         coef_df$var_residuals <- res[['Residuals']]
         coef_df$full_variance <- full_variance
-        print(coef_df)
+        print(str(coef_df))
         return(coef_df)
     }, warning = function(w) {
 
