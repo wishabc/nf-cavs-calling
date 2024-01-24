@@ -34,7 +34,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
 
     differential_cavs['pval_group'] = st.t.sf(
         abs(differential_cavs.eval('(group_es - 0.5)/group_es_std**2')),
-        df=differential_cavs['samples_count']
+        df=differential_cavs['samples_count'] - 1
     )
 
     differential_cavs['fdr_group'] = calc_fdr_pd(differential_cavs['pval_group'])
