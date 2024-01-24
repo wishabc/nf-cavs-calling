@@ -30,7 +30,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     #     groupby_cols=[*starting_columns, 'group_id']
     # )
 
-    differential_cavs['fdr_group'] = calc_fdr_pd(differential_cavs['pval_group'])
+    differential_cavs['fdr_group'] = calc_fdr_pd(differential_cavs['Pr(>|t|)'])
 
     # Group-wise aggregation
     result = pvals.merge(
