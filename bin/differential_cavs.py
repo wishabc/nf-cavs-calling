@@ -48,39 +48,34 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, differential_
     return result
 
 
-def get_category(anova_results, differential_fdr_tr=0.05, aggregation_fdr=0.1):
-    cpy = anova_results.copy()
-
+def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
+    cpy['group_es'] = cpy['group_es'] + 0.5
     cpy['logit_group_es'] = logit_es(cpy['group_es'])
     cpy['logit_group_es'] = np.where(
         cpy['fdr_group'].notna(),
         cpy['group_es'],
         0
     )
-    cpy['abs_logit_es'] = np.abs(cpy['logit_group_es'])
 
     cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
     
     cpy['significant_group'] = cpy.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
 
-    result = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
+    per_variant = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
         strong_cell_selective=('significant_group', 'any'),
         cell_selective=('cell_selective', 'any'),
         min_es=('logit_group_es', 'min'),
         max_es=('logit_group_es', 'max'),
     )
-    result['concordant'] = result.eval('strong_cell_selective & min_es * max_es >= 0')
-    result = cpy[[*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates(
-        ).set_index(
-            starting_columns
-        ).join(result)
-    result['overall_imbalanced'] = result.eval(f'min_fdr_overall <= {aggregation_fdr}')
+    per_variant['concordant'] = per_variant.eval('strong_cell_selective & min_es * max_es >= 0')
+    per_variant = cpy[[*starting_columns, 'cell_selective', 'min_fdr_overall', 'overall_es']].drop_duplicates().set_index(starting_columns).join(per_variant)
+    per_variant['overall_imbalanced'] = per_variant.eval(f'min_fdr_overall <= {aggregation_fdr}')
     
     conditions = [
-        ~result['overall_imbalanced'] & ~result['cell_selective'], # not_imbalanced
-        ~result['cell_selective'],                                 # not_cell_selective
-        ~result['strong_cell_selective'],
-        result['concordant'].fillna(True)                          # concordant
+        ~per_variant['overall_imbalanced'] & ~per_variant['cell_selective'], # not_imbalanced
+        ~per_variant['cell_selective'],                                 # not_cell_selective
+        ~per_variant['strong_cell_selective'],
+        per_variant['concordant'].fillna(True)                          # concordant
     ]
 
     choices = [
@@ -90,8 +85,8 @@ def get_category(anova_results, differential_fdr_tr=0.05, aggregation_fdr=0.1):
         'concordant'
     ]
     
-    result['category'] = np.select(conditions, choices, default='discordant')
-    return result['category'].reset_index()
+    per_variant['category'] = np.select(conditions, choices, default='discordant')
+    return cpy.merge(per_variant['category'].reset_index())
 
 
 if __name__ == '__main__':
