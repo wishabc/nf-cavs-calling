@@ -87,7 +87,7 @@ def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     ]
     
     per_variant['category'] = np.select(conditions, choices, default='discordant')
-    return cpy.drop(columns=['cl']).merge(per_variant['category'].reset_index())
+    return cpy.merge(per_variant['category'].reset_index())
 
 
 if __name__ == '__main__':
