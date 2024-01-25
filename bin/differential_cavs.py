@@ -83,7 +83,7 @@ def get_category(anova, aggregation_fdr=0.1):
     ]
     
     per_variant['category'] = np.select(conditions, choices, default='discordant')
-    return cpy.merge(per_variant['category'].reset_index())
+    return per_variant['category'].reset_index()
 
 
 if __name__ == '__main__':
