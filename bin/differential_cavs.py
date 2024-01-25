@@ -17,9 +17,6 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
     pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
     
-    pvals['significant_group'] = pvals.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
-    pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
-
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
     assert len(tested.index) == tested_length
@@ -27,12 +24,16 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     # set default inividual fdr and find differential snps
 
     pvals['pval'] = np.where(
-        pvals.eval(f'has_significant_group & p_differential <= {differential_fdr_tr}'), 
+        pvals['cell_selective'], 
         pvals['Pr(>|t|)'], 
         pd.NA
     )
 
     pvals['fdr_group'] = calc_fdr_pd(pvals['pval'])
+
+    pvals['significant_group'] = pvals.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
+    pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
+
 
     pvals['group_es'] = pvals['group_es'] + 0.5
     pvals['logit_group_es'] = logit_es(pvals['group_es'])
