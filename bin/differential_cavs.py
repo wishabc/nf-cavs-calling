@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 
-def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05):
+def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     constitutive_df = aggregate_pvalues_df(tested, starting_columns)
     constitutive_df['min_pval'] = get_min_pval(
         constitutive_df, 
@@ -15,6 +15,10 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05):
     constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
+    pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
+    
+    pvals['significant_group'] = pvals.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
+    pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
 
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
@@ -23,20 +27,16 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05):
     # set default inividual fdr and find differential snps
 
     pvals['pval'] = np.where(
-        pvals.eval(f'p_differential <= {differential_fdr_tr}'), 
+        pvals.eval(f'has_significant_group & p_differential <= {differential_fdr_tr}'), 
         pvals['Pr(>|t|)'], 
         pd.NA
     )
 
-    # differential_cavs = aggregate_pvalues_df(
-    #     differential_cavs, 
-    #     groupby_cols=[*starting_columns, 'group_id']
-    # )
-
     pvals['fdr_group'] = calc_fdr_pd(pvals['pval'])
 
-    print(pvals)
-    print(constitutive_df)
+    pvals['group_es'] = pvals['group_es'] + 0.5
+    pvals['logit_group_es'] = logit_es(pvals['group_es'])
+
     # Group-wise aggregation
     result = pvals.merge(
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
@@ -50,33 +50,28 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05):
     return result
 
 
-def get_category(cpy, differential_fdr_tr=0.05, aggregation_fdr=0.1):
-    cpy['group_es'] = cpy['group_es'] + 0.5
-    cpy['logit_group_es'] = logit_es(cpy['group_es'])
+def get_category(anova, aggregation_fdr=0.1):
+    cpy = anova.copy()
     cpy['logit_group_es'] = np.where(
-        cpy['fdr_group'].notna(),
+        cpy['fdr_group'].fillna(2) <= aggregation_fdr,
         cpy['group_es'],
         0
     )
 
-    cpy['cell_selective'] = cpy.eval(f'differential_fdr <= {differential_fdr_tr}')
-    
-    cpy['significant_group'] = cpy.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
-
     per_variant = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
-        strong_cell_selective=('significant_group', 'any'),
         min_es=('logit_group_es', 'min'),
         max_es=('logit_group_es', 'max'),
     )
-    per_variant['concordant'] = per_variant.eval('strong_cell_selective & min_es * max_es >= 0')
-    per_variant = cpy[[*starting_columns, 'cell_selective', 'min_fdr_overall']].drop_duplicates().set_index(starting_columns).join(per_variant)
-    per_variant['overall_imbalanced'] = per_variant.eval(f'min_fdr_overall <= {aggregation_fdr}')
     
+    per_variant = cpy[[*starting_columns, 'has_significant_group', 'cell_selective', 'min_fdr_overall']].drop_duplicates().set_index(starting_columns).join(per_variant)
+    per_variant['concordant'] = per_variant.eval('has_significant_group & (min_es * max_es) >= 0')
+    per_variant['overall_imbalanced'] = per_variant.eval(f'min_fdr_overall <= {aggregation_fdr}')
+
     conditions = [
-        ~per_variant['overall_imbalanced'] & ~per_variant['cell_selective'], # not_imbalanced
-        ~per_variant['cell_selective'],                                 # not_cell_selective
-        ~per_variant['strong_cell_selective'].fillna(True),
-        per_variant['concordant'].fillna(True)                          # concordant
+        ~per_variant['overall_imbalanced'] & ~per_variant['cell_selective'], 
+        ~per_variant['cell_selective'],
+        ~per_variant['has_significant_group'].fillna(False),
+        per_variant['concordant'].fillna(False), # concordant                          
     ]
 
     choices = [
