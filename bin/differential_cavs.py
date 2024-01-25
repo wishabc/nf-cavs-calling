@@ -43,10 +43,10 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
         constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
     )
     initial_len = len(result.index)
-    result = result.merge(
-        get_category(result)
-    )
-    assert len(result.index) == initial_len
+    # result = result.merge(
+    #     get_category(result)
+    # )
+    # assert len(result.index) == initial_len
 
     return result
 
