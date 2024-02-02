@@ -43,7 +43,7 @@ process_group <- function(current_data, vpcontrol) {
         df=NA_real_,    
         "t value"=NA_real_,
         "Pr(>|t|)"=NA_real_,
-        es_var = NA_real_,
+        indivs_count = NA_integer_,
         samples_count = NA_integer_,
         indiv_id_rand_var=NA_real_,
         chisq=NA_real_,
@@ -73,10 +73,11 @@ process_group <- function(current_data, vpcontrol) {
         # Add group_id column based on the names of the coefficients
         coef_df$group_id <- gsub("group_id", "", rownames(summary(full_model)$coefficients))
         merged_data <- merge(current_data, coef_df, by="group_id")
-        merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
-        es_var <- merged_data[, .(es_var = weighted.var(es_diff, w),
-                          samples_count = .N),
-                      by = .(group_id)]
+        # merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
+        es_var <- merged_data[, .(es_var = weighted.var(es, w),
+                                indivs_count = uniqueN(indiv_id),
+                                samples_count = .N),
+                    by = .(group_id)]
         coef_df <- merge(coef_df, es_var, by="group_id")
 
         names(coef_df)[names(coef_df) == "Estimate"] <- "group_es"

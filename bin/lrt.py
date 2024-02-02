@@ -131,7 +131,6 @@ if __name__ == '__main__':
         coverage_tr=args.coverage_tr
     )
 
-    # FIXME for future
     testable_snps['es'] = testable_snps['es'] - 0.5
 
     testable_snps.to_csv(

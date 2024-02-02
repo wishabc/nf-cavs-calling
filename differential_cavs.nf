@@ -57,24 +57,26 @@ process differential_cavs {
         path tested_snps
 
     output:
-        tuple path(pvals_new), path(tested_new)
+        tuple path(pvals_new), path(tested_new), path(fit_fail)
 
     script:
     pvals_new = "differential_pvals.${params.aggregation_key}.bed"
     tested_new = "differential_tested.${params.aggregation_key}.bed"
+    fit_fail = "differential_pvals.fit_fail.${params.aggregation_key}.bed"
     """
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
         ${pvals} \
-        tmp.bed \
-        --fdr ${params.diff_fdr_tr} 
-        #--es ${params.es_tr}
+        tmp \
+        --fdr ${params.diff_fdr_tr}
+    
+    mv tmp.fit_fail.bed ${fit_fail}
 
-    head -1 tmp.bed > ${pvals_new}
-    sort-bed tmp.bed >> ${pvals_new}
+    head -1 tmp.pvals.bed > ${pvals_new}
+    sort-bed tmp.pvals.bed >> ${pvals_new}
 
-    head -1 ${tested_snps} > ${tested_new}
-    sort-bed ${tested_snps} >> ${tested_new}
+    head -1 tmp.tested.bed > ${tested_new}
+    sort-bed tmp.tested.bed >> ${tested_new}
     """
 
 }

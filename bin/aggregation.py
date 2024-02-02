@@ -11,8 +11,9 @@ tqdm.pandas()
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 
-result_columns = [*starting_columns, 'AAF', 'RAF',
-    'mean_BAD', 'nSNPs', 'max_cover', 'mean_cover',
+result_columns = [*starting_columns, 'AAF', 'RAF', 
+    'mean_FMR', 'mean_BAD',
+    'nSNPs', 'max_cover', 'mean_cover',
     'footprints_n', 'hotspots_n',
     'group_id',
     'pval_ref_combined',
@@ -64,6 +65,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
             if col not in pval_df.columns
         }
     )
+    pval_df['initial_coverage'] = pval_df.eval('coverage / (1 - FMR)')
     agg_dict = {
         'nSNPs': ('coverage', 'count'),
         'max_cover': ('coverage', 'max'),
@@ -73,14 +75,15 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
         'mean_BAD': ('BAD', 'mean'),
         'group_id': ('group_id', 'first'),
         'AAF': ('AAF', 'first'),
-        'RAF': ('RAF', 'first')
+        'RAF': ('RAF', 'first'),
+        'initial_coverage': ('initial_coverage', 'mean')
     }
     for col in groupby_cols:
         if col in agg_dict:
             del agg_dict[col]
 
     snp_stats = pval_df.groupby(groupby_cols, group_keys=True).agg(**agg_dict)
-
+    snp_stats['mean_FMR'] = 1 - snp_stats.eval('mean_cover / initial_coverage')
     agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 
         'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
         groupby_cols, group_keys=True

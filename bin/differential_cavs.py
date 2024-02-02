@@ -100,11 +100,15 @@ if __name__ == '__main__':
     dropped_na_variants = pvals[pvals['p_differential'].isna()]['variant_id'].unique()
     print(dropped_na_variants)
     tested = tested[~tested['variant_id'].isin(dropped_na_variants)]
-    pvals = pvals[pvals['p_differential'].notna()]
+    pvals = pvals[~pvals['variant_id'].isin(dropped_na_variants)]
 
     res_df = main(
         tested, pvals, 
         differential_fdr_tr=args.fdr,
     )
+    tested['es'] = tested['es'] + 0.5
+
+    tested.to_csv(f"{args.outpath}.tested.bed", sep='\t', index=False)
+    tested[tested['variant_id'].isin(dropped_na_variants)].to_csv(f"{args.outpath}.fit_fail.bed", sep='\t', index=False)
     print(len(res_df.index), len(pvals.index))
-    res_df.to_csv(args.outpath, sep='\t', index=False)
+    res_df.to_csv(f"{args.outpath}.pvals.bed", sep='\t', index=False)
