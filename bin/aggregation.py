@@ -163,9 +163,9 @@ if __name__ == '__main__':
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
     parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
-    parser.add_argument('--max_coverage_tr', type=str, help="""Threshold for the maximum
+    parser.add_argument('--max_coverage_tr', type=int, help="""Threshold for the maximum
                             of coverages of variants aggregated at the same genomic position.
-                            Expected to be "auto" or a positive integer""", default='auto')
+                            Expected to be a positive integer""", default=10)
     args = parser.parse_args()
 
     coverage_tr = parse_coverage(args.max_coverage_tr)
