@@ -13,7 +13,7 @@ starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 result_columns = [*starting_columns, 'AAF', 'RAF', 
     'mean_FMR', 'mean_BAD',
-    'nSNPs', 'max_cover', 'mean_cover',
+    'nSNPs', 'max_cover', 'mean_cover', 'mean_inverse_mse', 
     'footprints_n', 'hotspots_n',
     'group_id',
     'pval_ref_combined',
@@ -35,6 +35,17 @@ def parse_coverage(cov_string):
 
 
 def logit_es(es, d=1/128):
+    """
+    Logit transformation of effect size
+    
+    Args:
+        es: effect size
+        d: pseudocount
+    
+    Returns:
+        logit-transformed effect size
+    
+    """
     return np.log2(es + d) - np.log2(1 - es + d)
 
 
@@ -76,7 +87,8 @@ def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
         'group_id': ('group_id', 'first'),
         'AAF': ('AAF', 'first'),
         'RAF': ('RAF', 'first'),
-        'initial_coverage': ('initial_coverage', 'mean')
+        'initial_coverage': ('initial_coverage', 'mean'),
+        'mean_inverse_mse': ('inverse_mse', 'mean'),
     }
     for col in groupby_cols:
         if col in agg_dict:
