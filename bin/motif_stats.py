@@ -129,6 +129,7 @@ if __name__ == '__main__':
 
     print('Reading variants df')
     variants_df = pd.read_table(args.variants)
+    variants_df = variants_df[variants_df['min_fdr'].notna()]
     
     print('Reading motifs df')
     motifs_df = pd.read_table(args.motifs).rename(columns={'motif': 'motif_id'})
