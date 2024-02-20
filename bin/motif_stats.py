@@ -110,8 +110,8 @@ class MotifEnrichment:
                     ]
                 }
             )
-            print(agg_df)
             inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside')
+            print(inside_df)
             flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks')
 
             # Concatenate the results
