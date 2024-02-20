@@ -102,10 +102,12 @@ class MotifEnrichment:
             data, _, _ = self.calc_enrichment(group_df, imbalanced_index)
             agg_df = group_df.groupby('within').agg(
                 {
-                'q1_power': ('power', lambda x: np.percentile(x, 25)),
-                'mean_power': ('power', 'mean'),
-                'q3_power': ('power', lambda x: np.percentile(x, 75)),
-                'q2_power': ('power', 'median'),
+                    'power': [
+                        ('q1_power', lambda x: np.percentile(x, 25)),
+                        ('mean_power', 'mean'),
+                        ('q3_power', lambda x: np.percentile(x, 75)),
+                        ('q2_power', 'median'),
+                    ]
                 }
             )
             print(agg_df)
