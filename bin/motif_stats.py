@@ -108,6 +108,7 @@ class MotifEnrichment:
                 'q2_power': ('power', 'median'),
                 }
             )
+            print(agg_df)
             inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside')
             flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks')
 
