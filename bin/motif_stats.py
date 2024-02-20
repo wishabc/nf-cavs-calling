@@ -110,12 +110,12 @@ class MotifEnrichment:
                     ]
                 }
             )
-            inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside')
+            inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside').reset_index(drop=True)
             print(inside_df)
-            flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks')
+            flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks').reset_index(drop=True)
 
             # Concatenate the results
-            data = pd.concat([data, inside_df, flanks_df], axis=1)
+            data = pd.concat([data, inside_df, flanks_df])
         except NoDataException:
             data = pd.Series(np.full(len(self.columns), pd.NA), index=self.columns)
         return data
