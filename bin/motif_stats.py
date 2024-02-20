@@ -110,9 +110,9 @@ class MotifEnrichment:
                     ]
                 }
             )
-            inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside').reset_index(drop=True)
+            inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside').reset_index(level=0, drop=True)
             print(inside_df)
-            flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks').reset_index(drop=True)
+            flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks').reset_index(level=0, drop=True)
 
             # Concatenate the results
             data = pd.concat([data, inside_df, flanks_df])
