@@ -24,6 +24,14 @@ class MotifEnrichment:
         "imbalanced_inside",
         "imbalanced_inside_median",
         "n_imbalanced_more_7",
+        "q1_power_inside",
+        "q2_power_inside",
+        "q3_power_inside",
+        "mean_power_inside",
+        "q1_power_flanks",
+        "q2_power_flanks",
+        "q3_power_flanks",
+        "mean_power_flanks",
     ]
     def __init__(self, flank_width=20, n_shuffles=1000):
         self.flank_width = flank_width
@@ -48,7 +56,7 @@ class MotifEnrichment:
         log_odds_per_nt = np.log2( (n_imbalanced / n_imbalanced.sum()) / (n_not_imbalanced / n_not_imbalanced.sum()) )
 
         perm = np.zeros(self.n_shuffles)
-        perm_per_nt = np.zeros((self.n_shuffles, len(bins)-1))
+        perm_per_nt = np.zeros((self.n_shuffles, len(bins) - 1))
         
         for i in range(self.n_shuffles):
             rng = np.random.default_rng(seed=i * self.n_shuffles * 10)
@@ -92,6 +100,19 @@ class MotifEnrichment:
                 raise NoDataException()
 
             data, _, _ = self.calc_enrichment(group_df, imbalanced_index)
+            agg_df = group_df.groupby('within').agg(
+                {
+                'q1_power': ('power', lambda x: np.percentile(x, 25)),
+                'mean_power': ('power', 'mean'),
+                'q3_power': ('power', lambda x: np.percentile(x, 75)),
+                'q2_power': ('power', 'median'),
+                }
+            )
+            inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside')
+            flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks')
+
+            # Concatenate the results
+            data = pd.concat([data, inside_df, flanks_df], axis=1)
         except NoDataException:
             data = pd.Series(np.full(len(self.columns), pd.NA), index=self.columns)
         return data
@@ -136,6 +157,8 @@ if __name__ == '__main__':
     print('Adding fields')
     data_df = preprocess_dfs(variants_df, motifs_df)
     data_df['imbalanced'] = data_df['min_fdr'] <= args.fdr
+
+    data_df['power'] = data_df.eval('mean_cover * nSNPs')
 
     me = MotifEnrichment(flank_width=args.flank_width, n_shuffles=1000)
     me.get_motif_stats(data_df).to_csv(args.outpath, index=False, sep='\t')
