@@ -110,6 +110,7 @@ class MotifEnrichment:
                     ]
                 }
             )
+            agg_df = agg_df.reindex([True, False]).fillna(0)
             inside_df = agg_df.loc[True].rename(lambda x: f'{x}_inside').reset_index(level=0, drop=True)
             print(inside_df)
             flanks_df = agg_df.loc[False].rename(lambda x: f'{x}_flanks').reset_index(level=0, drop=True)
