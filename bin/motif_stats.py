@@ -128,7 +128,7 @@ class MotifEnrichment:
 
 def preprocess_dfs(variants_df, motifs_df):
     # Compute preferred allele
-    data_df = variants_df[[*starting_columns, 'mean_cover', 'nSNPs', 'logit_es_combined', 'group_id', 'min_fdr']].merge(
+    data_df = variants_df.merge(
         motifs_df,
         on=starting_columns
     )
