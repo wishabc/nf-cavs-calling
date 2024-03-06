@@ -8,18 +8,19 @@ def set_key_for_group_tuple(ch) {
     | transpose()
 }
 
+params.bad1_only = false
 process aggregate_pvals {
     conda params.conda
-    tag "${indiv_id}"
+    tag "${sample_id}"
 
     input:
-        tuple val(indiv_id), path(pval_file)
+        tuple val(sample_id), path(pval_file)
 
     output:
-        tuple val(indiv_id), path(name)
+        tuple val(sample_id), path(name)
 
     script:
-    name = "${indiv_id}.aggregation.bed"
+    name = "${sample_id}.aggregation.bed"
     """
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
@@ -47,6 +48,23 @@ process merge_files {
     """
 }
 
+process filter_bad1 {
+    conda params.conda
+
+    input:
+        tuple val(sample_id), path(non_aggregated)
+    
+    output:
+        tuple val(sample_id), path(name)
+    script:
+    name = "${sample_id}_BAD1.nonaggregated.bed"
+    """
+    awk -v OFS='\t' -F'\t' \
+        'NR == 1 || \$16 == 1.0' \
+        ${non_aggregated} > ${name}
+    """
+}
+
 process pack_data {
     conda params.conda
     publishDir params.outdir
@@ -63,9 +81,10 @@ process pack_data {
         path name, emit: stats
     
     script:
-    sorted_aggregated = "aggregated.${params.aggregation_key}.bed"
-    sorted_non_aggregated = "non_aggregated.${params.aggregation_key}.bed.gz"
-    name = "cav_stats.${params.aggregation_key}.tsv"
+    suffix = "${params.bad1_only}" ? params.aggregation_key : "${params.aggregation_key}.BAD1"
+    sorted_aggregated = "aggregated.${suffix}.bed"
+    sorted_non_aggregated = "non_aggregated.${suffix}.bed.gz"
+    name = "cav_stats.${suffix}.tsv"
     """
     head -1 ${aggregated_variants} > ${sorted_aggregated}
     sort-bed ${aggregated_variants} >> ${sorted_aggregated}
@@ -137,8 +156,15 @@ workflow aggregation {
 
 
 workflow {
-    by_sample_pvals = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
+    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
+        | aggregation
+}
 
-    aggregation(by_sample_pvals)
+workflow bad1Aggregation {
+    params.bad1_only = true
+    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
+        | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
+        | filter_bad1
+        | aggregation
 }
