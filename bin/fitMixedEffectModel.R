@@ -74,8 +74,7 @@ process_group <- function(current_data, vpcontrol) {
         coef_df$group_id <- gsub("group_id", "", rownames(summary(full_model)$coefficients))
         merged_data <- merge(current_data, coef_df, by="group_id")
         # merged_data$es_diff <- merged_data$es - merged_data$"Estimate"
-        es_var <- merged_data[, .(es_var = weighted.var(es, w),
-                                indivs_count = uniqueN(indiv_id),
+        es_var <- merged_data[, .(indivs_count = uniqueN(indiv_id),
                                 samples_count = .N),
                     by = .(group_id)]
         coef_df <- merge(coef_df, es_var, by="group_id")
