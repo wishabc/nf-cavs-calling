@@ -131,8 +131,7 @@ process_group <- function(current_data, vpcontrol) {
         coef_df$var_group_id <- res[['group_id']]
         coef_df$var_residuals <- res[['Residuals']]
         coef_df$full_variance <- full_variance
-        print(colnames(placeholder_df))
-        print(colnames(coef_df))
+
         return(coef_df)
     }, warning = function(w) {
 
