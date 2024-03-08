@@ -1,10 +1,5 @@
 import pandas as pd
 import argparse
-import numpy as np
-from scipy.stats import f
-from scipy.special import expit
-
-from aggregation import starting_columns, aggregate_effect_size
 
 # Likelihoods
 # L0 <- 'es = 0' model
@@ -77,7 +72,6 @@ from aggregation import starting_columns, aggregate_effect_size
 #         return result
 
 def find_testable_pairs(melt, min_indivs_per_group, min_groups_per_variant, coverage_tr):
-    melt['variant_id'] = melt['#chr'] + "@" + melt['end'].astype(str) + "@" + melt['alt']
     testable_variant_group_pairs = melt.groupby(
         ['group_id', 'variant_id']
     ).agg(
@@ -100,13 +94,12 @@ def find_testable_pairs(melt, min_indivs_per_group, min_groups_per_variant, cove
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
+    parser = argparse.ArgumentParser(description='Find variants to fit random effects model')
     parser.add_argument('input_data', help='Non-aggregated file with tested CAVs')
     parser.add_argument('metadata', help='Samples metadata with ag_id to indiv_id correspondence')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
     parser.add_argument('--min_indivs_per_group', type=int, help='Number of indivs in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
-    parser.add_argument('--allele_tr', type=int, help='Allelic reads threshold', default=5) # FIXME not used
     parser.add_argument('--chrom', help='Chromosome for parallel execution', default=None)
     parser.add_argument('--coverage_tr', type=int, help='Coverage threshold for at least one variant in the group', default=15)
 
@@ -118,11 +111,11 @@ if __name__ == '__main__':
     
     ag_id2indiv_id = pd.read_table(args.metadata).set_index('ag_id')['indiv_id'].to_dict()
     input_df['indiv_id'] = input_df['sample_id'].map(ag_id2indiv_id)
+    input_df['variant_id'] = input_df['#chr'] + "@" + input_df['end'].astype(str) + "@" + input_df['alt']
 
     print("Finished reading non-aggregated file, shape:", input_df.shape)
     print("Unique groups:", input_df['group_id'].unique())
-    if len(input_df['group_id'].unique()) == 1:
-        raise AssertionError("Only one group, LRT is not applicable")
+    assert input_df['group_id'].nunique() == 1, "Only one group, LRT is not applicable"
 
     testable_snps = find_testable_pairs(
         input_df,
