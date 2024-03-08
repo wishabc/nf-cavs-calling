@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 
-def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_fdr=0.1):
+def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
     pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
