@@ -62,14 +62,11 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     pvals['signif_min_es'] = pvals.groupby('variant_id')['signif_es'].transform('min')
 
     pvals['significant_group'] = pvals.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
+    pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
 
     pvals['concordant'] = pvals.eval('has_significant_group & ((signif_min_es - 0.5) * (signif_max_es - 0.5)) >= 0')
     pvals['discordant'] = pvals.eval('has_significant_group & ((signif_min_es - 0.5) * (signif_max_es - 0.5)) < 0')
 
-
-    pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
-
-    pvals['group_es'] = pvals['group_es'] + 0.5
     pvals['logit_group_es'] = logit_es(pvals['group_es'])
 
     return pvals
@@ -91,13 +88,14 @@ if __name__ == '__main__':
     print(dropped_na_variants)
     tested = tested[~tested['variant_id'].isin(dropped_na_variants)]
     pvals = pvals[~pvals['variant_id'].isin(dropped_na_variants)]
-
+    pvals['group_es'] = pvals['group_es'] + 0.5
+    tested['es'] = tested['es'] + 0.5
     res_df = main(
         tested, pvals,
         max_cover_tr=args.coverage_tr,
         differential_fdr_tr=args.fdr,
     )
-    tested['es'] = tested['es'] + 0.5
+    
 
     tested.to_csv(f"{args.outpath}.tested.bed", sep='\t', index=False)
     tested[tested['variant_id'].isin(dropped_na_variants)].to_csv(f"{args.outpath}.fit_fail.bed", sep='\t', index=False)
