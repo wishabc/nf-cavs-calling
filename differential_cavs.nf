@@ -85,7 +85,7 @@ workflow differentialCavs {
     take:
         data
     main:
-        out = Channel.of(1..22, 'X')
+        out = Channel.of(1..22)
             | map(it -> "chr${it}")
             | combine(data)
             | filter_testable_snps
