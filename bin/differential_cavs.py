@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     res_df = main(
         tested, pvals,
-        max_cover_tr=args.max_cover_tr,
+        max_cover_tr=args.coverage_tr,
         differential_fdr_tr=args.fdr,
     )
     tested['es'] = tested['es'] + 0.5
