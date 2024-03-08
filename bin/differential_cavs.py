@@ -1,8 +1,7 @@
 import argparse
-from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd, logit_es
+from aggregation import starting_columns, calc_fdr_pd, logit_es
 import numpy as np
 import pandas as pd
-import scipy.stats as st
 
 def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
 
@@ -12,35 +11,52 @@ def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
     assert len(tested.index) == tested_length, f"Length of tested dataframe changed from {tested_length} to {len(tested.index)}"
+    tested['var_es * mse'] = tested.eval('(es - group_es)**2 * inverse_mse')
+    tested['es * mse'] = tested.eval('es * inverse_mse')
+    mse_estimates = tested.groupby(['variant_id', 'group_id']).agg(
+        var_es_sum=('var_es * mse', 'sum'),
+        inverse_mse_sum=('inverse_mse', 'sum'),
+        mean_group_mse=('inverse_mse', lambda x: np.mean(1/x))
+    ).eval(
+        '''
+        group_es_var = var_es_sum / inverse_mse_sum
+        '''
+    ).reset_index()[['variant_id', 'group_id', 'group_es_var', 'mean_group_mse']]
+
+    overall_estimates = tested.groupby(['variant_id']).agg(
+        es_sum=('es * mse', 'sum'),
+        inverse_mse_sum=('inverse_mse', 'sum'),
+    ).eval(
+        '''
+        es_overall = es_sum / inverse_mse_sum
+        '''
+    ).reset_index()[['variant_id', 'es_overall']]
+    used_results = used_results.drop(
+        columns=['es_overall', 'group_es_var', 'mean_group_mse'],
+        errors='ignore'
+    ).merge(
+        mse_estimates
+    ).merge(
+        overall_estimates
+    )
 
     # set default inividual fdr and find differential snps
 
-    pvals['pval'] = np.where(
+    pvals['group_pval'] = np.where(
         pvals['cell_selective'], 
         pvals['Pr(>|t|)'], 
         pd.NA
     )
 
-    pvals['fdr_group'] = calc_fdr_pd(pvals['pval'])
+    pvals['fdr_group'] = calc_fdr_pd(pvals['group_pval'])
 
     pvals['significant_group'] = pvals.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
     pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
 
-
     pvals['group_es'] = pvals['group_es'] + 0.5
     pvals['logit_group_es'] = logit_es(pvals['group_es'])
 
-    # Group-wise aggregation
-    result = pvals.merge(
-        constitutive_df[[*starting_columns, 'min_pval', 'min_fdr_overall']]
-    )
-    initial_len = len(result.index)
-    # result = result.merge(
-    #     get_category(result)
-    # )
-    # assert len(result.index) == initial_len
-
-    return result
+    return pvals
 
 
 def get_category(anova, aggregation_fdr=0.1):
