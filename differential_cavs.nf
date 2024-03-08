@@ -69,6 +69,7 @@ process differential_cavs {
         ${pvals} \
         tmp \
         --fdr ${params.diff_fdr_tr}
+        --coverage_tr ${params.fdr_coverage_filter}
     
     mv tmp.fit_fail.bed ${fit_fail}
 

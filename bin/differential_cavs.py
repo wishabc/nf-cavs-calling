@@ -1,9 +1,25 @@
 import argparse
-from aggregation import starting_columns, calc_fdr_pd, logit_es
+from aggregation import aggregate_pvalues_df, get_min_pval, starting_columns, calc_fdr_pd, logit_es
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 
-def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
+
+def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_fdr=0.1):
+    constitutive_df = aggregate_pvalues_df(tested, starting_columns)
+    constitutive_df['min_pval'] = get_min_pval(
+        constitutive_df, 
+        cover_tr=max_cover_tr, 
+        cover_col='max_cover',
+        pval_cols=["pval_ref_combined", "pval_alt_combined"]
+    )
+    constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
+
+    constitutive_df['overall_imbalanced'] = constitutive_df.eval(f'min_fdr_overall < {aggregation_fdr}')
+
+    pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
+    pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
+    
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
     pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
@@ -23,21 +39,13 @@ def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
         '''
     ).reset_index()[['variant_id', 'group_id', 'group_es_var', 'mean_group_mse']]
 
-    overall_estimates = tested.groupby(['variant_id']).agg(
-        es_sum=('es * mse', 'sum'),
-        inverse_mse_sum=('inverse_mse', 'sum'),
-    ).eval(
-        '''
-        es_overall = es_sum / inverse_mse_sum
-        '''
-    ).reset_index()[['variant_id', 'es_overall']]
-    used_results = used_results.drop(
-        columns=['es_overall', 'group_es_var', 'mean_group_mse'],
+    pvals = pvals.drop(
+        columns=['group_es_var', 'mean_group_mse'],
         errors='ignore'
     ).merge(
         mse_estimates
     ).merge(
-        overall_estimates
+        constitutive_df[['variant_id', 'min_pval', 'es_combined', 'min_fdr_overall', 'overall_imbalanced']]
     )
 
     # set default inividual fdr and find differential snps
@@ -50,7 +58,16 @@ def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
 
     pvals['fdr_group'] = calc_fdr_pd(pvals['group_pval'])
 
+    pvals['signif_es'] = np.where(pvals['fdr_group'] < 0.1, pvals['group_es'], 0.5)
+    pvals['signif_max_es'] = pvals.groupby('variant_id')['signif_es'].transform('max')
+    pvals['signif_min_es'] = pvals.groupby('variant_id')['signif_es'].transform('min')
+
     pvals['significant_group'] = pvals.eval(f'cell_selective & fdr_group <= {aggregation_fdr}')
+
+    pvals['concordant'] = pvals.eval('has_significant_group & ((signif_min_es - 0.5) * (signif_max_es - 0.5)) >= 0')
+    pvals['discordant'] = pvals.eval('has_significant_group & ((signif_min_es - 0.5) * (signif_max_es - 0.5)) < 0')
+
+
     pvals['has_significant_group'] = pvals.groupby('variant_id')['significant_group'].transform('any')
 
     pvals['group_es'] = pvals['group_es'] + 0.5
@@ -59,46 +76,12 @@ def main(tested, pvals, differential_fdr_tr=0.05, aggregation_fdr=0.1):
     return pvals
 
 
-def get_category(anova, aggregation_fdr=0.1):
-    cpy = anova.copy()
-    cpy['logit_group_es'] = np.where(
-        cpy['fdr_group'].fillna(2) <= aggregation_fdr,
-        cpy['group_es'],
-        0
-    )
-
-    per_variant = cpy.query(f'cell_selective == True').groupby(starting_columns).agg(
-        min_es=('logit_group_es', 'min'),
-        max_es=('logit_group_es', 'max'),
-    )
-    
-    per_variant = cpy[[*starting_columns, 'has_significant_group', 'cell_selective', 'min_fdr_overall']].drop_duplicates().set_index(starting_columns).join(per_variant)
-    per_variant['concordant'] = per_variant.eval('has_significant_group & (min_es * max_es) >= 0')
-    per_variant['overall_imbalanced'] = per_variant.eval(f'min_fdr_overall <= {aggregation_fdr}')
-
-    conditions = [
-        ~per_variant['overall_imbalanced'] & ~per_variant['cell_selective'], 
-        ~per_variant['cell_selective'],
-        ~per_variant['has_significant_group'].fillna(False),
-        per_variant['concordant'].fillna(False), # concordant                          
-    ]
-
-    choices = [
-        'not_imbalanced',
-        'not_cell_selective',
-        'weak_cell_selective',
-        'concordant'
-    ]
-    
-    per_variant['category'] = np.select(conditions, choices, default='discordant')
-    return per_variant['category'].reset_index()
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate ANOVA for tested CAVs')
     parser.add_argument('tested_variants', help='Tested variants')
     parser.add_argument('pvals', help='File with pvals calculated in LRT script')
     parser.add_argument('outpath', help='Outpath to save output to')
+    parser.add_argument('--coverage_tr', help='Coverage threshold for FDR calculation', type=int, default=15)
     parser.add_argument('--fdr', type=float, help='FDR threshold for differential CAVs', default=0.05)
 
     args = parser.parse_args()
@@ -111,7 +94,8 @@ if __name__ == '__main__':
     pvals = pvals[~pvals['variant_id'].isin(dropped_na_variants)]
 
     res_df = main(
-        tested, pvals, 
+        tested, pvals,
+        max_cover_tr=args.max_cover_tr,
         differential_fdr_tr=args.fdr,
     )
     tested['es'] = tested['es'] + 0.5
