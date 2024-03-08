@@ -5,21 +5,13 @@ import pandas as pd
 import scipy.stats as st
 
 def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_fdr=0.1):
-    constitutive_df = aggregate_pvalues_df(tested, starting_columns)
-    constitutive_df['min_pval'] = get_min_pval(
-        constitutive_df, 
-        cover_tr=max_cover_tr, 
-        cover_col='max_cover',
-        pval_cols=["pval_ref_combined", "pval_alt_combined"]
-    )
-    constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
     pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
     
     tested_length = len(tested.index)
     tested = tested.merge(pvals)
-    assert len(tested.index) == tested_length
+    assert len(tested.index) == tested_length, f"Length of tested dataframe changed from {tested_length} to {len(tested.index)}"
 
     # set default inividual fdr and find differential snps
 
