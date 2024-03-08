@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     print("Finished reading non-aggregated file, shape:", input_df.shape)
     print("Unique groups:", input_df['group_id'].unique())
-    assert input_df['group_id'].nunique() == 1, "Only one group, LRT is not applicable"
+    assert input_df['group_id'].nunique() > 1, "Only one group, LRT is not applicable"
 
     testable_snps = find_testable_pairs(
         input_df,
