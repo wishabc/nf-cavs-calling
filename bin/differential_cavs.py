@@ -6,6 +6,10 @@ import scipy.stats as st
 
 
 def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_fdr=0.1):
+    tested_length = len(tested.index)
+    tested = tested.merge(pvals)
+    assert len(tested.index) == tested_length, f"Length of tested dataframe changed from {tested_length} to {len(tested.index)}"
+
     constitutive_df = aggregate_pvalues_df(tested, starting_columns)
     constitutive_df['min_pval'] = get_min_pval(
         constitutive_df, 
@@ -19,14 +23,9 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
     pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
+    pvals['n_groups'] = pvals.groupby('variant_id')['group_id'].transform('nunique')
     
 
-    pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
-    pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
-    
-    tested_length = len(tested.index)
-    tested = tested.merge(pvals)
-    assert len(tested.index) == tested_length, f"Length of tested dataframe changed from {tested_length} to {len(tested.index)}"
     tested['var_es * mse'] = tested.eval('(es - group_es)**2 * inverse_mse')
     tested['es * mse'] = tested.eval('es * inverse_mse')
     mse_estimates = tested.groupby(['variant_id', 'group_id']).agg(
