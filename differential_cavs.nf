@@ -51,6 +51,7 @@ process differential_cavs {
     conda params.conda
     publishDir "${params.outdir}"
     label "high_mem"
+    scratch true
 
     input:
         path pvals
@@ -72,12 +73,8 @@ process differential_cavs {
         --coverage_tr ${params.fdr_coverage_filter}
     
     mv tmp.fit_fail.bed ${fit_fail}
-
-    head -1 tmp.pvals.bed > ${pvals_new}
-    sort-bed tmp.pvals.bed >> ${pvals_new}
-
-    head -1 tmp.tested.bed > ${tested_new}
-    sort-bed tmp.tested.bed >> ${tested_new}
+    (head -1 tmp.pvals.bed && sort-bed tmp.pvals.bed | tail -n +2) > ${pvals_new}
+    (head -1 tmp.tested.bed && sort-bed tmp.tested.bed | tail -n +2) > ${tested_new}
     """
 
 }
