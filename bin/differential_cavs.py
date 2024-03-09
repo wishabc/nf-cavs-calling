@@ -19,7 +19,7 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     )
     constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
 
-    constitutive_df['overall_imbalanced'] = constitutive_df.eval(f'min_fdr_overall < {aggregation_fdr}')
+    constitutive_df['overall_imbalanced'] = constitutive_df.eval(f'min_fdr_overall <= {aggregation_fdr}')
 
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])
     pvals['cell_selective'] = pvals.eval(f'differential_fdr <= {differential_fdr_tr}')
@@ -44,7 +44,13 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     ).merge(
         mse_estimates
     ).merge(
-        constitutive_df[[*starting_columns, 'min_pval', 'es_combined', 'min_fdr_overall', 'overall_imbalanced']]
+        constitutive_df[
+            [
+                *starting_columns, 'min_pval', 
+                'logit_es_combined', 'es_combined',
+                'min_fdr_overall', 'overall_imbalanced'
+            ]
+        ]
     )
 
     # set default inividual fdr and find differential snps
