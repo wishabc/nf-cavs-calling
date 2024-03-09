@@ -46,12 +46,13 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     ).merge(
         constitutive_df[
             [
-                *starting_columns, 'min_pval', 
-                'logit_es_combined', 'es_combined',
+                *starting_columns, 
+                'min_pval', 'es_combined',
                 'min_fdr_overall', 'overall_imbalanced'
             ]
         ]
     )
+    pvals['logit_es_combined'] = logit_es(pvals['es_combined'])
 
     # set default inividual fdr and find differential snps
 
