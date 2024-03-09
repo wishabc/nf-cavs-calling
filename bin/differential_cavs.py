@@ -85,7 +85,8 @@ if __name__ == '__main__':
     pvals = pd.read_table(args.pvals)
 
     dropped_na_variants = pvals[pvals['p_differential'].isna()]['variant_id'].unique()
-    print(dropped_na_variants)
+    failed_fit_df = tested[tested['variant_id'].isin(dropped_na_variants)]
+    print(dropped_na_variants.shape, failed_fit_df.shape)
     tested = tested[~tested['variant_id'].isin(dropped_na_variants)]
     pvals = pvals[~pvals['variant_id'].isin(dropped_na_variants)]
     pvals['group_es'] = pvals['group_es'] + 0.5
@@ -95,9 +96,8 @@ if __name__ == '__main__':
         max_cover_tr=args.coverage_tr,
         differential_fdr_tr=args.fdr,
     )
-    
 
     tested.to_csv(f"{args.outpath}.tested.bed", sep='\t', index=False)
-    tested[tested['variant_id'].isin(dropped_na_variants)].to_csv(f"{args.outpath}.fit_fail.bed", sep='\t', index=False)
+    failed_fit_df.to_csv(f"{args.outpath}.fit_fail.bed", sep='\t', index=False)
     print(len(res_df.index), len(pvals.index))
     res_df.to_csv(f"{args.outpath}.pvals.bed", sep='\t', index=False)
