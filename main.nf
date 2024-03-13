@@ -131,8 +131,7 @@ process annotate_variants {
             # Nextflow always needs an input file. Mock file was passed here.
             awk '{print "-"}' \$1 > \$3
         else
-            grep -v '#' \$2 \
-                | bedmap --indicator \$1 - > \$3
+            grep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
         fi
     }
 
