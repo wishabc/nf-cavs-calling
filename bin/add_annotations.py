@@ -15,6 +15,8 @@ if __name__ == '__main__':
     parser.add_argument('--footprints', type=str, help='Path to the in-footprint indicator file')
     args = parser.parse_args()
 
+    print('Reading files')
+
     df = pd.read_table(args.bed_file)
     initial_df_len = len(df.index)
     hotspots = read_indicator(args.hotspots)
