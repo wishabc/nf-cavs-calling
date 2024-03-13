@@ -144,6 +144,7 @@ process annotate_variants {
         footprints.txt
 
     unstarch ${hotspots_file} > hotspots.bed
+    echo `wc -l < hotspots.bed`
     process_file \
         pval_f.sorted.bed \
         hotspots.bed \
