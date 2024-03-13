@@ -124,7 +124,7 @@ process annotate_variants {
         # \$2 - peaks file, no header
         # \$3 - output file
 
-        bname = `basename \$2`
+        bname=`basename \$2`
 
         if [[ "\${bname}" == *".empty" ]]; then
             # Nextflow always needs an input file. Mock file was passed here.
