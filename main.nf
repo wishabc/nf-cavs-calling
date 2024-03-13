@@ -109,6 +109,7 @@ process annotate_variants {
     tag "${sample_id}"
     publishDir "${params.outdir}/by_sample"
     scratch true
+    label "med_mem"
 
     input:
         tuple val(sample_id), path(pval_file), path(hotspots_file), path(footprint_file)
@@ -144,13 +145,12 @@ process annotate_variants {
         footprints.txt
 
     unstarch ${hotspots_file} > hotspots.bed
-    wc -l < hotspots.bed
+
     process_file \
         pval_f.sorted.bed \
         hotspots.bed \
         hotspots.txt
 
-    cat hotspots.txt
 
     cat pvals.header.txt pval_f.sorted.bed > sorted_pvals.bed
 
