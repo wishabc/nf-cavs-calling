@@ -38,7 +38,7 @@ def es_var_vectorized(n, B, p):
         return effect_size_estimate(x, n, B ) ** 2
     return expectation_vectorized(x2, n=n, B=B, p=p) - exp ** 2
 
-def mse(n, B, n_points=101):
+def calc_mse(n, B, n_points=101):
     ess = np.linspace(0, 1, n_points)
     yvals = expectation_vectorized(effect_size_estimate, n, B, ess)
     vars = es_var_vectorized(n, B, ess)
@@ -46,13 +46,13 @@ def mse(n, B, n_points=101):
 
 
 
-if __name__ == '__main__':
-    df = pd.read_table(sys.argv[1])
-    initial_df_len = len(df.index)
+# if __name__ == '__main__':
+#     df = pd.read_table(sys.argv[1])
+#     initial_df_len = len(df.index)
     
-    data = df[['BAD', 'coverage']].drop_duplicates()
-    data['inverse_mse'] = data.progress_apply(lambda row: 1 / mse(row['coverage'], row['BAD']).mean(), axis=1)
-    df = df.merge(data, on=['BAD', 'coverage'])
-    assert initial_df_len == len(df.index)
+#     data = df[['BAD', 'coverage']].drop_duplicates()
+#     data['inverse_mse'] = data.progress_apply(lambda row: 1 / calc_mse(row['coverage'], row['BAD']).mean(), axis=1)
+#     df = df.merge(data, on=['BAD', 'coverage'])
+#     assert initial_df_len == len(df.index)
 
-    df.to_csv(sys.argv[1], index=False, sep='\t')
+#     df.to_csv(sys.argv[1], index=False, sep='\t')

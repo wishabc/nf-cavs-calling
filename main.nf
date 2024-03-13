@@ -119,28 +119,44 @@ process annotate_variants {
     script:
     name = "${sample_id}.nonaggregated.bed"
     """
-    sort-bed ${pval_file} > pval_f.bed
+    process_file() {
+        # \$1 - pval file, no header
+        # \$2 - peaks file, no header
+        # \$3 - output file
 
-    # Add footprints
-    if [[ "${footprint_file.name}" == "fp.empty" ]]; then
-        cat pval_f.bed | awk '{ print "-" }' > footprints.txt
-    else
-        bedmap --header \
-            --indicator pval_f.bed \
-            ${footprint_file} > footprints.txt
-    fi
+        bname = `basename \$2`
 
-    if [[ "${hotspots_file.name}" == "hp.empty" ]]; then
-        cat pval_f.bed | awk '{ print "-" }' > hotspots.txt
-    else
-        bedmap --header \
-            --indicator pval_f.bed \
-            ${hotspots_file} > hotspots.txt
-    fi
+        if [[ "\${bname}" == *".empty" ]]; then
+            # Nextflow always needs an input file. Mock file was passed here.
+            awk '{print "-"}' \$1 > \$3
+        else
+            bedmap --indicator \$1 "\$2" > \$3
+        fi
+    }
 
-    echo -e "`head -1 ${pval_file}`\tfootprints\thotspots" > ${name}
-    paste pval_f.bed footprints.txt hotspots.txt >> ${name}
-    python3 $moduleDir/bin/estimate_mse.py ${name}
+    tail -n+2 ${pval_file} | sort-bed - > pval_f.sorted.bed
+    head -1 ${pval_file} > pvals.header.txt
+
+    tail -n+2 ${footprint_file} > footprint.no_header.bed
+
+    process_file \
+        pval_f.sorted.bed \
+        footprint.no_header.bed \
+        footprints.txt
+
+    process_file \
+        pval_f.sorted.bed \
+        ${hotspots_file} \
+        hotspots.txt
+
+    cat pvals.header.txt pval_f.sorted.bed > sorted_pvals.bed
+
+    # Doing it here to check if footprints and hotspots columns are present
+    python3 $moduleDir/bin/add_annotations.py \
+        --hotspots hotspots.txt \
+        --footprints footprints.txt \
+        sorted_pvals.bed
+        ${name}
     """
 }
 
