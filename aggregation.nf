@@ -8,7 +8,6 @@ def set_key_for_group_tuple(ch) {
     | transpose()
 }
 
-params.bad1_only = false
 process aggregate_pvals {
     conda params.conda
     tag "${sample_id}"
@@ -102,7 +101,7 @@ process pack_data {
 
 }
 
-
+params.bad1_only = false
 workflow aggregation {
     take:
         sample_split_pvals
