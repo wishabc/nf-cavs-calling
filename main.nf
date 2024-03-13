@@ -238,8 +238,8 @@ workflow annotateWithFootprints {
 }
 
 
-workflow tmp {
-    Channel.fromPath("${params.raw_pvals_dir}/*.bed")
+workflow reannotateWithFootprints {
+    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | annotateWithFootprints
 }
