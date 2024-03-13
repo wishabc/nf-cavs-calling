@@ -130,18 +130,17 @@ process annotate_variants {
             # Nextflow always needs an input file. Mock file was passed here.
             awk '{print "-"}' \$1 > \$3
         else
-            bedmap --indicator \$1 "\$2" > \$3
+            grep -v '#' \$2 \
+                | bedmap --indicator \$1 - > \$3
         fi
     }
 
     tail -n+2 ${pval_file} | sort-bed - > pval_f.sorted.bed
     head -1 ${pval_file} > pvals.header.txt
 
-    tail -n+2 ${footprint_file} > footprint.no_header.bed
-
     process_file \
         pval_f.sorted.bed \
-        footprint.no_header.bed \
+        ${footprint_file} \
         footprints.txt
 
     process_file \
