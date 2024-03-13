@@ -4,7 +4,7 @@ from estimate_mse import calc_mse
 import numpy as np
 
 def read_indicator(file_path):
-    return np.loadtxt(file_path, dtype=int).astype(bool)
+    return np.loadtxt(file_path, dtype=str)
 
 
 if __name__ == '__main__':
