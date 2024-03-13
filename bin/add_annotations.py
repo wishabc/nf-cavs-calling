@@ -19,7 +19,7 @@ if __name__ == '__main__':
     initial_df_len = len(df.index)
     hotspots = read_indicator(args.hotspots),
     footprints = read_indicator(args.footprints)
-    assert len(hotspots) == len(footprints) == initial_df_len
+    assert len(hotspots) == len(footprints) == initial_df_len, f"Hotspots {len(hotspots)} and footprints {len(footprints)} should have the same length as the bed file {initial_df_len}."
     df['hotspots'] = hotspots
     df['footprints'] = footprints
     
