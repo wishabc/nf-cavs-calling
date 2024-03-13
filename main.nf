@@ -154,7 +154,7 @@ process annotate_variants {
     python3 $moduleDir/bin/add_annotations.py \
         --hotspots hotspots.txt \
         --footprints footprints.txt \
-        sorted_pvals.bed
+        sorted_pvals.bed \
         ${name}
     """
 }
