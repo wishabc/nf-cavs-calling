@@ -49,6 +49,7 @@ process merge_files {
 
 process filter_bad1 {
     conda params.conda
+    tag "${sample_id}"
 
     input:
         tuple val(sample_id), path(non_aggregated)
