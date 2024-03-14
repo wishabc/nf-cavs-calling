@@ -111,7 +111,32 @@ process pack_data {
 
 }
 
-params.bad1_only = false
+workflow packData {
+    take:
+        merged_files
+    main:
+        merged_files
+            | aggregate_pvals
+            | map(it -> it[1])
+            | collectFile(
+                skip: 1,
+                keepHeader: true,
+                name: "aggregated.bed",
+            )
+        merged_files
+            | map(it -> it[1])
+            | collectFile(
+                skip: 1,
+                keepHeader: true,
+                name: "non_aggregated.bed",
+            )
+        
+        packed = pack_data(aggregated_merged, non_aggregated_merged)
+    emit:
+        packed.aggregated
+        packed.non_aggregated
+}
+
 workflow aggregation {
     take:
         sample_split_pvals
@@ -139,28 +164,13 @@ workflow aggregation {
                 | collect(sort: true)
                 | map(it -> tuple('all', it)) 
         }
-        iter2_prefix = 'final'
 
-        aggregated_merged = pvals
+        packed = pvals
             | merge_files
-            | aggregate_pvals
-            | map(it -> it[1])
-            | collectFile(
-                skip: 1,
-                keepHeader: true,
-                name: "aggregated.bed",
-            )
-        non_aggregated_merged = merge_files.out
-            | map(it -> it[1])
-            | collectFile(
-                skip: 1,
-                keepHeader: true,
-                name: "non_aggregated.bed",
-            )
-        packed = pack_data(aggregated_merged, non_aggregated_merged)
+            | packData
     emit:
-        packed.aggregated
-        packed.non_aggregated
+        packed[0]
+        packed[1]
 }
 
 
@@ -171,9 +181,12 @@ workflow {
 }
 
 workflow bad1Aggregation {
-    params.bad1_only = true
     Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | filter_bad1
-        | aggregation
+        | map(it -> it[1])
+        | collect(sort: true)
+        | map(it -> tuple('all.bad1', it)) 
+        | merge_files
+        | packData
 }
