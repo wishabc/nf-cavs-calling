@@ -90,10 +90,9 @@ process pack_data {
         path name, emit: stats
     
     script:
-    suffix = params.bad1_only ? "${params.aggregation_key}.BAD1" : params.aggregation_key
-    sorted_aggregated = "aggregated.${suffix}.bed"
-    sorted_non_aggregated = "non_aggregated.${suffix}.bed.gz"
-    name = "cav_stats.${suffix}.tsv"
+    sorted_aggregated = "aggregated.${params.aggregation_key}.bed"
+    sorted_non_aggregated = "non_aggregated.${params.aggregation_key}.bed.gz"
+    name = "cav_stats.${params.aggregation_key}.tsv"
     """
     head -1 ${aggregated_variants} > ${sorted_aggregated}
     sort-bed ${aggregated_variants} >> ${sorted_aggregated}
