@@ -27,7 +27,7 @@ if __name__ == '__main__':
     
     data = df[['BAD', 'coverage']].drop_duplicates()
     data['inverse_mse'] = data.progress_apply(lambda row: 1 / calc_mse(row['coverage'], row['BAD']).mean(), axis=1)
-    df = df.merge(data, on=['BAD', 'coverage'])
+    df = df.drop(columns=['inverse_mse', 'inverse_mse_x', 'inverse_mse_y'], errors='ignore').merge(data, on=['BAD', 'coverage'])
     assert initial_df_len == len(df.index)
     df.to_csv(args.output, index=False, sep='\t')
     
