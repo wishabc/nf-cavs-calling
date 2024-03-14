@@ -11,7 +11,8 @@ tqdm.pandas()
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
 
 
-result_columns = [*starting_columns, 'AAF', 'RAF', 
+result_columns = [
+    *starting_columns, 'AAF', 'RAF', 
     'mean_FMR', 'mean_BAD',
     'nSNPs', 'max_cover', 'mean_cover', 'mean_inverse_mse', 
     'footprints_n', 'hotspots_n',
@@ -22,16 +23,7 @@ result_columns = [*starting_columns, 'AAF', 'RAF',
     'logit_es_combined',
     'min_pval',
     'min_fdr'
-    ]
-
-
-
-def parse_coverage(cov_string):
-    try:
-        return int(cov_string) if cov_string != 'auto' else 'auto'
-    except ValueError:
-        print(f'Incorrect coverage threshold provided. {args.max_coverage_tr} not a positive integer or "auto"')
-        raise
+]
 
 
 def logit_es(es, d=1/128):
@@ -52,6 +44,7 @@ def logit_es(es, d=1/128):
 def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
+
 
 def aggregate_effect_size(es, weights):
     return np.average(es, weights=weights)
@@ -142,6 +135,7 @@ def qvalue(pvals, bootstrap=False):
     qvals = qvals[rev_ind]
     return qvals
 
+
 def calc_fdr_pd(pd_series):
     ind = pd_series.notna()
     result = np.full_like(pd_series, np.nan, dtype=np.float64)
@@ -150,13 +144,15 @@ def calc_fdr_pd(pd_series):
     result[ind] = qvalue(pd_series[ind].to_numpy(), bootstrap=True)
     return result
 
+
 def get_min_pval(df, cover_tr, cover_col, pval_cols):
     min_pval = np.minimum(df[pval_cols].min(axis=1) * 2, 1)
     ind = (df[cover_col] < cover_tr)
     min_pval[ind] = np.nan
     return min_pval.to_numpy()
 
-def main(pval_df, chrom=None, max_cover_tr=10):
+
+def main(pval_df, chrom=None, max_cover_tr=15):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
@@ -180,10 +176,8 @@ if __name__ == '__main__':
     parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
     parser.add_argument('--max_coverage_tr', type=int, help="""Threshold for the maximum
                             of coverages of variants aggregated at the same genomic position.
-                            Expected to be a positive integer""", default=10)
+                            Expected to be a positive integer""", default=15)
     args = parser.parse_args()
 
-    coverage_tr = parse_coverage(args.max_coverage_tr)
-
     pval_df = pd.read_table(args.I, low_memory=False)
-    main(pval_df, args.chrom, max_cover_tr=coverage_tr).to_csv(args.O, sep='\t', index=False)
+    main(pval_df, args.chrom, max_cover_tr=args.max_coverage_tr).to_csv(args.O, sep='\t', index=False)
