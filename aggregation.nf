@@ -42,8 +42,10 @@ process merge_files {
     script:
     name = "${group_key}.sorted.bed"
     """
-    echo "`head -n 1 ${files[0]}`\tgroup_id" > ${name}
-    tail -n +2 -q ${files} | sed "s/\$/\t${group_key}/" | sort-bed - >> ${name}
+    (echo -e "`head -n 1 "${files[0]}`\tgroup_id" \
+        && awk -v group_key="${group_key}" \
+            -v OFS='\t' \
+            'FNR > 1 {print \$0, group_key}' ${files} | sort-bed -) > "${name}"
     """
 }
 
