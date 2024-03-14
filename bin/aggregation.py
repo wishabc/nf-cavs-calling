@@ -68,7 +68,10 @@ def aggregate_pvals(df):
         )
 
     
-def aggregate_pvalues_df(pval_df, groupby_cols=starting_columns):
+def aggregate_pvalues_df(pval_df, groupby_cols=None):
+    if groupby_cols is None:
+        groupby_cols = starting_columns
+
     pval_df = pval_df.assign(
         **{
             col: pd.NA for col in 
