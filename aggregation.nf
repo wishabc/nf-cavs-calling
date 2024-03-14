@@ -115,7 +115,7 @@ workflow packData {
     take:
         merged_files
     main:
-        merged_files
+        aggregated_merged = merged_files
             | aggregate_pvals
             | map(it -> it[1])
             | collectFile(
@@ -123,7 +123,7 @@ workflow packData {
                 keepHeader: true,
                 name: "aggregated.bed",
             )
-        merged_files
+        non_aggregated_merged = merged_files
             | map(it -> it[1])
             | collectFile(
                 skip: 1,
