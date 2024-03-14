@@ -58,9 +58,19 @@ process filter_bad1 {
     script:
     name = "${sample_id}_BAD1.nonaggregated.bed"
     """
-    awk -v OFS='\t' -F'\t' \
-        'NR == 1 || \$16 == 1.0' \
-        ${non_aggregated} > ${name}
+    awk -v OFS='\t' -F'\t' '
+        NR == 1 { \
+            for (i=1; i<=NF; i++) { \
+                if (\$i == "BAD") { \
+                    badCol = i; \
+                    print \$0; \
+                    break; \
+                } \
+            } \
+        } \
+        NR > 1 && \$(badCol) == 1.0 { \
+            print \$0; \
+        }' ${non_aggregated} > ${name}
     """
 }
 
@@ -80,7 +90,7 @@ process pack_data {
         path name, emit: stats
     
     script:
-    suffix = "${params.bad1_only}" ? params.aggregation_key : "${params.aggregation_key}.BAD1"
+    suffix = params.bad1_only ? "${params.aggregation_key}.BAD1" : params.aggregation_key
     sorted_aggregated = "aggregated.${suffix}.bed"
     sorted_non_aggregated = "non_aggregated.${suffix}.bed.gz"
     name = "cav_stats.${suffix}.tsv"
