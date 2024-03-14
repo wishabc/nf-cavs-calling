@@ -174,6 +174,9 @@ workflow aggregation {
 }
 
 
+///////////////////////////////////////////////////////////////
+/////////////////////// Entry workflows ///////////////////////
+///////////////////////////////////////////////////////////////
 workflow {
     Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
@@ -181,6 +184,8 @@ workflow {
 }
 
 workflow bad1Aggregation {
+    // This workflow is used to do overall aggregation for variants in bad1 regions
+    // It is agnostic to params.aggregation_key
     Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | filter_bad1
