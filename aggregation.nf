@@ -84,6 +84,7 @@ process pack_data {
     input:
         path aggregated_variants
         path non_aggregated_variants
+        val aggregation_key
     
     output:
         path sorted_aggregated, emit: aggregated
@@ -91,9 +92,9 @@ process pack_data {
         path name, emit: stats
     
     script:
-    sorted_aggregated = "aggregated.${params.aggregation_key}.bed"
-    sorted_non_aggregated = "non_aggregated.${params.aggregation_key}.bed.gz"
-    name = "cav_stats.${params.aggregation_key}.tsv"
+    sorted_aggregated = "aggregated.${aggregation_key}.bed"
+    sorted_non_aggregated = "non_aggregated.${aggregation_key}.bed.gz"
+    name = "cav_stats.${aggregation_key}.tsv"
     """
     head -1 ${aggregated_variants} > ${sorted_aggregated}
     sort-bed ${aggregated_variants} >> ${sorted_aggregated}
@@ -114,6 +115,7 @@ process pack_data {
 workflow packData {
     take:
         merged_files
+        aggregation_key
     main:
         aggregated_merged = merged_files
             | aggregate_pvals
@@ -121,17 +123,17 @@ workflow packData {
             | collectFile(
                 skip: 1,
                 keepHeader: true,
-                name: "aggregated.bed",
+                name: "aggregated.${aggregation_key}.bed",
             )
         non_aggregated_merged = merged_files
             | map(it -> it[1])
             | collectFile(
                 skip: 1,
                 keepHeader: true,
-                name: "non_aggregated.bed",
+                name: "non_aggregated.${aggregation_key}.bed",
             )
         
-        packed = pack_data(aggregated_merged, non_aggregated_merged)
+        packed = pack_data(aggregated_merged, non_aggregated_merged, aggregation_key)
     emit:
         packed.aggregated
         packed.non_aggregated
@@ -165,9 +167,7 @@ workflow aggregation {
                 | map(it -> tuple('all', it)) 
         }
 
-        packed = pvals
-            | merge_files
-            | packData
+        packed = packData(merge_files(pvals), params.aggregation_key)
     emit:
         packed[0]
         packed[1]
@@ -186,12 +186,12 @@ workflow {
 workflow bad1Aggregation {
     // This workflow is used to do overall aggregation for variants in bad1 regions
     // It is agnostic to params.aggregation_key
-    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
+    pvals = Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | filter_bad1
         | map(it -> it[1])
         | collect(sort: true)
         | map(it -> tuple('all.bad1', it)) 
         | merge_files
-        | packData
+    packData(pvals, 'all.bad1')
 }
