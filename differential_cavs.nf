@@ -28,6 +28,8 @@ process filter_testable_snps {
 }
 
 process fit_random_effects_model {
+
+    // FIXME move to label
     conda "/home/sabramov/miniconda3/envs/condR"
     tag "${chromosome}"
     label "med_mem"
@@ -56,14 +58,15 @@ process differential_cavs {
     input:
         path pvals
         path tested_snps
+        val aggregation_key
 
     output:
         tuple path(pvals_new), path(tested_new), path(fit_fail)
 
     script:
-    pvals_new = "differential_pvals.${params.aggregation_key}.bed"
-    tested_new = "differential_tested.${params.aggregation_key}.bed"
-    fit_fail = "differential_pvals.fit_fail.${params.aggregation_key}.bed"
+    pvals_new = "differential_pvals.${aggregation_key}.bed"
+    tested_new = "differential_tested.${aggregation_key}.bed"
+    fit_fail = "differential_pvals.fit_fail.${aggregation_key}.bed"
     """
     python3 $moduleDir/bin/differential_cavs.py \
         ${tested_snps} \
@@ -105,7 +108,7 @@ workflow differentialCavs {
                 keepHeader: true,
                 skip: 1
             )
-        dif_cavs = differential_cavs(pvals, tested)
+        dif_cavs = differential_cavs(pvals, tested, params.aggregation_key)
     emit:
         dif_cavs
         tested
