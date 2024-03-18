@@ -195,3 +195,11 @@ workflow bad1Aggregation {
         | merge_files
     packData(pvals, 'all.bad1')
 }
+
+// DEFUNC
+workflow tmp {
+    Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
+        | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
+        | filter_bad1
+        | aggregation
+}
