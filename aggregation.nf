@@ -123,14 +123,14 @@ workflow packData {
             | collectFile(
                 skip: 1,
                 keepHeader: true,
-                name: "aggregated.${aggregation_key}.bed",
+                name: "aggregated.not_sorted.${aggregation_key}.bed",
             )
         non_aggregated_merged = merged_files
             | map(it -> it[1])
             | collectFile(
                 skip: 1,
                 keepHeader: true,
-                name: "non_aggregated.${aggregation_key}.bed",
+                name: "non_aggregated.not_sorted.${aggregation_key}.bed",
             )
         
         packed = pack_data(aggregated_merged, non_aggregated_merged, aggregation_key)
