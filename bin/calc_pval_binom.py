@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 
 from scipy.special import expit, logit
-from aggregation import calc_fdr_pd, get_min_pval, logit_es
+from aggregation import calc_fdr_pd, get_min_pval, logit_es, filter_pval_df
 
 from tqdm import tqdm
 
@@ -96,7 +96,6 @@ def calc_fdr(group_df):
 
 
 def main(df, coverage_tr=15, modify_w=False):
-    # Remove already present columns
     df = df.drop(columns=updated_columns, errors='ignore')
     # Check if empty
     result_columns = [*df.columns, *updated_columns]
@@ -117,11 +116,9 @@ def main(df, coverage_tr=15, modify_w=False):
         **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result))
     )
     result['logit_es'] = logit_es(result['es'])
-
+    result = result.groupby('sample_id').progress_apply(filter_pval_df, max_cover_tr=coverage_tr)
     result['min_pval'] = get_min_pval(
         result,
-        cover_tr=coverage_tr,
-        cover_col='coverage',
         pval_cols=['pval_ref', 'pval_alt']
     )
     result['FDR_sample'] = result.groupby('sample_id', group_keys=True)['min_pval'].transform(calc_fdr_pd)

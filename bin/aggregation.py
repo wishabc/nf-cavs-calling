@@ -79,7 +79,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
     pval_df['initial_coverage'] = pval_df.eval('coverage / (1 - FMR)')
     agg_dict = {
         'nSNPs': ('coverage', 'count'),
-        'max_cover': ('coverage', 'max'),
+        'max_cover': ('max_cover', 'first'),
         'hotspots_n': ('hotspots', calc_sum_if_not_minus),
         'footprints_n': ('footprints', calc_sum_if_not_minus),
         'peaks_n': ('peaks', calc_sum_if_not_minus),
@@ -156,6 +156,7 @@ def calc_fdr_pd(pd_series):
 def main(pval_df, chrom=None):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
+    pval_df = filter_pval_df(pval_df, args.max_coverage_tr)
     if pval_df.empty or pval_df['is_tested'].sum() == 0:
         return pd.DataFrame([], columns=result_columns)
     
@@ -165,8 +166,8 @@ def main(pval_df, chrom=None):
 
 
 def filter_pval_df(df, max_cover_tr=15):
-    df['max_coverage'] = df.groupby(starting_columns)['coverage'].transform('max')
-    df['is_tested'] = (df['max_coverage'] >= max_cover_tr) & (df['hotspots'].astype(str) == '1')
+    df['max_cover'] = df.groupby(starting_columns)['coverage'].transform('max')
+    df['is_tested'] = (df['max_cover'] >= max_cover_tr) & (df['hotspots'].astype(str) == '1')
     return df
 
 
@@ -181,5 +182,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pval_df = pd.read_table(args.I, low_memory=False)
-    pval_df = filter_pval_df(pval_df, args.max_coverage_tr)
     main(pval_df, args.chrom).to_csv(args.O, sep='\t', index=False)
