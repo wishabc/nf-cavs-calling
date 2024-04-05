@@ -21,6 +21,7 @@ process aggregate_pvals {
     script:
     name = "${sample_id}.aggregation.bed"
     """
+    echo 1
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
         -O ${name} \
