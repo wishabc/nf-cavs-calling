@@ -97,7 +97,11 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
         'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].query('is_tested').groupby(
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
-    return snp_stats.join(agg_pvals, how='left').reset_index()
+    result = snp_stats.join(agg_pvals, how='left').reset_index()
+    min_pval = result[["pval_ref_combined", "pval_alt_combined"]].min(axis=1) * 2
+    result['min_pval'] = np.where(np.isnan(min_pval), np.nan, np.minimum(min_pval, 1)).to_numpy()
+    result['logit_es_combined'] = logit_es(result['es_combined'])
+    return result
 
 
 # implementation of Storey method for FDR estimation
@@ -146,12 +150,6 @@ def calc_fdr_pd(pd_series):
     return result
 
 
-def get_min_pval(df, valid_rows, pval_cols):
-    min_pval = np.minimum(df[pval_cols].min(axis=1) * 2, 1)
-    min_pval[~valid_rows] = np.nan
-    return min_pval.to_numpy()
-
-
 def main(pval_df, chrom=None, max_cover_tr=15):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
@@ -159,13 +157,6 @@ def main(pval_df, chrom=None, max_cover_tr=15):
         return pd.DataFrame([], columns=result_columns)
     
     aggr_df = aggregate_pvalues_df(pval_df)
-    val_rows = (aggr_df['max_cover'] >= max_cover_tr)
-    aggr_df['min_pval'] = get_min_pval(
-        aggr_df,
-        valid_rows=val_rows,
-        pval_cols=["pval_ref_combined", "pval_alt_combined"]
-    )
-    aggr_df['logit_es_combined'] = logit_es(aggr_df['es_combined'])
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 
