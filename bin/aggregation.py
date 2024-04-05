@@ -62,7 +62,7 @@ def aggregate_pvals(df):
 
 def get_min_pval(result, columns):
     min_pval = result[columns].min(axis=1) * 2
-    return np.where(np.isnan(min_pval), np.nan, np.minimum(min_pval, 1)).to_numpy()
+    return np.where(np.isnan(min_pval), np.nan, np.minimum(min_pval, 1))
 
 
 def aggregate_pvalues_df(pval_df, groupby_cols=None):
