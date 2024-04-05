@@ -94,10 +94,10 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
     snp_stats = pval_df.groupby(groupby_cols, group_keys=True).agg(**agg_dict)
     snp_stats['mean_FMR'] = 1 - snp_stats.eval('mean_cover / initial_coverage')
     agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 
-        'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
+        'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].query('is_tested').groupby(
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
-    return snp_stats.join(agg_pvals).reset_index()
+    return snp_stats.join(agg_pvals, how='left').reset_index()
 
 
 # implementation of Storey method for FDR estimation
@@ -155,11 +155,9 @@ def get_min_pval(df, valid_rows, pval_cols):
 def main(pval_df, chrom=None, max_cover_tr=15):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
-    if pval_df.empty:
+    if pval_df.empty or pval_df['is_tested'].sum() == 0:
         return pd.DataFrame([], columns=result_columns)
     
-    pval_df['hotspots'] = pval_df['hotspots'].astype(str)
-    pval_df.query('hotspots == "1"', inplace=True)
     aggr_df = aggregate_pvalues_df(pval_df)
     val_rows = (aggr_df['max_cover'] >= max_cover_tr)
     aggr_df['min_pval'] = get_min_pval(
@@ -171,7 +169,10 @@ def main(pval_df, chrom=None, max_cover_tr=15):
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 
-
+def filter_pval_df(df):
+    df['max_coverage'] = df.groupby(starting_columns)['coverage'].transform('max')
+    df['is_tested'] = (df['max_coverage'] >= 15) & (df['hotspots'].astype(str) == '1')
+    return df
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
