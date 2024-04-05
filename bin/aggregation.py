@@ -15,7 +15,7 @@ result_columns = [
     *starting_columns, 'AAF', 'RAF', 
     'mean_FMR', 'mean_BAD',
     'nSNPs', 'max_cover', 'mean_cover', 'mean_inverse_mse', 
-    'footprints_n', 'hotspots_n',
+    'footprints_n', 'hotspots_n', 'peaks_n',
     'group_id',
     'pval_ref_combined',
     'pval_alt_combined',
@@ -68,7 +68,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
     pval_df = pval_df.assign(
         **{
             col: pd.NA for col in 
-            ['footprints', 'group_id', 'hotspots'] 
+            ['footprints', 'group_id', 'hotspots', 'peaks'] 
             if col not in pval_df.columns
         }
     )
@@ -78,6 +78,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
         'max_cover': ('coverage', 'max'),
         'hotspots_n': ('hotspots', calc_sum_if_not_minus),
         'footprints_n': ('footprints', calc_sum_if_not_minus),
+        'peaks_n': ('peaks', calc_sum_if_not_minus),
         'mean_cover': ('coverage', 'mean'),
         'mean_BAD': ('BAD', 'mean'),
         'group_id': ('group_id', 'first'),
@@ -156,8 +157,11 @@ def main(pval_df, chrom=None, max_cover_tr=15):
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
+    
+    pval_df['hotspots'] = pval_df['hotspots'].astype(str)
+    pval_df.query('hotspots == "1"', inplace=True)
     aggr_df = aggregate_pvalues_df(pval_df)
-    val_rows = (aggr_df['max_cover'] >= max_cover_tr) & (aggr_df['hotspots'].astype(str) == "1")
+    val_rows = (aggr_df['max_cover'] >= max_cover_tr)
     aggr_df['min_pval'] = get_min_pval(
         aggr_df,
         valid_rows=val_rows,
