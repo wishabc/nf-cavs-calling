@@ -97,7 +97,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
 
     snp_stats = pval_df.groupby(groupby_cols, group_keys=True).agg(**agg_dict)
     snp_stats['mean_FMR'] = 1 - snp_stats.eval('mean_cover / initial_coverage')
-    agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 
+    agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 'is_tested',
         'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].query('is_tested').groupby(
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
