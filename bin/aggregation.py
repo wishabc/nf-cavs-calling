@@ -58,7 +58,7 @@ def aggregate_pvals(df):
     return pd.Series(
         [pval_ref_combined, pval_alt_combined, es_combined],
         ["pval_ref_combined", "pval_alt_combined", "es_combined"]
-        )
+    )
 
     
 def aggregate_pvalues_df(pval_df, groupby_cols=None):

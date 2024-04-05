@@ -112,7 +112,7 @@ process annotate_variants {
     label "med_mem"
 
     input:
-        tuple val(sample_id), path(pval_file), path(hotspots_file), path(footprint_file)
+        tuple val(sample_id), path(pval_file), path(peaks_file), path(footprint_file), path(hotspots_file)
 
     output:
         tuple val(sample_id), path(name)
@@ -128,7 +128,7 @@ process annotate_variants {
         bname=`basename \$2`
 
         if [[ "\${bname}" == *".empty" ]]; then
-            # Nextflow always needs an input file. Mock file was passed here.
+            # Nextflow needs an input file. Mock file was passed here.
             awk '{print "-"}' \$1 > \$3
         else
             grep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
@@ -143,19 +143,26 @@ process annotate_variants {
         ${footprint_file} \
         footprints.txt
 
-    unstarch ${hotspots_file} > hotspots.bed
+    unstarch ${peaks_file} > peaks.bed
+
+    process_file \
+        pval_f.sorted.bed \
+        peaks.bed \
+        peaks.txt
+
+    unstarch ${peaks_file} > hotspots.bed
 
     process_file \
         pval_f.sorted.bed \
         hotspots.bed \
         hotspots.txt
 
-
     cat pvals.header.txt pval_f.sorted.bed > sorted_pvals.bed
 
     # Doing it here to check if footprints and hotspots columns are present
     python3 $moduleDir/bin/add_annotations.py \
         --hotspots hotspots.txt \
+        --peaks peaks.txt \
         --footprints footprints.txt \
         sorted_pvals.bed \
         ${name}
@@ -194,7 +201,6 @@ workflow combineFilesAndEstimateBAD {
 
 workflow {
     // Estimate BAD and call 1-st round CAVs
-
     bads = Channel.of(params.states.tokenize(','))
     input_data = Channel.fromPath(params.samples_file)
         | splitCsv(header: true, sep: '\t')
@@ -227,9 +233,11 @@ workflow annotateWithFootprints {
     main:
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header: true, sep: '\t')
-            | map(row -> tuple(row.ag_id,
-                    check_var(row?.hotspot_peaks_point1per, 'hp'), 
-                    check_var(row?.footprints_path, 'fp')
+            | map(row -> tuple(
+                    row.ag_id,
+                    check_var(row?.hotspot_peaks_point1per, 'peaks'), 
+                    check_var(row?.footprints_path, 'fp'),
+                    check_var(row?.hotspot_calls, 'hs')
                     )
                 )
         out = pval_files

@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('output', type=str, help='Path to the output file')
     parser.add_argument('--hotspots', type=str, help='Path to the in-hotspot indicator file')
     parser.add_argument('--footprints', type=str, help='Path to the in-footprint indicator file')
+    parser.add_argument('--peaks', type=str, help='Path to the in-peaks indicator file')
     args = parser.parse_args()
 
     print('Reading files')
@@ -21,9 +22,12 @@ if __name__ == '__main__':
     initial_df_len = len(df.index)
     hotspots = read_indicator(args.hotspots)
     footprints = read_indicator(args.footprints)
-    assert len(hotspots) == len(footprints) == initial_df_len, f"Hotspots {len(hotspots)} and footprints {len(footprints)} should have the same length as the bed file {initial_df_len}."
+    peaks = read_indicator(args.peaks)
+
+    assert len(peaks) == len(hotspots) == len(footprints) == initial_df_len, f"Hotspots {len(hotspots)}, footprints {len(footprints)} and peaks {len(peaks)} should have the same length as the bed file {initial_df_len}."
     df['hotspots'] = hotspots
     df['footprints'] = footprints
+    df['peaks'] = peaks
     
     data = df[['BAD', 'coverage']].drop_duplicates()
     data['inverse_mse'] = data.progress_apply(lambda row: 1 / calc_mse(row['coverage'], row['BAD']).mean(), axis=1)
