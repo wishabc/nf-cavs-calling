@@ -145,10 +145,9 @@ def calc_fdr_pd(pd_series):
     return result
 
 
-def get_min_pval(df, cover_tr, cover_col, pval_cols):
+def get_min_pval(df, valid_rows, pval_cols):
     min_pval = np.minimum(df[pval_cols].min(axis=1) * 2, 1)
-    ind = (df[cover_col] < cover_tr)
-    min_pval[ind] = np.nan
+    min_pval[~valid_rows] = np.nan
     return min_pval.to_numpy()
 
 
@@ -158,10 +157,10 @@ def main(pval_df, chrom=None, max_cover_tr=15):
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     aggr_df = aggregate_pvalues_df(pval_df)
+    val_rows = (aggr_df['max_cover'] >= max_cover_tr) & (aggr_df['hotspots'].astype(str) == "1")
     aggr_df['min_pval'] = get_min_pval(
-        aggr_df, 
-        cover_tr=max_cover_tr, 
-        cover_col='max_cover',
+        aggr_df,
+        valid_rows=val_rows,
         pval_cols=["pval_ref_combined", "pval_alt_combined"]
     )
     aggr_df['logit_es_combined'] = logit_es(aggr_df['es_combined'])
