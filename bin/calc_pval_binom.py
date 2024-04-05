@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 
 from scipy.special import expit, logit
-from aggregation import calc_fdr_pd, parse_coverage, get_min_pval, logit_es
+from aggregation import calc_fdr_pd, get_min_pval, logit_es
 
 from tqdm import tqdm
 
@@ -134,14 +134,13 @@ if __name__ == '__main__':
     parser.add_argument('-O', help='File to save calculated p-value into')
     parser.add_argument('--recalc-w', help='Specify to recalculate w',
         default=False, action="store_true")
-    parser.add_argument('--coverage_threhold', type=str, help="""Coverage threshold for variants to calculate per-sample q-values.
-                            Expected to be "auto" or a positive integer""", default=15)
+    parser.add_argument('--coverage_threhold', type=int, help="""Coverage threshold for variants to calculate per-sample q-values.
+                            Expected to a positive integer""", default=15)
     args = parser.parse_args()
-    coverage_tr = parse_coverage(args.coverage_threhold)
     input_df = pd.read_table(args.I, low_memory=False)
     modified_df = main(
         input_df,
         modify_w=args.recalc_w,
-        coverage_tr=coverage_tr
+        coverage_tr=args.coverage_threhold
     )
     modified_df.to_csv(args.O, sep='\t', index=None)

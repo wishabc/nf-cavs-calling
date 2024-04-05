@@ -60,7 +60,11 @@ def aggregate_pvals(df):
         ["pval_ref_combined", "pval_alt_combined", "es_combined"]
     )
 
-    
+def get_min_pval(result, columns):
+    min_pval = result[columns].min(axis=1) * 2
+    return np.where(np.isnan(min_pval), np.nan, np.minimum(min_pval, 1)).to_numpy()
+
+
 def aggregate_pvalues_df(pval_df, groupby_cols=None):
     if groupby_cols is None:
         groupby_cols = starting_columns
@@ -98,8 +102,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
     result = snp_stats.join(agg_pvals, how='left').reset_index()
-    min_pval = result[["pval_ref_combined", "pval_alt_combined"]].min(axis=1) * 2
-    result['min_pval'] = np.where(np.isnan(min_pval), np.nan, np.minimum(min_pval, 1)).to_numpy()
+    result['min_pval'] = get_min_pval(result, ['pval_ref_combined', 'pval_alt_combined'])
     result['logit_es_combined'] = logit_es(result['es_combined'])
     return result
 
@@ -150,7 +153,7 @@ def calc_fdr_pd(pd_series):
     return result
 
 
-def main(pval_df, chrom=None, max_cover_tr=15):
+def main(pval_df, chrom=None):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
     if pval_df.empty or pval_df['is_tested'].sum() == 0:
@@ -160,10 +163,13 @@ def main(pval_df, chrom=None, max_cover_tr=15):
     aggr_df['min_fdr'] = calc_fdr_pd(aggr_df['min_pval'])
     return aggr_df[result_columns]
 
-def filter_pval_df(df):
+
+def filter_pval_df(df, max_cover_tr=15):
     df['max_coverage'] = df.groupby(starting_columns)['coverage'].transform('max')
-    df['is_tested'] = (df['max_coverage'] >= 15) & (df['hotspots'].astype(str) == '1')
+    df['is_tested'] = (df['max_coverage'] >= max_cover_tr) & (df['hotspots'].astype(str) == '1')
     return df
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate pvalue for model')
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
@@ -175,4 +181,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pval_df = pd.read_table(args.I, low_memory=False)
-    main(pval_df, args.chrom, max_cover_tr=args.max_coverage_tr).to_csv(args.O, sep='\t', index=False)
+    pval_df = filter_pval_df(pval_df, args.max_coverage_tr)
+    main(pval_df, args.chrom).to_csv(args.O, sep='\t', index=False)
