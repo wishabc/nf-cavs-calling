@@ -150,7 +150,7 @@ process annotate_variants {
         peaks.bed \
         peaks.txt
 
-    unstarch ${peaks_file} > hotspots.bed
+    unstarch ${hotspots_file} > hotspots.bed
 
     process_file \
         pval_f.sorted.bed \
