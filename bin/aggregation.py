@@ -78,6 +78,9 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
     )
     pval_df['initial_coverage'] = pval_df.eval('coverage / (1 - FMR)')
     agg_dict = {
+        'AAF': ('AAF', 'first'),
+        'RAF': ('RAF', 'first'),
+
         'nSNPs': ('coverage', 'count'),
         'max_cover': ('max_cover', 'first'),
         'hotspots_n': ('hotspots', calc_sum_if_not_minus),
@@ -86,8 +89,6 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
         'mean_cover': ('coverage', 'mean'),
         'mean_BAD': ('BAD', 'mean'),
         'group_id': ('group_id', 'first'),
-        'AAF': ('AAF', 'first'),
-        'RAF': ('RAF', 'first'),
         'initial_coverage': ('initial_coverage', 'mean'),
         'mean_inverse_mse': ('inverse_mse', 'mean'),
     }
@@ -98,7 +99,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
     snp_stats = pval_df.groupby(groupby_cols, group_keys=True).agg(**agg_dict)
     snp_stats['mean_FMR'] = 1 - snp_stats.eval('mean_cover / initial_coverage')
     agg_pvals = pval_df[[*groupby_cols, 'BAD', 'es', 'is_tested',
-        'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].query('is_tested').groupby(
+        'pval_ref', 'pval_alt', 'inverse_mse', 'coverage']].groupby(
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
     result = snp_stats.join(agg_pvals, how='left').reset_index()
@@ -156,8 +157,8 @@ def calc_fdr_pd(pd_series):
 def main(pval_df, chrom=None):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
-    pval_df = filter_pval_df(pval_df, args.max_coverage_tr)
-    if pval_df.empty or pval_df['is_tested'].sum() == 0:
+    pval_df = filter_pval_df(pval_df, args.max_coverage_tr).query('is_tested').reset_index(drop=True)
+    if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     
     aggr_df = aggregate_pvalues_df(pval_df)
@@ -166,8 +167,9 @@ def main(pval_df, chrom=None):
 
 
 def filter_pval_df(df, max_cover_tr=15):
-    df['max_cover'] = df.groupby(starting_columns)['coverage'].transform('max')
-    df['is_tested'] = (df['max_cover'] >= max_cover_tr) & (df['hotspots'].astype(str) == '1')
+    df['is_tested'] = df['hotspots'].astype(str) == '1'
+    df['max_cover'] = df.query('is_tested').groupby(starting_columns)['coverage'].transform('max')
+    df['is_tested'] = df.eval(f'max_cover >= {max_cover_tr} & is_tested')
     return df
 
 
