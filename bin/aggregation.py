@@ -167,7 +167,10 @@ def main(pval_df, chrom=None):
 
 
 def filter_pval_df(df, max_cover_tr=15):
-    df['is_tested'] = df['hotspots'].astype(str) == '1'
+    if "hotspots" in df.columns:
+        df['is_tested'] = df['hotspots'].astype(str) == '1'
+    else:
+        df['is_tested'] = True
     df['max_cover'] = df.query('is_tested').groupby(starting_columns)['coverage'].transform('max')
     df['is_tested'] = df.eval(f'max_cover >= {max_cover_tr} & is_tested')
     return df
