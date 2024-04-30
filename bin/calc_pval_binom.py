@@ -119,7 +119,7 @@ def main(df, coverage_tr=15, modify_w=False):
     result = result.groupby('sample_id').progress_apply(filter_pval_df, max_cover_tr=coverage_tr)
     result['min_pval'] = get_min_pval(
         result,
-        pval_cols=['pval_ref', 'pval_alt']
+        columns=['pval_ref', 'pval_alt']
     )
     result['FDR_sample'] = result.groupby('sample_id', group_keys=True)['min_pval'].transform(calc_fdr_pd)
     return result.reset_index(drop=True)[result_columns]
