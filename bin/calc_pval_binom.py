@@ -116,7 +116,7 @@ def main(df, coverage_tr=15, modify_w=False):
         **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result))
     )
     result['logit_es'] = logit_es(result['es'])
-    result = result.groupby('sample_id').progress_apply(filter_pval_df, max_cover_tr=coverage_tr)
+    result = result.groupby('sample_id').progress_apply(filter_pval_df, max_cover_tr=coverage_tr).reset_index(drop=True)
     result['min_pval'] = get_min_pval(
         result,
         columns=['pval_ref', 'pval_alt']
