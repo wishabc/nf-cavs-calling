@@ -121,7 +121,7 @@ def main(df, coverage_tr=15, modify_w=False):
         result,
         columns=['pval_ref', 'pval_alt']
     )
-    result['FDR_sample'] = result.groupby('sample_id', group_keys=True)['min_pval'].transform(calc_fdr_pd)
+    result['FDR_sample'] = result.groupby('sample_id')['min_pval'].transform(calc_fdr_pd)
     return result.reset_index(drop=True)[result_columns]
 
 
