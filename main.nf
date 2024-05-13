@@ -143,18 +143,14 @@ process annotate_variants {
         ${footprint_file} \
         footprints.txt
 
-    unstarch ${peaks_file} > peaks.bed
-
     process_file \
         pval_f.sorted.bed \
-        peaks.bed \
+        ${peaks_file} \
         peaks.txt
 
-    unstarch ${hotspots_file} > hotspots.bed
-
     process_file \
         pval_f.sorted.bed \
-        hotspots.bed \
+        ${hotspots_file} \
         hotspots.txt
 
     cat pvals.header.txt pval_f.sorted.bed > sorted_pvals.bed
