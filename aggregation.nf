@@ -154,6 +154,7 @@ workflow aggregation {
                         throw new Exception("Column '${params.aggregation_key}' does not exist in the samples file '${params.samples_file}'")
                     }
                 }
+                | view()
             pvals = sample_split_pvals
                 | join(sample_cl_correspondence)
                 | filter(it -> !it[2].isEmpty())
