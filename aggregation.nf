@@ -156,7 +156,6 @@ workflow aggregation {
                 }
             pvals = sample_split_pvals
                 | join(sample_cl_correspondence)
-                | view()
                 | filter(it -> !it[2].isEmpty())
                 | map(it -> tuple(it[2], it[1]))
                 | set_key_for_group_tuple 
