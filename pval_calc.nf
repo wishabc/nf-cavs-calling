@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 params.conda = "$moduleDir/environment.yml"
 
+// Supplimentary functions to calculate p-value for each SNP
+
 process calc_pval_binom {
     tag "${indiv_id}"
     conda params.conda

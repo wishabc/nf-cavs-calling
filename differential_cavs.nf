@@ -115,6 +115,7 @@ workflow differentialCavs {
 }
 
 workflow {
+    params.nonagr_pvals = "${params.outdir}/non_aggregated.${params.aggregation_key}.bed.gz"
     Channel.fromPath(params.nonagr_pvals)
         | differentialCavs
 }

@@ -10,10 +10,8 @@ def main(tested, pvals, max_cover_tr=15, differential_fdr_tr=0.05, aggregation_f
     tested = tested.merge(pvals)
     assert len(tested.index) == tested_length, f"Length of tested dataframe changed from {tested_length} to {len(tested.index)}"
 
-    constitutive_df = filter_pval_df(pvals, max_cover_tr)
     constitutive_df = aggregate_pvalues_df(tested, starting_columns)
     constitutive_df['min_fdr_overall'] = calc_fdr_pd(constitutive_df['min_pval'])
-
 
     constitutive_df['overall_imbalanced'] = constitutive_df.eval(f'min_fdr_overall <= {aggregation_fdr}')
     pvals['differential_fdr'] = calc_fdr_pd(pvals['p_differential'])

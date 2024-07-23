@@ -45,8 +45,7 @@ workflow cavsMotifEnrichment {
 
 workflow {
     params.agr_pvals = "${params.outdir}/aggregated.${params.aggregation_key}.bed"
-    params.motif_counts = "/net/seq/data2/projects/sabramov/ENCODE4/moods_scans.ref.0928/output/motif_counts"
-    motif_counts = Channel.fromPath("${params.motif_counts}/*.counts.bed")
+    motif_counts = Channel.fromPath("${params.motif_counts_ref}/*.counts.bed")
         | map(it -> tuple(it.name.replaceAll(".counts.bed", ""), it, file(params.agr_pvals)))
         | cavsMotifEnrichment
 
