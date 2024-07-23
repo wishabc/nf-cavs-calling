@@ -112,7 +112,7 @@ process annotate_variants {
     label "med_mem"
 
     input:
-        tuple val(sample_id), path(pval_file), path(peaks_file), path(footprint_file), path(hotspots_file)
+        tuple val(sample_id), path("pvals.bed"), path(peaks_file), path(footprint_file), path(hotspots_file)
 
     output:
         tuple val(sample_id), path(name)
@@ -131,12 +131,16 @@ process annotate_variants {
             # Nextflow needs an input file. Mock file was passed here.
             awk '{print "-"}' \$1 > \$3
         else
-            grep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
+            if [[ "\${bname}" == *".starch" ]]; then
+                bedmap --indicator \$1 \$2 > \$3 || true
+            else
+                grep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
+            fi
         fi
     }
 
-    tail -n+2 ${pval_file} | sort-bed - > pval_f.sorted.bed
-    head -1 ${pval_file} > pvals.header.txt
+    tail -n+2 pvals.bed | sort-bed - > pval_f.sorted.bed
+    head -1 pvals.bed > pvals.header.txt
 
     process_file \
         pval_f.sorted.bed \
