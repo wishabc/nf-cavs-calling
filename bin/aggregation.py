@@ -82,7 +82,7 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
         'RAF': ('RAF', 'first'),
 
         'nSNPs': ('coverage', 'count'),
-        'max_cover': ('max_cover', 'first'),
+        'max_cover': ('coverage', 'max'),
         'hotspots_n': ('hotspots', calc_sum_if_not_minus),
         'footprints_n': ('footprints', calc_sum_if_not_minus),
         'peaks_n': ('peaks', calc_sum_if_not_minus),
