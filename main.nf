@@ -236,7 +236,7 @@ workflow annotateWithFootprints {
             | map(row -> tuple(
                     row.ag_id,
                     check_var(row?.peaks_file, 'peaks'), 
-                    check_var(row?.footprints_path, 'fp'),
+                    check_var(row?.footprints_file, 'fp'),
                     check_var(row?.hotspots_file, 'hs')
                     )
                 )
