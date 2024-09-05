@@ -157,7 +157,7 @@ def calc_fdr_pd(pd_series):
 def main(pval_df, max_cover_tr=15, chrom=None):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
-    pval_df = filter_pval_df(pval_df, max_cover_tr=15).query('is_tested').reset_index(drop=True)
+    pval_df = filter_pval_df(pval_df, max_cover_tr=max_cover_tr).query('is_tested').reset_index(drop=True)
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     
