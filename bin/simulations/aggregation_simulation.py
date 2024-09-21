@@ -109,10 +109,13 @@ class AggregatedBinomialScoringModel(AggregatedBinomialModel):
         side = np.where(agg_log_p_right < agg_log_p_left, 1, -1)
         return agg_log_p, side
 
+    def can_score(self, model: AggregatedBinomialModel):
+        return np.all(np.sorted(self.ns) == np.sorted(model.ns))
+
 
 class AggregatedSamplingPowerEstimator:
     def __init__(self, null_model: AggregatedBinomialSamplingModel, scoring_model: AggregatedBinomialScoringModel, n_itter=10000, random_state=None, bad_phasing_mode=None):
-        assert all(null_model.ns == scoring_model.ns), 'Models have different ns'
+        assert scoring_model.can_score(null_model), 'Models have different ns'
         if random_state is None:
             random_state = np.random.randint(0, 100000)
         self.random_state = random_state
