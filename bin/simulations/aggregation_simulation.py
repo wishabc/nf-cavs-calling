@@ -112,6 +112,7 @@ class AggregatedBinomialScoringModel(AggregatedBinomialModel):
 
 class AggregatedSamplingPowerEstimator:
     def __init__(self, null_model: AggregatedBinomialSamplingModel, scoring_model: AggregatedBinomialScoringModel, n_itter=10000, random_state=None, bad_phasing_mode=None):
+        assert null_model.ns == scoring_model.ns, 'Models have different ns'
         if random_state is None:
             random_state = np.random.randint(0, 100000)
         self.random_state = random_state
