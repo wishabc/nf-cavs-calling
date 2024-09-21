@@ -26,6 +26,7 @@ def aggregate_pvals(pvals, weights):
 
 
 class AggregatedBinomialModel:
+    __child_model__ = BinomialModel
     def __init__(self, ns, effect=0, Bs=None, indivs=None):
         self.e = effect
         self.ns = np.array(ns)
@@ -33,7 +34,7 @@ class AggregatedBinomialModel:
         self.Bs = self._validate_list_argument(Bs)
         self.weights = self.ns  # np.sqrt(self.ns)
         self._random_state_mod = 2**32
-        self.models = [BinomialModel(n, effect, B) for n, B in zip(self.ns, self.Bs)]
+        self.models = [self.__child_model__(n, effect, B) for n, B in zip(self.ns, self.Bs)]
 
     @cached_method
     def get_effect_model(self, effect=0):
@@ -51,12 +52,12 @@ class AggregatedBinomialModel:
             arg = np.ones(len(self.ns)) * arg
         return arg
 
+    @classmethod
+    def from_model(cls, other: 'AggregatedBinomialModel'):
+        return cls(other.ns, other.e, other.Bs, other.indivs)
 
 class AggregatedBinomialSamplingModel(AggregatedBinomialModel):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.models = [BinomialSamplingModel.from_model(model) for model in self.models]
+    __child_model__ = BinomialSamplingModel
 
     @cached_method
     def get_samples(self, n_itter, random_state=0, bad_phasing_mode=None):
@@ -84,9 +85,7 @@ class AggregatedBinomialSamplingModel(AggregatedBinomialModel):
 
 
 class AggregatedBinomialScoringModel(AggregatedBinomialModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.models = [BinomialScoringModel.from_model(model) for model in self.models]
+    __child_model__ = BinomialScoringModel
 
     def aggregate_pvals(self, pvals, weights):
         """
