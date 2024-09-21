@@ -216,7 +216,7 @@ class CachedBinomialScoringModel(BinomialScoringModel):
 
 
 class ExactPowerEstimator:
-    def __init__(self, null_model: BinomialModel, scoring_model: CachedBinomialScoringModel, bad_phasing_mode=1):
+    def __init__(self, null_model: BinomialModel, scoring_model: CachedBinomialScoringModel, bad_phasing_mode=None):
         self.null_model = null_model
         self.scoring_model = scoring_model
         assert bad_phasing_mode in [None, 1, 2]
