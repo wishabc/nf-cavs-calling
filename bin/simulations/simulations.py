@@ -214,7 +214,7 @@ class ExactPowerEstimator:
     def __init__(self, null_model: BinomialModel, scoring_model: CachedBinomialScoringModel, bad_phasing_mode=1):
         self.null_model = null_model
         self.scoring_model = scoring_model
-        assert bad_phasing_mode in [1, 2]
+        assert bad_phasing_mode in [None, 1, 2]
         self.bad_phasing_mode = bad_phasing_mode
 
     @cached_method
@@ -251,7 +251,10 @@ class ExactPowerEstimator:
     # For true distribution, knowing the correct BAD phasing mode.
     # By default positive effect corresponds to preference towards copied allele (mode=1)    
     def sum_probability_for_mode(self, model, indicators):
-        dist = model.dist1 if self.bad_phasing_mode == 1 else model.dist2
-        log_pmf_for_mode = dist.logpmf(model.all_x)
+        if self.bad_phasing_mode is None:
+            log_pmf_for_mode = logsumexp([model.dist1.logpmf(model.all_x), model.dist2.logpmf(model.all_x)], axis=0) - np.log(2)
+        else:
+            dist = model.dist1 if self.bad_phasing_mode == 1 else model.dist2
+            log_pmf_for_mode = dist.logpmf(model.all_x)
         return np.exp(logsumexp(log_pmf_for_mode[indicators])) if indicators.sum() != 0 else 0
 

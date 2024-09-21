@@ -33,7 +33,7 @@ class AggregatedBinomialModel:
         self.indivs = self._validate_list_argument(indivs)
         self.Bs = self._validate_list_argument(Bs)
         self.weights = self.ns  # np.sqrt(self.ns)
-        self._random_state_mod = 2**32
+        self._random_state_mod = 2 ** 32
         self.models = [self.__child_model__(n, effect, B) for n, B in zip(self.ns, self.Bs)]
 
     @cached_method
