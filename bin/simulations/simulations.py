@@ -40,9 +40,10 @@ def cached_property(func=None, *, init_method=None):
 
     return wrapper
 
-
-def hash_array(array):
-    return hash(array.tobytes())
+def hash_element(element):
+    if isinstance(element, np.ndarray):
+        return hash(element.tobytes())
+    return hash(element)
 
 
 def cached_method(func):
@@ -60,10 +61,14 @@ def cached_method(func):
         cache = getattr(self, cache_attr_name)
 
         hashed_args = tuple(
-            hash_array(arg) if isinstance(arg, np.ndarray) else arg
+            hash_element(arg)
             for arg in args
         )
-        key = (hashed_args, tuple(sorted(kwargs.items())))
+        hashed_kwargs = tuple(
+            (key, hash_element(value))
+            for key, value in kwargs.items()
+        )
+        key = (hashed_args, hashed_kwargs)
         if key not in cache:
             cache[key] = func(self, *args, **kwargs)
         return cache[key]
