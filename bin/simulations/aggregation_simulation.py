@@ -126,7 +126,7 @@ class AggregatedSamplingPowerEstimator:
         if effect == self.null_model.e:
             print('(!) Comparing same effect size models')
         effect_model = self.null_model.get_effect_model(effect)
-        samples, _ = effect_model.get_samples(self.n_itter, random_state=self.random_state, phased=self.phased)
+        samples, _ = effect_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
         log_pvals, side = self.scoring_model.aggregated_log_p_values(samples)
         if correct_indices:
             correct_indices = side == (1 if effect - self.null_model.e > 0 else -1)
@@ -136,7 +136,7 @@ class AggregatedSamplingPowerEstimator:
 
     @cached_method
     def specificity(self, signif_tr):
-        samples, _ = self.null_model.get_samples(self.n_itter, random_state=self.random_state, phased=self.phased)
+        samples, _ = self.null_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
         log_pvals, _ = self.scoring_model.aggregated_log_p_values(samples)
         return 1 - np.sum(log_pvals <= np.log(signif_tr)) / self.n_itter
 
