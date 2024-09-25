@@ -263,3 +263,95 @@ class ExactPowerEstimator:
             log_pmf_for_mode = dist.logpmf(model.all_x)
         return np.exp(logsumexp(log_pmf_for_mode[indicators])) if indicators.sum() != 0 else 0
 
+
+
+def plot_qq_ci(logq_x, log_y_ci, line_kws=None, fill_kws=None, ax=None, label=None):
+    if ax is None:
+        ax = plt.gca()
+    
+    line_kwargs = dict(
+        lw=0.5,
+        ls='-',
+        color='k'
+    )
+    if line_kws is not None:
+        line_kwargs.update(line_kws)
+
+    fill_kwargs = dict(
+        lw=0,
+        color='grey',
+        alpha=0.1
+    )
+    if fill_kws is not None:
+        fill_kwargs.update(fill_kws)
+
+
+    ax.plot(
+        logq_x,
+        log_y_ci.median,
+        **line_kwargs
+    )
+    
+    ax.fill_between(
+        logq_x,
+        log_y_ci.ci_low,
+        log_y_ci.ci_upp,
+        **fill_kwargs
+    )
+
+    custom_legend = (
+        Line2D([0], [0], **line_kwargs), 
+        Patch(**fill_kwargs)
+    )
+    return ax, [custom_legend], [label]
+    
+
+def plot_qq(logq_obs, logq_binom, logq_betabin=None, ax=None, ci=0.95, s=1, **kwargs):
+    if ax is None:
+        ax = plt.gca()
+
+    obs_handle = ax.scatter(
+        logq_binom.median,
+        logq_obs,
+        label='Observed',
+        s=s,
+        **kwargs
+    )
+
+    _, b_legend, b_label = plot_qq_ci(
+        logq_binom.median,
+        logq_binom,
+        ax=ax,
+        label=f'Simulated binomial\nmedian & {ci*100:.0f}% CI',
+        line_kws=dict(color='k', ls='--'),
+        fill_kws=dict(color='grey', alpha=0.1)
+    )
+
+    if logq_betabin is not None:
+        _, bb_legend, bb_label = plot_qq_ci(
+            logq_binom.median,
+            logq_betabin,
+            ax=ax,
+            label=f'Simulated beta-binomial\nmedian & {ci*100:.0f}% CI',
+            line_kws=dict(color='red'),
+            fill_kws=dict(color='red', alpha=0.1)
+        )
+    else:
+        bb_legend = []
+        bb_label = []
+    
+    ax.set_ylabel('Observed -log10 P')
+    ax.set_xlabel('Expected -log10 P\n(Simulated binomial)')
+
+    handles = [obs_handle, *b_legend, *bb_legend]
+    labels = ['Observed', *b_label, *bb_label]
+
+    ax.legend(
+        handles=handles,
+        labels=labels,
+        loc='upper left',
+        bbox_to_anchor=(1, 1)
+    )
+
+    return ax
+        
