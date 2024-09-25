@@ -110,7 +110,7 @@ class AggregatedBinomialScoringModel(AggregatedBinomialModel):
         return agg_log_p, side
 
     def compatible_with(self, model: AggregatedBinomialModel):
-        assert np.all(np.sorted(self.ns) == np.sorted(model.ns)), 'Scoring model cannot score the null model, wrong Ns'
+        assert np.all(np.sort(self.ns) == np.sort(model.ns)), 'Scoring model cannot score the null model, wrong Ns'
 
 
 class AggregatedSamplingPowerEstimator:
