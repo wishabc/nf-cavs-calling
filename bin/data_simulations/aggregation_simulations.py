@@ -27,6 +27,7 @@ def aggregate_pvals(pvals, weights):
 
 class AggregatedBinomialModel:
     __child_model__ = BinomialModel
+
     def __init__(self, ns, effect=0, Bs=None, indivs=None, weights=None):
         self.e = effect
         self.ns = np.array(ns)
@@ -57,7 +58,8 @@ class AggregatedBinomialModel:
 
     @classmethod
     def from_model(cls, other: 'AggregatedBinomialModel'):
-        return cls(other.ns, other.e, other.Bs, other.indivs)
+        return cls(other.ns, other.e, other.Bs, other.indivs, other.weights)
+
 
 class AggregatedBinomialSamplingModel(AggregatedBinomialModel):
     __child_model__ = BinomialSamplingModel
