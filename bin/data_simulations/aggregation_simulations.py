@@ -27,12 +27,15 @@ def aggregate_pvals(pvals, weights):
 
 class AggregatedBinomialModel:
     __child_model__ = BinomialModel
-    def __init__(self, ns, effect=0, Bs=None, indivs=None):
+    def __init__(self, ns, effect=0, Bs=None, indivs=None, weights=None):
         self.e = effect
         self.ns = np.array(ns)
         self.indivs = self._validate_list_argument(indivs)
         self.Bs = self._validate_list_argument(Bs)
-        self.weights = self.ns  # np.sqrt(self.ns)
+        self.weights = self._validate_list_argument(weights)
+        if weights is None:
+            self.weights *= self.ns  # np.sqrt(self.ns)
+
         self._random_state_mod = 2 ** 32
         self.models = [self.__child_model__(n, effect, B) for n, B in zip(self.ns, self.Bs)]
 
