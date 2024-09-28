@@ -2,6 +2,7 @@ import scipy.stats as st
 from scipy.special import expit
 import numpy as np
 from base_models import BimodalEffectModel, cached_method
+from estimate_mse import effect_size_estimate, estimate_w_null
 
 
 class BinomialModel(BimodalEffectModel):
@@ -92,8 +93,8 @@ class BinomialScoringModel(BinomialModel):
 
     def estimate_w(self, x):
         if self.e == 0:
-            b = np.log(self.B)
-            delta = b * (self.n - 2 * x)
-            return expit(-delta)
+            return estimate_w_null(x, self.n, self.B)
         return expit(self.dist1.logpmf(x) - self.dist2.logpmf(x))
 
+    def es_estimate(self, x):
+        return effect_size_estimate(x, self.n, self.B)
