@@ -2,7 +2,7 @@ import scipy.stats as st
 from scipy.special import expit
 import numpy as np
 from base_models import BimodalEffectModel, cached_method
-from estimate_mse import effect_size_estimate, estimate_w_null
+from estimate_mse import es_estimate_vectorized, estimate_w_null, es_variance_vectorized
 
 
 class BinomialModel(BimodalEffectModel):
@@ -97,4 +97,7 @@ class BinomialScoringModel(BinomialModel):
         return expit(self.dist1.logpmf(x) - self.dist2.logpmf(x))
 
     def es_estimate(self, x):
-        return effect_size_estimate(x, self.n, self.B)
+        return es_estimate_vectorized(x, self.n, self.B)
+    
+    def es_variance(self, p):
+        return es_variance_vectorized(self.n, self.B, p)
