@@ -1,6 +1,6 @@
 import pandas as pd
 import argparse
-from estimate_mse import calc_variance
+from AI_statistics.estimate_mse import calc_variance
 import numpy as np
 
 
