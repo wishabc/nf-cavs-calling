@@ -38,7 +38,7 @@ def es_var_vectorized(n, B, p):
         return effect_size_estimate(x, n, B ) ** 2
     return expectation_vectorized(x2, n=n, B=B, p=p) - exp ** 2
 
-def calc_mse(n, B, n_points=101):
+def calc_variance(n, B, n_points=101):
     ess = np.linspace(0, 1, n_points)
     yvals = expectation_vectorized(effect_size_estimate, n, B, ess)
     vars = es_var_vectorized(n, B, ess)
