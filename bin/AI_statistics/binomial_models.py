@@ -1,7 +1,7 @@
 import scipy.stats as st
 from scipy.special import expit
 import numpy as np
-from base_models import BimodalEffectModel, cached_method
+from base_models import BimodalEffectModel, cached_method, BimodalSamplingModel, BimodalScoringModel
 from vectorized_estimators import es_estimate_vectorized, estimate_w_null
 
 
@@ -30,7 +30,7 @@ class BinomialModel(BimodalEffectModel):
         return cls(other.n, effect, other.B)
     
 
-class BinomialSamplingModel(BinomialModel):
+class BinomialSamplingModel(BimodalSamplingModel):
     """
     A model to simulate allelic imbalance data
     """
@@ -76,7 +76,7 @@ class BinomialSamplingModel(BinomialModel):
             return samples[order], phase[order]
 
 
-class BinomialScoringModel(BinomialModel):
+class BinomialScoringModel(BimodalScoringModel):
     """
     A model to score allelic imbalance data
     """

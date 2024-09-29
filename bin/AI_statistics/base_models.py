@@ -119,7 +119,7 @@ class BimodalEffectModel:
         return self.n == other.n
 
 
-class BimodalSamplingModel(BimodalEffectModel):
+class SamplingModel:
     """
     A model to simulate allelic imbalance data
     """
@@ -127,7 +127,7 @@ class BimodalSamplingModel(BimodalEffectModel):
         raise NotImplementedError
 
 
-class BimodalScoringModel(BimodalEffectModel):
+class ScoringModel:
     """
     Base class that contains calc_pvalues method
     """
@@ -136,3 +136,11 @@ class BimodalScoringModel(BimodalEffectModel):
 
     def effect_size_estimate(self, observations):
         raise NotImplementedError
+
+
+class BimodalSamplingModel(SamplingModel, BimodalEffectModel):
+    ...
+
+
+class BimodalScoringModel(ScoringModel, BimodalEffectModel):
+    ...

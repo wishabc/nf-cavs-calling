@@ -1,6 +1,6 @@
 import scipy.stats as st
 import numpy as np
-from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel
+from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel
 from collections.abc import Sequence
 from vectorized_estimators import aggregate_pvals, aggregate_effect_size
 
@@ -56,8 +56,12 @@ class AggregatedBimodalModel:
     def compatible_with(self, other: 'AggregatedBimodalModel'):
         return np.all(x.compatible_with(y) for x, y in zip(self.models, other.models))
 
+    @property
+    def all_observations(self):
+        raise NotImplementedError
 
-class AggregatedBimodalSamplingModel(AggregatedBimodalModel):
+
+class AggregatedBimodalSamplingModel(SamplingModel, AggregatedBimodalModel):
     __child_model__ = BimodalSamplingModel
 
     @cached_method
@@ -85,11 +89,11 @@ class AggregatedBimodalSamplingModel(AggregatedBimodalModel):
         return samples, phases
 
 
-class AggregatedBimodalScoringModel(AggregatedBimodalModel):
+class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
     __child_model__ = BimodalScoringModel
 
-    @cached_method
     def calc_pvalues(self, samples):
+        self.check_samples(samples)
         p_right, p_left, _ = map(
             np.stack,
             zip(*[model.calc_pvalues(sample) for sample, model in zip(samples, self.models)])
@@ -100,3 +104,12 @@ class AggregatedBimodalScoringModel(AggregatedBimodalModel):
         agg_log_p = np.log(2) + np.min([agg_log_p_left, agg_log_p_right], axis=0)
         side = np.where(agg_log_p_right < agg_log_p_left, 1, -1)
         return agg_log_p, side
+
+    def effect_size_estimate(self, samples):
+        self.check_samples(samples)
+        return aggregate_effect_size([model.effect_size_estimate(sample) for sample, model in zip(samples, self.models)], weights=self.weights)
+    
+    def check_samples(self, samples):
+        samples = np.asarray(samples)
+        assert samples.ndim == 2, f'(!) samples should be 2D array, got: {samples.ndim}'
+        assert samples.shape[0] == len(self.models), f'(!) number of models does not match number of samples'

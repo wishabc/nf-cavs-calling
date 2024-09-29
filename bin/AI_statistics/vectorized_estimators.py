@@ -50,7 +50,14 @@ def calc_variance(n, B, n_points=101):
 
 
 def aggregate_effect_size(es, weights):
-    return np.average(es, weights=weights)
+    """
+    Aggregate effect sizes using weights
+
+    Args:
+    - es: effect sizes shape (n_samples, ...)
+    - weights: weights shape (n_samples,)
+    """
+    return np.average(es, weights=weights, axis=0)
 
 
 def aggregate_pvals(pvals, weights):
