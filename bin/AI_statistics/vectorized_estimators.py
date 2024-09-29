@@ -27,7 +27,11 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
 
     b = np.log(B)
     logit_p = logit(x / n)
-    return expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
+    finite_logit_p = np.isfinite(logit_p)
+    result = logit_p.copy()
+    result[finite_logit_p] = expit(w * (logit_p[finite_logit_p] - b) + (1 - w) * (logit_p[finite_logit_p] + b))
+
+    return result
 
 
 def calc_variance(n, B, n_points=101):
