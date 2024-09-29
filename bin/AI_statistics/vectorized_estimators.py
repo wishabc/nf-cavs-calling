@@ -29,6 +29,7 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
     logit_p = logit(x / n)
     finite_logit_p = np.isfinite(logit_p)
     result = logit_p.copy()
+    print(result.shape, finite_logit_p.shape)
     result[finite_logit_p] = expit(w * (logit_p[finite_logit_p] - b) + (1 - w) * (logit_p[finite_logit_p] + b))
 
     return result
