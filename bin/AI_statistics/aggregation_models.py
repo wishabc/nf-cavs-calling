@@ -2,6 +2,7 @@ import scipy.stats as st
 import numpy as np
 from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel
 from collections.abc import Sequence
+from vectorized_estimators import aggregate_pvals, aggregate_effect_size
 
 
 def is_iterable(obj):
@@ -12,15 +13,6 @@ def is_iterable(obj):
         return False
     
 
-def aggregate_pvals(pvals, weights):
-    """
-    A vectorized version of Stouffer's method for combining p-values
-    """
-    if weights is None:
-        weights = np.ones_like(pvals)
-    # return st.combine_pvalues(pvals, weights=weights, method='stouffer')[1]
-    return st.norm.logsf(weights.dot(st.norm.isf(pvals)) / np.linalg.norm(weights))
-
 def _validate_list_argument(len_models, arg):
     if arg is None:
         arg = np.ones(len_models)
@@ -30,6 +22,7 @@ def _validate_list_argument(len_models, arg):
     else:
         arg = np.ones(len_models) * arg
     return arg
+
 
 class AggregatedBimodalModel:
     __child_model__ = BimodalEffectModel
@@ -44,7 +37,7 @@ class AggregatedBimodalModel:
             self.weights *= np.sqrt(np.array([model.n for model in self.models]))
 
         self._random_state_mod = 2 ** 32
-        self.e = np.average([model.e for model in self.models], weights=self.weights)
+        self.e = aggregate_effect_size([model.e for model in self.models], weights=self.weights)
 
     @cached_method
     def get_effect_model(self, effect):
@@ -59,6 +52,9 @@ class AggregatedBimodalModel:
     def from_model(cls, other: 'AggregatedBimodalModel', effect=None):
         new_models = [model.from_model(model, effect=effect) for model in other.models]
         return cls(new_models, other.indivs, other.weights)
+
+    def compatible_with(self, other: 'AggregatedBimodalModel'):
+        return np.all(x.compatible_with(y) for x, y in zip(self.models, other.models))
 
 
 class AggregatedBimodalSamplingModel(AggregatedBimodalModel):
@@ -92,18 +88,9 @@ class AggregatedBimodalSamplingModel(AggregatedBimodalModel):
 class AggregatedBimodalScoringModel(AggregatedBimodalModel):
     __child_model__ = BimodalScoringModel
 
-    def aggregate_pvals(self, pvals, weights):
-        """
-        A vectorized version of Stouffer's method for combining p-values
-        """
-        if weights is None:
-            weights = np.ones_like(pvals)
-        # return st.combine_pvalues(pvals, weights=self.weights, method='stouffer')
-        return st.norm.logsf(self.weights.dot(st.norm.isf(pvals)) / np.linalg.norm(self.weights))
-
     @cached_method
-    def aggregated_log_p_values(self, samples):
-        p_right, p_left, p_both = map(
+    def calc_pvalues(self, samples):
+        p_right, p_left, _ = map(
             np.stack,
             zip(*[model.calc_pvalues(sample) for sample, model in zip(samples, self.models)])
         )
@@ -113,6 +100,3 @@ class AggregatedBimodalScoringModel(AggregatedBimodalModel):
         agg_log_p = np.log(2) + np.min([agg_log_p_left, agg_log_p_right], axis=0)
         side = np.where(agg_log_p_right < agg_log_p_left, 1, -1)
         return agg_log_p, side
-
-    def compatible_with(self, other: AggregatedBimodalModel):
-        assert np.all(x.compatible_with(y) for x, y in zip(self.models, other.models)), 'Scoring model cannot score the null model, wrong Ns'

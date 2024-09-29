@@ -48,8 +48,24 @@ def calc_variance(n, B, n_points=101):
     vars = es_variance_vectorized(n, B, ess)
     return (yvals - ess) ** 2 + vars
 
+
+def aggregate_effect_size(es, weights):
+    return np.average(es, weights=weights)
+
+
+def aggregate_pvals(pvals, weights):
+    """
+    A vectorized version of Stouffer's method for combining p-values
+    """
+    if weights is None:
+        weights = np.ones_like(pvals)
+    # return st.combine_pvalues(pvals, weights=weights, method='stouffer')[1]
+    return st.norm.logsf(weights.dot(st.norm.isf(pvals)) / np.linalg.norm(weights))
+
+
 def logit_es(p, d=1/128):
     return np.log2(p + d) - np.log2(1 - p + d)
+
 
 def inv_logit_es(es, d=1/128):
     s = 2 ** es

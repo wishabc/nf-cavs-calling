@@ -120,7 +120,7 @@ class ExactPowerEstimator:
 
 class AggregatedSamplingPowerEstimator:
     def __init__(self, null_model: AggregatedBimodalSamplingModel, scoring_model: AggregatedBimodalScoringModel, n_itter=10000, random_state=None, bad_phasing_mode=None):
-        scoring_model.compatible_with(null_model)
+        assert scoring_model.compatible_with(null_model), 'Scoring model cannot score the null model, wrong Ns'
         if random_state is None:
             random_state = np.random.randint(0, 100000)
         self.random_state = random_state
@@ -136,7 +136,7 @@ class AggregatedSamplingPowerEstimator:
             print('(!) Comparing same effect size models')
         effect_model = self.null_model.get_effect_model(effect)
         samples, _ = effect_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
-        log_pvals, side = self.scoring_model.aggregated_log_p_values(samples)
+        log_pvals, side = self.scoring_model.calc_pvalues(samples)
         if correct_indices:
             correct_indices = side == (1 if effect - self.null_model.e > 0 else -1)
         else:
@@ -146,7 +146,7 @@ class AggregatedSamplingPowerEstimator:
     @cached_method
     def specificity(self, signif_tr):
         samples, _ = self.null_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
-        log_pvals, _ = self.scoring_model.aggregated_log_p_values(samples)
+        log_pvals, _ = self.scoring_model.calc_pvalues(samples)
         return 1 - np.sum(log_pvals <= np.log(signif_tr)) / self.n_itter
 
     @cached_method

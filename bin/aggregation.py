@@ -4,7 +4,7 @@ import scipy.stats as st
 from scipy import interpolate
 import numpy as np
 from tqdm import tqdm
-
+from AI_statistics.vectorized_estimators import logit_es, aggregate_effect_size
 
 tqdm.pandas()
 
@@ -26,28 +26,9 @@ result_columns = [
 ]
 
 
-def logit_es(es, d=1/128):
-    """
-    Logit transformation of effect size
-    
-    Args:
-        es: effect size
-        d: pseudocount
-    
-    Returns:
-        logit-transformed effect size
-    
-    """
-    return np.log2(es + d) - np.log2(1 - es + d)
-
-
 def calc_sum_if_not_minus(df_column):
     non_null_vals = [int(x) for x in df_column.tolist() if not pd.isna(x) and x != '-']
     return sum(non_null_vals) if len(non_null_vals) > 0 else '-' 
-
-
-def aggregate_effect_size(es, weights):
-    return np.average(es, weights=weights)
 
 
 def aggregate_pvals(df):
