@@ -103,14 +103,18 @@ class ExactPowerEstimator:
     def fraction_effect_size_stats(self, effect):
         log_pmf = self.get_effect_log_pmf(effect)
         p_estimates = expit(self.scoring_model.effect_size_estimates * np.log(2))
-        p_expectation = np.exp(logsumexp(
-                            log_pmf,
-                            b=p_estimates
-                        ))
-        p_variance = np.exp(logsumexp(
-                            log_pmf,
-                            b=(p_estimates - p_expectation) ** 2
-                        ))
+        p_expectation = np.exp(
+            logsumexp(
+                log_pmf,
+                b=p_estimates
+            )
+        )
+        p_variance = np.exp(
+            logsumexp(
+                log_pmf,
+                b=(p_estimates - p_expectation) ** 2
+            )
+        )
         return p_expectation, p_variance
 
 
