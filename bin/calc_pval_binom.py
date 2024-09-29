@@ -43,7 +43,7 @@ def main(df: pd.DataFrame, coverage_tr=15):
         min_pval=np.exp(log_pval_both),
         inplace=True
     )
-
+    print(df.columns)
     df['FDR_sample'] = df.groupby('sample_id')['min_pval'].transform(calc_fdr_pd)
     return df.reset_index(drop=True)[result_columns]
 
