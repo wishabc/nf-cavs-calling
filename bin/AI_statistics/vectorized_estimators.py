@@ -28,7 +28,7 @@ def es_estimate_vectorized(x, n, B, w=None):
     b = np.log(B)
 
     with warnings.catch_warnings(record=True) as war:
-        warnings.simplefilter("always", warnings.RuntimeWarning)
+        warnings.simplefilter("always", RuntimeWarning)
         
         # Code that may trigger RuntimeWarnings
         logit_p = logit(x / n)
