@@ -1,5 +1,4 @@
-from scipy.special import logsumexp
-from functools import wraps
+from scipy.special import logsumexp, expit, logit
 from base_models import cached_method, BimodalScoringModel, BimodalEffectModel, cached_property
 from aggregation_model import AggregatedBimodalSamplingModel, AggregatedBimodalScoringModel
 import numpy as np
@@ -39,6 +38,10 @@ class CachedScoringModel:
             return self.p_left
         elif side == 'both':
             return self.p_both
+        
+    @cached_property
+    def effect_size_estimates(self):
+        return self.model.effect_size_estimate(self.all_observations)
     
     def get_signif_indices(self, signif_tr, side='both'):
         return self.p_value(side=side) <= signif_tr
@@ -49,6 +52,7 @@ class ExactPowerEstimator:
         self.null_model = null_model
         self.scoring_model = scoring_model
         assert bad_phasing_mode in [None, 1, 2]
+        assert scoring_model.model.compatible_with(null_model)
         self.bad_phasing_mode = bad_phasing_mode
 
     @cached_method
@@ -75,23 +79,39 @@ class ExactPowerEstimator:
         signif_indices = self.scoring_model.get_signif_indices(signif_tr, side=side)
         return 1 - self.sum_probability_for_mode(self.null_model, signif_indices)
 
-
     def correct_side_sensitivity(self, effect, signif_tr, side='both'):
         correct_side_indices = (self.scoring_model.p_right < self.scoring_model.p_left) == (
                     (effect - self.null_model.e) > 0)
         return self.sensitivity(effect, signif_tr, side=side, correct_indices=correct_side_indices)
 
-
-    # For true distribution, knowing the correct BAD phasing mode.
-    # By default positive effect corresponds to preference towards copied allele (mode=1)    
     def sum_probability_for_mode(self, model: BimodalEffectModel, indicators: np.ndarray):
-        assert hasattr(model, 'dist1') and hasattr(model, 'dist2'), 'Model must have dist1 and dist2 attributes'
-        if self.bad_phasing_mode is None:
-            log_pmf_for_mode = logsumexp([model.dist1.logpmf(model.all_observations), model.dist2.logpmf(model.all_observations)], axis=0) - np.log(2)
-        else:
-            dist = model.dist1 if self.bad_phasing_mode == 1 else model.dist2
-            log_pmf_for_mode = dist.logpmf(model.all_observations)
+        """
+        Calculate the sum of probabilities for the given mode
+
+        For true distribution, knowing the correct BAD phasing mode.
+        By default positive effect corresponds to preference towards copied allele (mode=1)  
+        """
+        log_pmf_for_mode = model.get_log_pmf_for_mode(self.bad_phasing_mode)
         return np.exp(logsumexp(log_pmf_for_mode[indicators])) if indicators.sum() != 0 else 0
+    
+    @cached_method
+    def get_effect_log_pmf(self, effect):
+        effect_model = self.null_model.get_effect_model(effect)
+        return effect_model.get_log_pmf_for_mode(self.bad_phasing_mode)
+    
+    @cached_method
+    def fraction_effect_size_stats(self, effect):
+        log_pmf = self.get_effect_log_pmf(effect)
+        p_estimates = expit(self.scoring_model.effect_size_estimates * np.log(2))
+        p_expectation = np.exp(logsumexp(
+                            log_pmf,
+                            b=p_estimates
+                        ))
+        p_variance = np.exp(logsumexp(
+                            log_pmf,
+                            b=(p_estimates - p_expectation) ** 2
+                        ))
+        return p_expectation, p_variance
 
 
 class AggregatedSamplingPowerEstimator:

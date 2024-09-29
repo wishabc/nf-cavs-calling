@@ -96,8 +96,6 @@ class BinomialScoringModel(BinomialModel):
             return estimate_w_null(x, self.n, self.B)
         return expit(self.dist1.logpmf(x) - self.dist2.logpmf(x))
 
-    def es_estimate(self, x):
-        return es_estimate_vectorized(x, self.n, self.B)
-    
-    def es_variance(self, p):
-        return es_variance_vectorized(self.n, self.B, p)
+    def effect_size_estimate(self, x):
+        w = self.estimate_w(x)
+        return es_estimate_vectorized(x, self.n, self.B, w)

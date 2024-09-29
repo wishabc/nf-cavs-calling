@@ -105,6 +105,18 @@ class BimodalEffectModel:
         if effect == self.e:
             return self
         return self.__class__.from_model(self, effect=effect)
+    
+    def get_log_pmf_for_mode(self, bad_phasing_mode):
+        assert bad_phasing_mode in [1, 2, None]
+        if bad_phasing_mode is None:
+            log_pmf_for_mode = logsumexp([self.dist1.logpmf(self.all_observations), self.dist2.logpmf(self.all_observations)], axis=0) - np.log(2)
+        else:
+            dist = self.dist1 if bad_phasing_mode == 1 else self.dist2
+            log_pmf_for_mode = dist.logpmf(self.all_observations)
+        return log_pmf_for_mode
+    
+    def compatible_with(self, other: 'BimodalEffectModel'):
+        return self.n == other.n
 
 
 class BimodalSamplingModel(BimodalEffectModel):
@@ -122,5 +134,5 @@ class BimodalScoringModel(BimodalEffectModel):
     def calc_pvalues(self, observations):
         raise NotImplementedError
 
-    def compatible_with(self, other: BimodalEffectModel):
-        return self.n == other.n
+    def effect_size_estimate(self, observations):
+        raise NotImplementedError
