@@ -2,6 +2,10 @@ import pandas as pd
 import argparse
 from AI_statistics.vectorized_estimators import calc_variance
 import numpy as np
+from tqdm import tqdm
+
+
+tqdm.pandas()
 
 
 def read_indicator(file_path):
