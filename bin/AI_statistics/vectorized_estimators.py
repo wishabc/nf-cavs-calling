@@ -20,25 +20,14 @@ def mode1_expectation_vectorized(dist1: st.rv_discrete, func, x, *args, **kwargs
     return np.exp(expectations)
 
 
-def es_estimate_vectorized(x, n, B, w=None):
+def es_fraction_estimate_vectorized(x, n, B, w=None):
     if w is None:
         w = estimate_w_null(x, n, B)
     x, n, B = map(np.asarray, [x, n, B])
 
     b = np.log(B)
-
-    with warnings.catch_warnings(record=True) as war:
-        warnings.simplefilter("always", RuntimeWarning)
-        
-        # Code that may trigger RuntimeWarnings
-        logit_p = logit(x / n)
-        result = w * (logit_p - b) + (1 - w) * (logit_p + b)
-
-        # Check if any warnings were captured
-        if war:
-            for warning in war:
-                print(x, n, w, b, logit_p)
-    return result
+    logit_p = logit(x / n)
+    return expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
 
 
 def calc_variance(n, B, n_points=101):
@@ -47,10 +36,10 @@ def calc_variance(n, B, n_points=101):
     p1 = expit(logit(es_fraction) + np.log(B))
     dist1 = st.binom(n, p1)
 
-    yvals = mode1_expectation_vectorized(dist1, es_estimate_vectorized, x, n=n, B=B)
+    yvals = mode1_expectation_vectorized(dist1, es_fraction_estimate_vectorized, x, n=n, B=B)
 
     def es_estimate_squared(*args, **kwargs):
-        return es_estimate_vectorized(*args, **kwargs) ** 2
+        return es_fraction_estimate_vectorized(*args, **kwargs) ** 2
 
     yvals_squared_exp = mode1_expectation_vectorized(dist1, es_estimate_squared, x, n=n, B=B)    
 

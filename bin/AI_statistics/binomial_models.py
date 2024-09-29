@@ -1,8 +1,8 @@
 import scipy.stats as st
-from scipy.special import expit
+from scipy.special import expit, logit
 import numpy as np
 from base_models import BimodalEffectModel, cached_method, BimodalSamplingModel, BimodalScoringModel, Pvalues
-from vectorized_estimators import es_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
+from vectorized_estimators import es_fraction_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
 
 
 class BinomialModel(BimodalEffectModel):
@@ -91,4 +91,4 @@ class BinomialScoringModel(BimodalScoringModel):
 
     def effect_size_estimate(self, x):
         w = self.estimate_w(x)
-        return es_estimate_vectorized(x, self.n, self.B, w)
+        return logit(es_fraction_estimate_vectorized(x, self.n, self.B, w))

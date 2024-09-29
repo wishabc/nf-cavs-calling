@@ -4,7 +4,7 @@ import numpy as np
 import scipy.stats as st
 from scipy.special import expit
 from aggregation import calc_fdr_pd, check_if_tested
-from AI_statistics.vectorized_estimators import logit_es, es_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
+from AI_statistics.vectorized_estimators import logit_es, es_fraction_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
 from tqdm import tqdm
 
 tqdm.pandas()
@@ -24,7 +24,7 @@ def main(df: pd.DataFrame, coverage_tr=15):
     df = df.groupby('sample_id').progress_apply(check_if_tested, max_cover_tr=coverage_tr).reset_index(drop=True)
     
     df['w'] = estimate_w_null(df['ref_counts'], df['coverage'], df['BAD'])
-    df['es'] = es_estimate_vectorized(df['ref_counts'], df['coverage'], df['BAD'], df['w'])
+    df['es'] = es_fraction_estimate_vectorized(df['ref_counts'], df['coverage'], df['BAD'], df['w'])
     df['logit_es'] = logit_es(df['es'])
 
     log_bad = np.log(df['BAD'])
