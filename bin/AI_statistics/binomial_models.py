@@ -2,7 +2,7 @@ import scipy.stats as st
 from scipy.special import expit
 import numpy as np
 from base_models import BimodalEffectModel, cached_method
-from estimate_mse import es_estimate_vectorized, estimate_w_null
+from vectorized_estimators import es_estimate_vectorized, estimate_w_null
 
 
 class BinomialModel(BimodalEffectModel):
@@ -85,10 +85,6 @@ class BinomialScoringModel(BinomialModel):
         p_right = w * self.dist1.sf(x - 1) + (1 - w) * self.dist2.sf(x - 1)
         p_left = w * self.dist1.cdf(x) + (1 - w) * self.dist2.cdf(x)
         p_both = 2 * np.minimum(p_right, p_left)
-        # p_both_alt = 2 * (
-        #     w * np.minimum(self.dist.sf(x - 1), self.dist.cdf(x)) +
-        #     (1 - w) * np.minimum(self.dist2.sf(x - 1), self.dist2.cdf(x))
-        # )
         return p_right, p_left, p_both
 
     def estimate_w(self, x):

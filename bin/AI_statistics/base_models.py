@@ -94,7 +94,7 @@ class BimodalEffectModel:
         raise NotImplementedError
     
     @classmethod
-    def from_model(cls, other: 'BimodalEffectModel', effect=None):
+    def from_model(cls, other: 'BimodalEffectModel', effect=None) -> 'BimodalEffectModel':
         raise NotImplementedError
     
     @cached_method
