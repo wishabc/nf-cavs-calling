@@ -13,16 +13,11 @@ def estimate_w_null(x, n, B):
     return expit(-delta)
 
 
-def mode1_expectation_vectorized(func, n, B, p):
-    b = np.log(B)
-    p1 = expit(logit(p) + b)
-    x = np.arange(0, n + 1)
-    
-    pmf_values = st.binom.pmf(x[:, None], n, p1[None, :])
-    func_values = func(x[:, None], n, B )
-    
-    expectations = np.sum(pmf_values * func_values, axis=0)
-    return expectations
+def mode1_expectation_vectorized(dist1: st.rv_discrete, func, x, *args, **kwargs):
+    log_pmf_values = dist1.logpmf(x[:, None])
+    func_values = func(x[:, None], *args, **kwargs)
+    expectations = logsumexp(log_pmf_values, b=func_values, axis=0)
+    return np.exp(expectations)
 
 
 def es_estimate_vectorized(x, n, B, w=None):
@@ -37,11 +32,16 @@ def es_estimate_vectorized(x, n, B, w=None):
 
 def es_variance_vectorized(n, B, p, w=None):
     assert np.all(p >= 0) and np.all(p <= 1), "p must be in [0, 1]"
-    kwargs = dict(n=n, B=B, p=p, w=w)
-    exp = mode1_expectation_vectorized(es_estimate_vectorized, **kwargs)
+    kwargs = dict(n=n, B=B, w=w)
+    x = np.arange(n + 1)
+    ## FIXME: ugly
+    p1 = expit(logit(p) + np.log(B))
+    dist1 = st.binom(n, p1)
+
+    exp = mode1_expectation_vectorized(dist1, es_estimate_vectorized, x, **kwargs)
     def es_estimate_squared(*args, **kwargs):
         return es_estimate_vectorized(*args, **kwargs) ** 2
-    return mode1_expectation_vectorized(es_estimate_squared, **kwargs) - exp ** 2
+    return mode1_expectation_vectorized(dist1, es_estimate_squared, **kwargs) - exp ** 2
 
 
 def calc_variance(n, B, n_points=101):
