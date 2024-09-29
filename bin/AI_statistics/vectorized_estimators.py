@@ -41,7 +41,7 @@ def es_variance_vectorized(n, B, p, w=None):
     exp = mode1_expectation_vectorized(dist1, es_estimate_vectorized, x, **kwargs)
     def es_estimate_squared(*args, **kwargs):
         return es_estimate_vectorized(*args, **kwargs) ** 2
-    return mode1_expectation_vectorized(dist1, es_estimate_squared, **kwargs) - exp ** 2
+    return mode1_expectation_vectorized(dist1, es_estimate_squared, x, **kwargs) - exp ** 2
 
 
 def calc_variance(n, B, n_points=101):
