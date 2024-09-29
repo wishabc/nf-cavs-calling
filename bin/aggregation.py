@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
-from AI_statistics.vectorized_estimators import logit_es, aggregate_effect_size, stouffer_combine_pvals, log_pval_both, qvalue
+from AI_statistics.vectorized_estimators import logit_es, aggregate_effect_size, stouffer_combine_log_pvals, log_pval_both, qvalue
 
 
 tqdm.pandas()
@@ -32,8 +32,8 @@ def calc_sum_if_not_minus(df_column):
 
 def aggregate_pvals(df):
     weights = df['inverse_mse']
-    log_pval_ref_combined = stouffer_combine_pvals(df['pval_ref'], weights)
-    log_pval_alt_combined = stouffer_combine_pvals(df['pval_alt'], weights)
+    log_pval_ref_combined = stouffer_combine_log_pvals(df['pval_ref'], weights)
+    log_pval_alt_combined = stouffer_combine_log_pvals(df['pval_alt'], weights)
     log_pval_both_combined = log_pval_both(log_pval_ref_combined, log_pval_alt_combined)
     es_combined = aggregate_effect_size(df['es'], weights=weights)
     return pd.Series(

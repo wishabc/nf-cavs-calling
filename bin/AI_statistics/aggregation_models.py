@@ -1,7 +1,7 @@
 import numpy as np
 from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel
 from collections.abc import Sequence
-from vectorized_estimators import stouffer_combine_pvals, aggregate_effect_size, log_pval_both
+from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both
 
 
 def is_iterable(obj):
@@ -97,8 +97,8 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
             np.stack,
             zip(*[model.calc_pvalues(sample) for sample, model in zip(samples, self.models)])
         )
-        agg_log_p_right = stouffer_combine_pvals(log_p_right, self.weights) 
-        agg_log_p_left = stouffer_combine_pvals(log_p_left, self.weights)
+        agg_log_p_right = stouffer_combine_log_pvals(log_p_right, self.weights) 
+        agg_log_p_left = stouffer_combine_log_pvals(log_p_left, self.weights)
         agg_log_p = log_pval_both(agg_log_p_left, agg_log_p_right)
         return agg_log_p_right, agg_log_p_left, agg_log_p
 

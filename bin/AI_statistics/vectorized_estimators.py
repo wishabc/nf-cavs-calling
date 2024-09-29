@@ -88,12 +88,13 @@ def log_pval_both(log_p_right, log_p_left):
     return np.min(np.stack([log_p_right, log_p_left]), axis=0) - np.log(2)
 
 
-def stouffer_combine_pvals(pvals, weights):
+def stouffer_combine_log_pvals(log_pvals, weights):
     """
     A vectorized version of Stouffer's method for combining p-values
     """
     if weights is None:
-        weights = np.ones_like(pvals)
+        weights = np.ones_like(log_pvals)
+    pvals = np.exp(log_pvals)
     # return st.combine_pvalues(pvals, weights=weights, method='stouffer')[1]
     return st.norm.logsf(weights.dot(st.norm.isf(pvals)) / np.linalg.norm(weights))
 
