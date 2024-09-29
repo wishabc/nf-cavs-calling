@@ -19,8 +19,7 @@ process calc_pval_binom {
     python3 $moduleDir/bin/calc_pval_binom.py \
         -I ${badmap_intersect_file} \
         -O ${name} \
-        --coverage_threhold ${params.fdr_coverage_filter} \
-        --recalc-w
+        --coverage_threhold ${params.fdr_coverage_filter}
     """
 }
 
