@@ -1,7 +1,7 @@
 import scipy.stats as st
-from scipy.special import expit, logsumexp
+from scipy.special import expit
 import numpy as np
-from base_models import BimodalEffectModel, cached_method, BimodalSamplingModel, BimodalScoringModel
+from base_models import BimodalEffectModel, cached_method, BimodalSamplingModel, BimodalScoringModel, Pvalues
 from vectorized_estimators import es_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
 
 
@@ -82,7 +82,7 @@ class BinomialScoringModel(BimodalScoringModel):
     """
     def calc_log_pvalues(self, x):
         w = self.estimate_w(x)
-        return calc_bimodal_pvalues(self.dist1, self.dist2, x, w)
+        return Pvalues(calc_bimodal_pvalues(self.dist1, self.dist2, x, w))
 
     def estimate_w(self, x):
         if self.e == 0:

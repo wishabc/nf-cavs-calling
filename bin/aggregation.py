@@ -32,13 +32,22 @@ def calc_sum_if_not_minus(df_column):
 
 def aggregate_pvals(df):
     weights = df['inverse_mse']
-    log_pval_ref_combined = stouffer_combine_log_pvals(df['pval_ref'], weights)
-    log_pval_alt_combined = stouffer_combine_log_pvals(df['pval_alt'], weights)
+    log_pval_ref_combined = stouffer_combine_log_pvals(np.log(df['pval_ref']), weights)
+    log_pval_alt_combined = stouffer_combine_log_pvals(np.log(df['pval_alt']), weights)
     log_pval_both_combined = log_pval_both(log_pval_ref_combined, log_pval_alt_combined)
-    es_combined = aggregate_effect_size(df['es'], weights=weights)
     return pd.Series(
-        [np.exp(log_pval_ref_combined), np.exp(log_pval_alt_combined), es_combined, np.exp(log_pval_both_combined)],
-        ["pval_ref_combined", "pval_alt_combined", "es_combined", 'min_pval']
+        [
+            np.exp(log_pval_ref_combined), 
+            np.exp(log_pval_alt_combined), 
+            aggregate_effect_size(df['es'], weights=weights), 
+            np.exp(log_pval_both_combined)
+        ],
+        [
+            "pval_ref_combined", 
+            "pval_alt_combined",
+            "es_combined", 
+            'min_pval'
+        ]
     )
 
 

@@ -88,7 +88,7 @@ def log_pval_both(log_p_right, log_p_left):
     return np.min(np.stack([log_p_right, log_p_left]), axis=0) - np.log(2)
 
 
-def stouffer_combine_log_pvals(log_pvals, weights):
+def stouffer_combine_log_pvals(log_pvals, weights, return_log=True):
     """
     A vectorized version of Stouffer's method for combining p-values
     """

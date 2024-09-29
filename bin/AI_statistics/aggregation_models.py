@@ -1,5 +1,5 @@
 import numpy as np
-from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel
+from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel, Pvalues
 from collections.abc import Sequence
 from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both
 
@@ -91,7 +91,7 @@ class AggregatedBimodalSamplingModel(SamplingModel, AggregatedBimodalModel):
 class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
     __child_model__ = BimodalScoringModel
 
-    def calc_log_pvalues(self, samples):
+    def calc_log_pvalues(self, samples) -> Pvalues:
         self.check_samples(samples)
         log_p_right, log_p_left, _ = map(
             np.stack,
@@ -100,7 +100,7 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
         agg_log_p_right = stouffer_combine_log_pvals(log_p_right, self.weights) 
         agg_log_p_left = stouffer_combine_log_pvals(log_p_left, self.weights)
         agg_log_p = log_pval_both(agg_log_p_left, agg_log_p_right)
-        return agg_log_p_right, agg_log_p_left, agg_log_p
+        return Pvalues([agg_log_p_right, agg_log_p_left, agg_log_p])
 
     def effect_size_estimate(self, samples):
         self.check_samples(samples)

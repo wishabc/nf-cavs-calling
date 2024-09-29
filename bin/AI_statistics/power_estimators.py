@@ -147,7 +147,7 @@ class AggregatedSamplingPowerEstimator:
     @cached_method
     def specificity(self, signif_tr):
         samples, _ = self.null_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
-        _, _, log_pvals = self.scoring_model.calc_log_pvalues(samples)
+        log_pvals = self.scoring_model.calc_log_pvalues(samples).both
         return 1 - np.sum(log_pvals <= np.log(signif_tr)) / self.n_itter
 
     @cached_method
