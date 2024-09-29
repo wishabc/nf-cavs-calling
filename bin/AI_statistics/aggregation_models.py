@@ -1,8 +1,7 @@
-import scipy.stats as st
 import numpy as np
 from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel
 from collections.abc import Sequence
-from vectorized_estimators import aggregate_pvals, aggregate_effect_size
+from vectorized_estimators import aggregate_pvals, aggregate_effect_size, log_pval_both
 
 
 def is_iterable(obj):
@@ -92,18 +91,16 @@ class AggregatedBimodalSamplingModel(SamplingModel, AggregatedBimodalModel):
 class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
     __child_model__ = BimodalScoringModel
 
-    def calc_pvalues(self, samples):
+    def calc_log_pvalues(self, samples):
         self.check_samples(samples)
-        p_right, p_left, _ = map(
+        log_p_right, log_p_left, _ = map(
             np.stack,
             zip(*[model.calc_pvalues(sample) for sample, model in zip(samples, self.models)])
         )
-        agg_log_p_right = aggregate_pvals(p_right, self.weights) 
-        agg_log_p_left = aggregate_pvals(p_left, self.weights)
-        #         agg_log_p = aggregate_pvals(p_both, self.weights)
-        agg_log_p = np.log(2) + np.min([agg_log_p_left, agg_log_p_right], axis=0)
-        side = np.where(agg_log_p_right < agg_log_p_left, 1, -1)
-        return agg_log_p, side
+        agg_log_p_right = aggregate_pvals(log_p_right, self.weights) 
+        agg_log_p_left = aggregate_pvals(log_p_left, self.weights)
+        agg_log_p = log_pval_both(agg_log_p_left, agg_log_p_right)
+        return agg_log_p_right, agg_log_p_left, agg_log_p
 
     def effect_size_estimate(self, samples):
         self.check_samples(samples)

@@ -70,6 +70,10 @@ def aggregate_pvals(pvals, weights):
     return st.norm.logsf(weights.dot(st.norm.isf(pvals)) / np.linalg.norm(weights))
 
 
+def log_pval_both(log_p_right, log_p_left):
+    return np.min(np.stack([log_p_right, log_p_left]), axis=0) - np.log(2)
+
+
 def logit_es(p, d=1/128):
     return np.log2(p + d) - np.log2(1 - p + d)
 

@@ -2,6 +2,7 @@ import numpy as np
 from functools import wraps
 from scipy.special import logsumexp
 import scipy.stats as st
+from typing import Union
 
 
 def cached_property(func=None, *, init_method=None):
@@ -131,7 +132,15 @@ class ScoringModel:
     """
     Base class that contains calc_pvalues method
     """
-    def calc_pvalues(self, observations):
+    def calc_log_pvalues(self, observations) -> Union[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Calculates log10 p-values for right, left, and both-sided tests.
+        
+        Returns:
+            log_p_right (np.ndarray): Natural log p-values for right-tailed test
+            log_p_left (np.ndarray): Natural log p-values for left-tailed test
+            log_p_both (np.ndarray): Natural log p-values for two-tailed test
+        """
         raise NotImplementedError
 
     def effect_size_estimate(self, observations):

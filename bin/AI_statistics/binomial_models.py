@@ -1,8 +1,8 @@
 import scipy.stats as st
-from scipy.special import expit
+from scipy.special import expit, logsumexp
 import numpy as np
 from base_models import BimodalEffectModel, cached_method, BimodalSamplingModel, BimodalScoringModel
-from vectorized_estimators import es_estimate_vectorized, estimate_w_null
+from vectorized_estimators import es_estimate_vectorized, estimate_w_null, log_pval_both
 
 
 class BinomialModel(BimodalEffectModel):
@@ -80,12 +80,20 @@ class BinomialScoringModel(BimodalScoringModel):
     """
     A model to score allelic imbalance data
     """
-    def calc_pvalues(self, x):
+    def calc_log_pvalues(self, x):
         w = self.estimate_w(x)
-        p_right = w * self.dist1.sf(x - 1) + (1 - w) * self.dist2.sf(x - 1)
-        p_left = w * self.dist1.cdf(x) + (1 - w) * self.dist2.cdf(x)
-        p_both = 2 * np.minimum(p_right, p_left)
-        return p_right, p_left, p_both
+
+        log_p_right = logsumexp(
+            [self.dist1.logsf(x - 1), self.dist2.logsf(x - 1)], 
+            b=[w, 1 - w]
+        )
+        log_p_left = logsumexp(
+            [self.dist1.logcdf(x), self.dist2.logcdf(x)], 
+            b=[w, 1 - w]
+        )
+        log_p_both = log_pval_both(log_p_right, log_p_left)
+
+        return log_p_right, log_p_left, log_p_both
 
     def estimate_w(self, x):
         if self.e == 0:

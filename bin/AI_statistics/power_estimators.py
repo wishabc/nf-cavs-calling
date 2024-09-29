@@ -1,5 +1,5 @@
-from scipy.special import logsumexp, expit, logit
-from base_models import cached_method, BimodalScoringModel, BimodalEffectModel, cached_property
+from scipy.special import logsumexp, expit
+from base_models import cached_method, ScoringModel, BimodalEffectModel, cached_property
 from aggregation_models import AggregatedBimodalSamplingModel, AggregatedBimodalScoringModel
 import numpy as np
 
@@ -9,42 +9,42 @@ class CachedScoringModel:
     A model with pre-calculated p-values for all possible x values
     """
 
-    def __init__(self, model: BimodalScoringModel):
+    def __init__(self, model: ScoringModel):
         self.model = model
-        if not isinstance(model, BimodalScoringModel):
-            raise TypeError(f"{model.__class__.__name__} must inherit from BimodalScoringModel")
+        if not isinstance(model, ScoringModel):
+            raise TypeError(f"{model.__class__.__name__} must inherit from ScoringModel")
         self.all_observations = model.all_observations
     
     def _calc_all_pvalues(self):
-        self._p_right, self._p_left, self._p_both = self.model.calc_pvalues(self.all_observations)
+        self._log_p_right, self._log_p_left, self._log_p_both = self.model.calc_log_pvalues(self.all_observations)
     
     @cached_property(init_method='_calc_all_pvalues')
-    def p_right(self):
-        return self._p_right
+    def log_p_right(self):
+        return self._log_p_right
 
     @cached_property(init_method='_calc_all_pvalues')
-    def p_left(self):
-        return self._p_left
+    def log_p_left(self):
+        return self._log_p_left
 
     @cached_property(init_method='_calc_all_pvalues')
-    def p_both(self):
-        return self._p_both
+    def log_p_both(self):
+        return self._log_p_both
     
-    def p_value(self, side='both'):
+    def log_p_value(self, side='both'):
         assert side in ['right', 'left', 'both']
         if side == 'right':
-            return self.p_right
+            return self.log_p_right
         elif side == 'left':
-            return self.p_left
+            return self.log_p_left
         elif side == 'both':
-            return self.p_both
+            return self.log_p_both
         
     @cached_property
     def effect_size_estimates(self):
         return self.model.effect_size_estimate(self.all_observations)
     
     def get_signif_indices(self, signif_tr, side='both'):
-        return self.p_value(side=side) <= signif_tr
+        return self.log_p_value(side=side) <= np.log(signif_tr)
 
 
 class ExactPowerEstimator:
@@ -80,7 +80,7 @@ class ExactPowerEstimator:
         return 1 - self.sum_probability_for_mode(self.null_model, signif_indices)
 
     def correct_side_sensitivity(self, effect, signif_tr, side='both'):
-        correct_side_indices = (self.scoring_model.p_right < self.scoring_model.p_left) == (
+        correct_side_indices = (self.scoring_model.log_p_right < self.scoring_model.log_p_left) == (
                     (effect - self.null_model.e) > 0)
         return self.sensitivity(effect, signif_tr, side=side, correct_indices=correct_side_indices)
 
@@ -136,17 +136,18 @@ class AggregatedSamplingPowerEstimator:
             print('(!) Comparing same effect size models')
         effect_model = self.null_model.get_effect_model(effect)
         samples, _ = effect_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
-        log_pvals, side = self.scoring_model.calc_pvalues(samples)
+        log_pval_right, log_pval_left, log_pval_both = self.scoring_model.calc_log_pvalues(samples)
+        side = np.where(log_pval_right < log_pval_left, 1, -1)
         if correct_indices:
             correct_indices = side == (1 if effect - self.null_model.e > 0 else -1)
         else:
-            correct_indices = np.ones_like(log_pvals, dtype=bool)
-        return np.sum((log_pvals <= np.log(signif_tr)) & correct_indices) / self.n_itter
+            correct_indices = np.ones_like(log_pval_both, dtype=bool)
+        return np.sum((log_pval_both <= np.log(signif_tr)) & correct_indices) / self.n_itter
 
     @cached_method
     def specificity(self, signif_tr):
         samples, _ = self.null_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
-        log_pvals, _ = self.scoring_model.calc_pvalues(samples)
+        _, _, log_pvals = self.scoring_model.calc_log_pvalues(samples)
         return 1 - np.sum(log_pvals <= np.log(signif_tr)) / self.n_itter
 
     @cached_method
