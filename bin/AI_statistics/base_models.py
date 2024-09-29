@@ -71,13 +71,41 @@ def cached_method(func):
 
     return wrapper
 
+class EffectModel:
+    """
+    Base class to store parameters of a model
+    """
+    def __init__(self, effect, *args, **kwargs):
+        self.e = effect
 
-class BimodalEffectModel:
+
+    @classmethod
+    def from_model(cls, other: 'EffectModel', effect=None) -> 'EffectModel':
+        raise NotImplementedError
+    
+    @cached_method
+    def get_effect_model(self, effect):
+        """
+        Get a model with a different effect size
+        """
+        if effect == self.e:
+            return self
+        return self.__class__.from_model(self, effect=effect)
+    
+    
+    def compatible_with(self, other: 'EffectModel'):
+        raise NotImplementedError
+    
+    def get_log_pmf_for_mode(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class BimodalBaseModel(EffectModel):
     """
     Base class to store parameters of a model
     """
     def __init__(self, n, effect, B, **kwargs):
-        self.e = effect
+        super().__init__(effect, **kwargs)
         self.n = n
         self.B = B
 
@@ -94,19 +122,6 @@ class BimodalEffectModel:
     def dist2(self) -> st.rv_discrete:
         raise NotImplementedError
     
-    @classmethod
-    def from_model(cls, other: 'BimodalEffectModel', effect=None) -> 'BimodalEffectModel':
-        raise NotImplementedError
-    
-    @cached_method
-    def get_effect_model(self, effect):
-        """
-        Get a model with a different effect size
-        """
-        if effect == self.e:
-            return self
-        return self.__class__.from_model(self, effect=effect)
-    
     def get_log_pmf_for_mode(self, bad_phasing_mode):
         assert bad_phasing_mode in [1, 2, None]
         if bad_phasing_mode is None:
@@ -115,9 +130,6 @@ class BimodalEffectModel:
             dist = self.dist1 if bad_phasing_mode == 1 else self.dist2
             log_pmf_for_mode = dist.logpmf(self.all_observations)
         return log_pmf_for_mode
-    
-    def compatible_with(self, other: 'BimodalEffectModel'):
-        return self.n == other.n
 
 
 class SamplingModel:
@@ -147,9 +159,9 @@ class ScoringModel:
         raise NotImplementedError
 
 
-class BimodalSamplingModel(SamplingModel, BimodalEffectModel):
+class BimodalSamplingModel(SamplingModel, BimodalBaseModel):
     ...
 
 
-class BimodalScoringModel(ScoringModel, BimodalEffectModel):
+class BimodalScoringModel(ScoringModel, BimodalBaseModel):
     ...

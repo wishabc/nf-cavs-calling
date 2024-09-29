@@ -1,5 +1,5 @@
 import numpy as np
-from base_models import cached_method, BimodalEffectModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel, Pvalues
+from base_models import cached_method, EffectModel, BimodalBaseModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel, Pvalues
 from collections.abc import Sequence
 from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both
 
@@ -23,11 +23,11 @@ def _validate_list_argument(len_models, arg):
     return arg
 
 
-class AggregatedBimodalModel:
-    __child_model__ = BimodalEffectModel
+class AggregatedBimodalModel(EffectModel):
+    __child_model__ = BimodalBaseModel
 
-    def __init__(self, models: Sequence[BimodalEffectModel], indivs=None, weights=None):
-        assert all(isinstance(model, BimodalEffectModel) for model in models)
+    def __init__(self, models: Sequence[BimodalBaseModel], indivs=None, weights=None):
+        assert all(isinstance(model, BimodalBaseModel) for model in models)
         self.models = [self.__child_model__.from_model(model) for model in models]
         len_models = len(self.models)
         self.indivs = _validate_list_argument(len_models, indivs)
@@ -37,15 +37,6 @@ class AggregatedBimodalModel:
 
         self._random_state_mod = 2 ** 32
         self.e = aggregate_effect_size([model.e for model in self.models], weights=self.weights)
-
-    @cached_method
-    def get_effect_model(self, effect):
-        """
-        Get a model with a different effect size
-        """
-        if effect == self.e:
-            return self
-        return self.__class__.from_model(self, effect=effect)
 
     @classmethod
     def from_model(cls, other: 'AggregatedBimodalModel', effect=None):
@@ -57,6 +48,9 @@ class AggregatedBimodalModel:
 
     @property
     def all_observations(self):
+        raise NotImplementedError
+    
+    def get_log_pmf_for_mode(self):
         raise NotImplementedError
 
 

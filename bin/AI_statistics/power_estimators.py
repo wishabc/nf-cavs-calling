@@ -1,5 +1,5 @@
 from scipy.special import logsumexp, expit
-from base_models import cached_method, ScoringModel, BimodalEffectModel, cached_property
+from base_models import cached_method, ScoringModel, BimodalBaseModel, cached_property, EffectModel
 from aggregation_models import AggregatedBimodalSamplingModel, AggregatedBimodalScoringModel
 import numpy as np
 
@@ -48,7 +48,7 @@ class CachedScoringModel:
 
 
 class ExactPowerEstimator:
-    def __init__(self, null_model: BimodalEffectModel, scoring_model: CachedScoringModel, bad_phasing_mode=None):
+    def __init__(self, null_model: EffectModel, scoring_model: CachedScoringModel, bad_phasing_mode=None):
         self.null_model = null_model
         self.scoring_model = scoring_model
         assert bad_phasing_mode in [None, 1, 2]
@@ -84,7 +84,7 @@ class ExactPowerEstimator:
                     (effect - self.null_model.e) > 0)
         return self.sensitivity(effect, signif_tr, side=side, correct_indices=correct_side_indices)
 
-    def sum_probability_for_mode(self, model: BimodalEffectModel, indicators: np.ndarray):
+    def sum_probability_for_mode(self, model: EffectModel, indicators: np.ndarray):
         """
         Calculate the sum of probabilities for the given mode
 
@@ -118,7 +118,7 @@ class ExactPowerEstimator:
         return p_expectation, p_variance
 
 
-class AggregatedSamplingPowerEstimator:
+class SamplingPowerEstimator:
     def __init__(self, null_model: AggregatedBimodalSamplingModel, scoring_model: AggregatedBimodalScoringModel, n_itter=10000, random_state=None, bad_phasing_mode=None):
         assert scoring_model.compatible_with(null_model), 'Scoring model cannot score the null model, wrong Ns'
         if random_state is None:
