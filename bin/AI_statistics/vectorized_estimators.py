@@ -28,27 +28,23 @@ def es_estimate_vectorized(x, n, B, w=None):
     b = np.log(B)
     p = x / n
     return w * (logit(p) - b) + (1 - w) * (logit(p) + b)
-    
-
-def es_variance_vectorized(n, B, p, w=None):
-    assert np.all(p >= 0) and np.all(p <= 1), "p must be in [0, 1]"
-    kwargs = dict(n=n, B=B, w=w)
-    x = np.arange(n + 1)
-    ## FIXME: ugly
-    p1 = expit(logit(p) + np.log(B))
-    dist1 = st.binom(n, p1)
-
-    exp = mode1_expectation_vectorized(dist1, es_estimate_vectorized, x, **kwargs)
-    def es_estimate_squared(*args, **kwargs):
-        return es_estimate_vectorized(*args, **kwargs) ** 2
-    return mode1_expectation_vectorized(dist1, es_estimate_squared, x, **kwargs) - exp ** 2
 
 
 def calc_variance(n, B, n_points=101):
-    ess = np.linspace(0, 1, n_points)
-    yvals = mode1_expectation_vectorized(es_estimate_vectorized, n, B, ess)
-    vars = es_variance_vectorized(n, B, ess)
-    return (yvals - ess) ** 2 + vars
+    es_fraction = np.linspace(0, 1, n_points)
+    x = np.arange(n + 1)
+    p1 = expit(logit(es_fraction) + np.log(B))
+    dist1 = st.binom(n, p1)
+
+    yvals = mode1_expectation_vectorized(dist1, es_estimate_vectorized, x, n=n, B=B)
+
+    def es_estimate_squared(*args, **kwargs):
+        return es_estimate_vectorized(*args, **kwargs) ** 2
+
+    yvals_squared_exp = mode1_expectation_vectorized(dist1, es_estimate_squared, x, n=n, B=B)    
+
+    vars = yvals_squared_exp - yvals ** 2
+    return (yvals - es_fraction) ** 2 + vars
 
 
 def aggregate_effect_size(es, weights):
