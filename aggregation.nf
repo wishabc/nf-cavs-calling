@@ -89,11 +89,12 @@ process pack_data {
     output:
         path sorted_aggregated, emit: aggregated
         tuple path(sorted_non_aggregated), path("${sorted_non_aggregated}.tbi"), emit: non_aggregated
-        path name, emit: stats
+        tuple path(name), path(parquet_non_aggregated), emit: stats
     
     script:
     sorted_aggregated = "aggregated.${aggregation_key}.bed"
     sorted_non_aggregated = "non_aggregated.${aggregation_key}.bed.gz"
+    parquet_non_aggregated = "non_aggregated.${aggregation_key}.parquet"
     name = "cav_stats.${aggregation_key}.tsv"
     """
     head -1 ${aggregated_variants} > ${sorted_aggregated}
@@ -103,6 +104,8 @@ process pack_data {
     sort-bed ${non_aggregated_variants} >> tmp.txt
     bgzip -c tmp.txt > ${sorted_non_aggregated}
     tabix ${sorted_non_aggregated}
+
+    python3 -c "import pandas as pd; pd.read_table('${sorted_non_aggregated}').to_parquet('${parquet_non_aggregated}')"
 
     python3 $moduleDir/bin/collect_stats.py \
         ${sorted_aggregated} \
