@@ -1,12 +1,10 @@
 import pandas as pd
-from scipy.stats import binom
-from scipy.special import betainc
 import argparse
 import numpy as np
-
-from scipy.special import expit, logit
-from aggregation import calc_fdr_pd, get_min_pval, logit_es, filter_pval_df
-
+import scipy.stats as st
+from scipy.special import expit
+from aggregation import calc_fdr_pd, check_if_tested
+from AI_statistics.vectorized_estimators import logit_es, es_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
 from tqdm import tqdm
 
 tqdm.pandas()
@@ -14,36 +12,8 @@ tqdm.pandas()
 
 updated_columns = ['coverage', 'w', 'es', 'logit_es', 'pval_ref', 'pval_alt', 'min_pval', 'FDR_sample']
 
-def calc_pval(self, n, k, BADs, smooth=False):
-    p = 1 / (BADs + 1)
-    ws = np.full(k.shape, 0.5, dtype=np.float64)
-    if self.modify_w:
-        ws = self.modify_w_binom(k, n, p, ws)
-    
-    fraction_es = self.odds_es(k, n, BADs, ws)
 
-    pval_ref = self.censored_binom_pvalue(k, n, p, ws, smooth=smooth)
-    pval_alt = self.censored_binom_pvalue(n - k, n, p, 1 - ws, smooth=smooth)
-    return [ws, fraction_es, pval_ref, pval_alt]
-
-def odds_es(x, n, BAD, w):
-    # w * np.log2(OR / BAD) + (1 - w) * np.log2(OR * BAD)
-    x, n, BAD = map(np.asarray, [x, n, BAD])
-
-    log_bad = np.log(BAD)
-    delta = log_bad * (n - 2 * x)
-    p = x / n
-    return expit(expit(-delta) * (logit(p) - log_bad) + expit(delta) * (logit(p) + log_bad))
-    
-
-
-def calc_fdr(group_df):
-    corrected_pvalues = calc_fdr_pd(group_df['min_pval'])
-    group_df.loc[:, 'FDR_sample'] = corrected_pvalues
-    return group_df
-
-
-def main(df, coverage_tr=15):
+def main(df: pd.DataFrame, coverage_tr=15):
     df = df.drop(columns=updated_columns, errors='ignore')
     # Check if empty
     result_columns = [*df.columns, *updated_columns]
@@ -51,26 +21,31 @@ def main(df, coverage_tr=15):
         return pd.DataFrame([], columns=result_columns)
 
     df['coverage'] = df.eval('ref_counts + alt_counts')
+    df = df.groupby('sample_id').progress_apply(check_if_tested, max_cover_tr=coverage_tr).reset_index(drop=True)
+    
+    df['w'] = estimate_w_null(df['ref_counts'], df['coverage'], df['BAD'])
+    df['es'] = es_estimate_vectorized(df['ref_counts'], df['coverage'], df['BAD'], df['w'])
+    df['logit_es'] = logit_es(df['es'])
 
+    log_bad = np.log(df['BAD'])
 
-    result = imbalance_est.calc_pval(
-        df['coverage'].to_numpy(), 
-        df['ref_counts'].to_numpy(),
-        BADs=df['BAD'].to_numpy(),
-        smooth=False
+    dist1 = st.binom(df['coverage'], expit(log_bad))
+    dist2 = st.binom(df['coverage'], expit(-log_bad))
+    log_pval_ref, log_pval_alt, log_pval_both = calc_bimodal_pvalues(
+        dist1,
+        dist2,
+        df['ref_counts'], 
+        df['w']
+    )
+    df.assign(
+        pval_ref=np.exp(log_pval_ref),
+        pval_alt=np.exp(log_pval_alt),
+        min_pval=np.exp(log_pval_both),
+        inplace=True
     )
 
-    result = df.assign(
-        **dict(zip(['w', 'es', 'pval_ref', 'pval_alt'], result))
-    )
-    result['logit_es'] = logit_es(result['es'])
-    result = result.groupby('sample_id').progress_apply(filter_pval_df, max_cover_tr=coverage_tr).reset_index(drop=True)
-    result['min_pval'] = get_min_pval(
-        result,
-        columns=['pval_ref', 'pval_alt']
-    )
-    result['FDR_sample'] = result.groupby('sample_id')['min_pval'].transform(calc_fdr_pd)
-    return result.reset_index(drop=True)[result_columns]
+    df['FDR_sample'] = df.groupby('sample_id')['min_pval'].transform(calc_fdr_pd)
+    return df.reset_index(drop=True)[result_columns]
 
 
 if __name__ == '__main__':

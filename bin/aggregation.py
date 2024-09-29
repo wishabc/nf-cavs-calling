@@ -1,16 +1,15 @@
 import argparse
 import pandas as pd
-import scipy.stats as st
-from scipy import interpolate
 import numpy as np
 from tqdm import tqdm
-from AI_statistics.vectorized_estimators import logit_es, aggregate_effect_size
+
+from AI_statistics.vectorized_estimators import logit_es, aggregate_effect_size, stouffer_combine_pvals, log_pval_both, qvalue
+
 
 tqdm.pandas()
 
+
 starting_columns = ['#chr', 'start', 'end', 'ID', 'ref', 'alt']
-
-
 result_columns = [
     *starting_columns, 'AAF', 'RAF', 
     'mean_FMR', 'mean_BAD',
@@ -33,17 +32,14 @@ def calc_sum_if_not_minus(df_column):
 
 def aggregate_pvals(df):
     weights = df['inverse_mse']
-    pval_ref_combined = st.combine_pvalues(df['pval_ref'], method='stouffer', weights=weights)[1]
-    pval_alt_combined = st.combine_pvalues(df['pval_alt'], method='stouffer', weights=weights)[1]
+    log_pval_ref_combined = stouffer_combine_pvals(df['pval_ref'], weights)
+    log_pval_alt_combined = stouffer_combine_pvals(df['pval_alt'], weights)
+    log_pval_both_combined = log_pval_both(log_pval_ref_combined, log_pval_alt_combined)
     es_combined = aggregate_effect_size(df['es'], weights=weights)
     return pd.Series(
-        [pval_ref_combined, pval_alt_combined, es_combined],
-        ["pval_ref_combined", "pval_alt_combined", "es_combined"]
+        [np.exp(log_pval_ref_combined), np.exp(log_pval_alt_combined), es_combined, np.exp(log_pval_both_combined)],
+        ["pval_ref_combined", "pval_alt_combined", "es_combined", 'min_pval']
     )
-
-def get_min_pval(result, columns):
-    min_pval = result[columns].min(axis=1) * 2
-    return np.where(np.isnan(min_pval), np.nan, np.minimum(min_pval, 1))
 
 
 def aggregate_pvalues_df(pval_df, groupby_cols=None):
@@ -84,46 +80,8 @@ def aggregate_pvalues_df(pval_df, groupby_cols=None):
         groupby_cols, group_keys=True
     ).progress_apply(aggregate_pvals)
     result = snp_stats.join(agg_pvals, how='left').reset_index()
-    result['min_pval'] = get_min_pval(result, ['pval_ref_combined', 'pval_alt_combined'])
     result['logit_es_combined'] = logit_es(result['es_combined'])
     return result
-
-
-# implementation of Storey method for FDR estimation
-def qvalue(pvals, bootstrap=False):
-    m, pvals = len(pvals), np.asarray(pvals)
-    ind = np.argsort(pvals)
-    rev_ind = np.argsort(ind)
-    pvals = pvals[ind]
-    # Estimate proportion of features that are truly null.
-    kappa = np.arange(0.05, 0.96, 0.01)
-    pik = np.array([sum(pvals > k) / (m * (1-k)) for k in kappa])
-
-    if bootstrap:
-        minpi0 = np.quantile(pik, 0.1)
-        W = np.array([(pvals >= l).sum() for l in kappa])
-        mse = (W / (np.square(m^2) * np.square(1 - kappa))) * (1 - (W / m)) + np.square((pik - minpi0))
-        
-        if np.any(np.isnan(mse)) or np.any(np.isinf(mse)):
-            # Case 1: mse contains NaN or Inf
-            mask = np.isnan(mse)  # This will return a boolean mask where True indicates NaN positions
-
-        else:
-            # Case 2: mse contains only finite values
-            mask = mse == mse.min()
-        pi0 = pik[mask][0]
-    else:
-        cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
-        pi0 = float(cs(1.))
-    
-    pi0 = min(pi0, 1)
-    # Compute the q-values.
-    qvals = np.zeros(len(pvals))
-    qvals[-1] = pi0 * pvals[-1]
-    for i in np.arange(m - 2, -1, -1):
-        qvals[i] = min(pi0 * m * pvals[i]/float(i+1), qvals[i+1])
-    qvals = qvals[rev_ind]
-    return qvals
 
 
 def calc_fdr_pd(pd_series):
@@ -138,7 +96,7 @@ def calc_fdr_pd(pd_series):
 def main(pval_df, max_cover_tr=15, chrom=None):
     if chrom is not None:
         pval_df = pval_df[pval_df['#chr'] == args.chrom]
-    pval_df = filter_pval_df(pval_df, max_cover_tr=max_cover_tr).query('is_tested').reset_index(drop=True)
+    pval_df = check_if_tested(pval_df, max_cover_tr=max_cover_tr).query('is_tested').reset_index(drop=True)
     if pval_df.empty:
         return pd.DataFrame([], columns=result_columns)
     
@@ -147,7 +105,7 @@ def main(pval_df, max_cover_tr=15, chrom=None):
     return aggr_df[result_columns]
 
 
-def filter_pval_df(df, max_cover_tr=15):
+def check_if_tested(df, max_cover_tr=15):
     if "hotspots" in df.columns:
         df['is_tested'] = df['hotspots'].astype(str).isin(['1', '-'])
     else:
@@ -162,9 +120,8 @@ if __name__ == '__main__':
     parser.add_argument('-I', help='BABACHI annotated BED file with SNPs')
     parser.add_argument('-O', help='File to save calculated p-value into')
     parser.add_argument('--chrom', help='Chromosome (for parallel execution)', default=None)
-    parser.add_argument('--max_coverage_tr', type=int, help="""Threshold for the maximum
-                            of coverages of variants aggregated at the same genomic position.
-                            Expected to be a positive integer""", default=15)
+    parser.add_argument('--max_coverage_tr', type=int, help="""Threshold for the highest coverage of the variants aggregated at the same genomic position.
+    Expected to be a positive integer""", default=15)
     args = parser.parse_args()
 
     pval_df = pd.read_table(args.I, low_memory=False)

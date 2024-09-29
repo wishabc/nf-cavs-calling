@@ -2,7 +2,7 @@ import scipy.stats as st
 from scipy.special import expit, logsumexp
 import numpy as np
 from base_models import BimodalEffectModel, cached_method, BimodalSamplingModel, BimodalScoringModel
-from vectorized_estimators import es_estimate_vectorized, estimate_w_null, log_pval_both
+from vectorized_estimators import es_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues
 
 
 class BinomialModel(BimodalEffectModel):
@@ -82,18 +82,7 @@ class BinomialScoringModel(BimodalScoringModel):
     """
     def calc_log_pvalues(self, x):
         w = self.estimate_w(x)
-
-        log_p_right = logsumexp(
-            [self.dist1.logsf(x - 1), self.dist2.logsf(x - 1)], 
-            b=[w, 1 - w]
-        )
-        log_p_left = logsumexp(
-            [self.dist1.logcdf(x), self.dist2.logcdf(x)], 
-            b=[w, 1 - w]
-        )
-        log_p_both = log_pval_both(log_p_right, log_p_left)
-
-        return log_p_right, log_p_left, log_p_both
+        return calc_bimodal_pvalues(self.dist1, self.dist2, x, w)
 
     def estimate_w(self, x):
         if self.e == 0:

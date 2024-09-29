@@ -1,10 +1,12 @@
-from scipy.special import logit, expit
+from scipy.special import logit, expit, logsumexp
 from scipy import stats as st
 import numpy as np
+from typing import Tuple
+from scipy import interpolate
+
+
 
 # Vectorized functions for effect size estimates, expectation, variance and MSE
-
-
 def estimate_w_null(x, n, B):
     b = np.log(B)
     delta = b * (n - 2 * x)
@@ -59,8 +61,34 @@ def aggregate_effect_size(es, weights):
     """
     return np.average(es, weights=weights, axis=0)
 
+def logit_es(p, d=1/128):
+    return np.log2(p + d) - np.log2(1 - p + d)
 
-def aggregate_pvals(pvals, weights):
+
+def inv_logit_es(es, d=1/128):
+    s = 2 ** es
+    return (1 + (s - 1) * (d + 1)) / (s + 1)
+
+## P-values
+
+def calc_bimodal_pvalues(dist1: st.rv_discrete, dist2: st.rv_discrete, x: np.ndarray, w: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    log_p_right = logsumexp(
+        [dist1.logsf(x - 1), dist2.logsf(x - 1)], 
+        b=[w, 1 - w]
+    )
+    log_p_left = logsumexp(
+        [dist1.logcdf(x), dist2.logcdf(x)], 
+        b=[w, 1 - w]
+    )
+    log_p_both = log_pval_both(log_p_right, log_p_left)
+    return log_p_right, log_p_left, log_p_both
+
+
+def log_pval_both(log_p_right, log_p_left):
+    return np.min(np.stack([log_p_right, log_p_left]), axis=0) - np.log(2)
+
+
+def stouffer_combine_pvals(pvals, weights):
     """
     A vectorized version of Stouffer's method for combining p-values
     """
@@ -70,14 +98,38 @@ def aggregate_pvals(pvals, weights):
     return st.norm.logsf(weights.dot(st.norm.isf(pvals)) / np.linalg.norm(weights))
 
 
-def log_pval_both(log_p_right, log_p_left):
-    return np.min(np.stack([log_p_right, log_p_left]), axis=0) - np.log(2)
+# implementation of Storey method for FDR estimation
+def qvalue(pvals, bootstrap=False):
+    m, pvals = len(pvals), np.asarray(pvals)
+    ind = np.argsort(pvals)
+    rev_ind = np.argsort(ind)
+    pvals = pvals[ind]
+    # Estimate proportion of features that are truly null.
+    kappa = np.arange(0.05, 0.96, 0.01)
+    pik = np.array([sum(pvals > k) / (m * (1-k)) for k in kappa])
 
+    if bootstrap:
+        minpi0 = np.quantile(pik, 0.1)
+        W = np.array([(pvals >= l).sum() for l in kappa])
+        mse = (W / (np.square(m^2) * np.square(1 - kappa))) * (1 - (W / m)) + np.square((pik - minpi0))
+        
+        if np.any(np.isnan(mse)) or np.any(np.isinf(mse)):
+            # Case 1: mse contains NaN or Inf
+            mask = np.isnan(mse)  # This will return a boolean mask where True indicates NaN positions
 
-def logit_es(p, d=1/128):
-    return np.log2(p + d) - np.log2(1 - p + d)
-
-
-def inv_logit_es(es, d=1/128):
-    s = 2 ** es
-    return (1 + (s - 1) * (d + 1)) / (s + 1)
+        else:
+            # Case 2: mse contains only finite values
+            mask = mse == mse.min()
+        pi0 = pik[mask][0]
+    else:
+        cs = interpolate.UnivariateSpline(kappa, pik, k=3, s=None, ext=0)
+        pi0 = float(cs(1.))
+    
+    pi0 = min(pi0, 1)
+    # Compute the q-values.
+    qvals = np.zeros(len(pvals))
+    qvals[-1] = pi0 * pvals[-1]
+    for i in np.arange(m - 2, -1, -1):
+        qvals[i] = min(pi0 * m * pvals[i]/float(i+1), qvals[i+1])
+    qvals = qvals[rev_ind]
+    return qvals

@@ -2,7 +2,7 @@ import numpy as np
 from functools import wraps
 from scipy.special import logsumexp
 import scipy.stats as st
-from typing import Union
+from typing import Tuple
 
 
 def cached_property(func=None, *, init_method=None):
@@ -132,7 +132,7 @@ class ScoringModel:
     """
     Base class that contains calc_pvalues method
     """
-    def calc_log_pvalues(self, observations) -> Union[np.ndarray, np.ndarray, np.ndarray]:
+    def calc_log_pvalues(self, observations) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculates log10 p-values for right, left, and both-sided tests.
         
