@@ -2,7 +2,7 @@ import scipy.stats as st
 from scipy.special import expit
 import numpy as np
 from base_models import BimodalEffectModel, cached_method
-from estimate_mse import es_estimate_vectorized, estimate_w_null, es_variance_vectorized
+from estimate_mse import es_estimate_vectorized, estimate_w_null
 
 
 class BinomialModel(BimodalEffectModel):
