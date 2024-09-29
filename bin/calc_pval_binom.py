@@ -42,7 +42,8 @@ def main(df: pd.DataFrame, coverage_tr=15):
         pval_alt=np.exp(log_pval_alt),
         min_pval=np.exp(log_pval_both),
     )
-    df['FDR_sample'] = df.groupby('sample_id')['min_pval'].transform(calc_fdr_pd)
+    is_tested_idx = df['is_tested']
+    df.loc[is_tested_idx, 'FDR_sample'] = df.loc[is_tested_idx, :].groupby('sample_id')['min_pval'].transform(calc_fdr_pd)
     return df.reset_index(drop=True)[result_columns]
 
 
