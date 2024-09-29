@@ -3,7 +3,7 @@ from scipy import stats as st
 import numpy as np
 from typing import Tuple
 from scipy import interpolate
-
+import warnings
 
 
 # Vectorized functions for effect size estimates, expectation, variance and MSE
@@ -26,8 +26,19 @@ def es_estimate_vectorized(x, n, B, w=None):
     x, n, B = map(np.asarray, [x, n, B])
 
     b = np.log(B)
-    p = x / n
-    return w * (logit(p) - b) + (1 - w) * (logit(p) + b)
+
+    with warnings.catch_warnings(record=True) as war:
+        warnings.simplefilter("always", warnings.RuntimeWarning)
+        
+        # Code that may trigger RuntimeWarnings
+        logit_p = logit(x / n)
+        result = w * (logit_p - b) + (1 - w) * (logit_p + b)
+
+        # Check if any warnings were captured
+        if war:
+            for warning in war:
+                print(x, n, w, b, logit_p)
+    return result
 
 
 def calc_variance(n, B, n_points=101):
