@@ -79,7 +79,7 @@ class EffectModel:
     """
     Base class to store parameters of a model
     """
-    def __init__(self, effect, *args, **kwargs):
+    def __init__(self, effect):
         self.e = effect
 
 
@@ -131,8 +131,8 @@ class BimodalBaseModel(EffectModel):
     """
     Base class to store parameters of a model
     """
-    def __init__(self, n, effect, B, **kwargs):
-        super().__init__(effect, **kwargs)
+    def __init__(self, n, effect, B):
+        super().__init__(effect)
         self.n = n
         self.B = B
 

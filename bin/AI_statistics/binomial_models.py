@@ -33,7 +33,7 @@ class BinomialModel(BimodalBaseModel):
         return self.n == other.n
 
 
-class BinomialSamplingModel(BimodalSamplingModel):
+class BinomialSamplingModel(BimodalSamplingModel, BinomialModel):
     """
     A model to simulate allelic imbalance data
     """
@@ -79,7 +79,7 @@ class BinomialSamplingModel(BimodalSamplingModel):
             return samples[order], phase[order]
 
 
-class BinomialScoringModel(BimodalScoringModel):
+class BinomialScoringModel(BimodalScoringModel, BinomialModel):
     """
     A model to score allelic imbalance data
     """
