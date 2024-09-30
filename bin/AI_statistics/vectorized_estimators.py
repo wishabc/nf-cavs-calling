@@ -28,7 +28,7 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
     b = np.log(B)
     logit_p = logit(x / n)
     return np.select(
-        [w == 0, w == 1],
+        [np.isclose(w, 0), np.isclose(w, 1)],
         [
             expit(logit_p + b),
             expit(logit_p - b),
