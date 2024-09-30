@@ -63,7 +63,6 @@ class AggregatedBimodalModel(EffectModel):
     def all_observations(self):
         self.check_sizes()
         individual_observations = [model.all_observations for model in self.models]
-        print(individual_observations)
         return generate_cartesian_product(*individual_observations)
     
     def get_log_pmf_for_mode(self, bad_phasing_mode):
@@ -107,7 +106,7 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
         self.check_samples(samples)
         log_p_right, log_p_left, _ = map(
             np.stack,
-            zip(*[model.calc_pvalues(sample) for sample, model in zip(samples, self.models)])
+            zip(*[model.calc_log_pvalues(sample) for sample, model in zip(samples, self.models)])
         )
         agg_log_p_right = stouffer_combine_log_pvals(log_p_right, self.weights) 
         agg_log_p_left = stouffer_combine_log_pvals(log_p_left, self.weights)
@@ -116,7 +115,7 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
     
     def get_effect_size_frac(self, samples):
         self.check_samples(samples)
-        return aggregate_effect_size([model.effect_size_estimate(sample, return_frac=True) for sample, model in zip(samples, self.models)], weights=self.weights)
+        return aggregate_effect_size([model.get_effect_size_frac(sample) for sample, model in zip(samples, self.models)], weights=self.weights)
     
     def check_samples(self, samples):
         samples = np.asarray(samples)
