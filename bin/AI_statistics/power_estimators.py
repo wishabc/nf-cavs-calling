@@ -1,6 +1,5 @@
-from scipy.special import logsumexp, expit
-from base_models import cached_method, ScoringModel, BimodalBaseModel, cached_property, EffectModel, SamplingModel
-from aggregation_models import AggregatedBimodalSamplingModel, AggregatedBimodalScoringModel
+from scipy.special import logsumexp
+from base_models import cached_method, ScoringModel, cached_property, EffectModel, SamplingModel
 import numpy as np
 
 

@@ -3,7 +3,6 @@ from scipy import stats as st
 import numpy as np
 from typing import Tuple
 from scipy import interpolate
-import warnings
 
 
 # Vectorized functions for effect size estimates, expectation, variance and MSE

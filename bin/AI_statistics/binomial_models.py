@@ -1,5 +1,5 @@
 import scipy.stats as st
-from scipy.special import expit, logit
+from scipy.special import expit
 import numpy as np
 from base_models import BimodalBaseModel, cached_method, BimodalSamplingModel, BimodalScoringModel, Pvalues
 from vectorized_estimators import es_fraction_estimate_vectorized, estimate_w_null, calc_bimodal_pvalues

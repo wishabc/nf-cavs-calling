@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.special import logit
 from base_models import cached_method, EffectModel, BimodalBaseModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel, Pvalues
 from collections.abc import Sequence
 from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both, generate_cartesian_product
