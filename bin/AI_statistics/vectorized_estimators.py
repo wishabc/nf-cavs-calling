@@ -130,7 +130,7 @@ def qvalue(pvals, bootstrap=False):
     qvals = qvals[rev_ind]
     return qvals
 
-# Cartesian product
+
 def generate_cartesian_product(*arrays):
     """
     Generates a matrix of dimensions [N, n1*n2*...*nN] where each column contains
@@ -142,5 +142,15 @@ def generate_cartesian_product(*arrays):
     Returns:
         A numpy matrix of shape [N, n1*n2*...*nN].
     """
-    meshgrids = np.meshgrid(*arrays, indexing='ij')
-    return np.vstack([np.ravel(grid) for grid in meshgrids])
+    num_columns = np.prod([len(arr) for arr in arrays])
+    num_rows = len(arrays)
+
+    result_matrix = np.empty((num_rows, num_columns), dtype=object)
+
+    repeat_factor = num_columns
+    for i, arr in enumerate(arrays):
+        n = len(arr)
+        repeat_factor //= n
+        result_matrix[i] = np.tile(np.repeat(arr, repeat_factor), num_columns // (n * repeat_factor))
+    
+    return result_matrix

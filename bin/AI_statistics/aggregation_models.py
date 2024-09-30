@@ -28,7 +28,12 @@ class AggregatedBimodalModel(EffectModel):
 
     def __init__(self, models: Sequence[BimodalBaseModel], indivs=None, weights=None,
                  size_constraint=1e7):
-        assert all(isinstance(model, self.__child_model__) for model in models)
+        invalid_models = [model for model in models if not isinstance(model, self.__child_model__)]
+    
+        assert len(invalid_models) == 0, (
+            f"(!) All models should be instances of {self.__child_model__.__name__}, but the following are not: {[type(model).__name__ for model in invalid_models]}"
+        )
+
         self.models = models
         len_models = len(self.models)
         self.indivs = _validate_list_argument(len_models, indivs)
