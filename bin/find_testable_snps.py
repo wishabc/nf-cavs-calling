@@ -3,6 +3,7 @@ import argparse
 from  genome_tools.data.extractors import tabix_extractor as TabixExtractor
 from genome_tools import genomic_interval as GenomicInterval
 
+
 def find_testable_pairs(melt, min_indivs_per_group, min_groups_per_variant, coverage_tr):
     testable_variant_group_pairs = melt.groupby(
         ['group_id', 'variant_id']
@@ -12,7 +13,7 @@ def find_testable_pairs(melt, min_indivs_per_group, min_groups_per_variant, cove
     ).query(
         f"max_coverage >= {coverage_tr} & indiv_count >= {min_indivs_per_group}"
     ).reset_index()
-    # for each group and variant >= 3 indivs and max_coverage >= 15
+    # for each group and variant >= 3 indivs and max_coverage >= coverage_tr
     groups_per_variant = testable_variant_group_pairs.value_counts('variant_id')
 
     # variants present in ≥ 2 groups
@@ -41,10 +42,14 @@ if __name__ == '__main__':
     if args.chrom is not None:
         genomic_interval = GenomicInterval(args.chrom, 0, 3e9)
         with TabixExtractor(args.input_data) as tb:
-            input_df = tb[genomic_interval]
+            try:
+                input_df = tb[genomic_interval]
+            except ValueError:
+                input_df = pd.read_table(args.input_data, nrows=0)
     else:
         input_df = pd.read_table(args.input_data)
     
+
     input_df.query('BAD <= 1', inplace=True)
     ag_id2indiv_id = pd.read_table(args.metadata).set_index('ag_id')['indiv_id'].to_dict()
     input_df['indiv_id'] = input_df['sample_id'].map(ag_id2indiv_id)
