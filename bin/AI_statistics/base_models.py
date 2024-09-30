@@ -122,7 +122,7 @@ class ScoringModel(EffectModel):
         raise NotImplementedError
     
     def calc_effect_size(self, observations, return_frac=False):
-        es_fraction = self._get_effect_size_frac(observations)
+        es_fraction = self.get_effect_size_frac(observations)
         if return_frac:
             return es_fraction
         return logit(es_fraction) / np.log(2)
