@@ -20,7 +20,7 @@ class BinomialModel(BimodalBaseModel):
         self.p1 = expit(self.e * np.log(2) + np.log(B))
         self.p2 = expit(self.e * np.log(2) - np.log(B))
 
-        self.dist1(st.binom(n, self.p1))
+        self.dist1 = st.binom(n, self.p1)
         self.dist2 = st.binom(n, self.p2)
     
     @classmethod
