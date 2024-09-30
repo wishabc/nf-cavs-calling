@@ -102,6 +102,10 @@ class EffectModel:
     
     def get_log_pmf_for_mode(self, *args, **kwargs):
         raise NotImplementedError
+    
+    @property
+    def all_observations(self):
+        raise NotImplementedError
 
 
 class ScoringModel(EffectModel):

@@ -69,11 +69,11 @@ def inv_logit_es(es, d=1/128):
 def calc_bimodal_pvalues(dist1: st.rv_discrete, dist2: st.rv_discrete, x: np.ndarray, w: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     log_p_right = logsumexp(
         [dist1.logsf(x - 1), dist2.logsf(x - 1)], 
-        b=[w, 1 - w]
+        b=[w, 1 - w], axis=0
     )
     log_p_left = logsumexp(
         [dist1.logcdf(x), dist2.logcdf(x)], 
-        b=[w, 1 - w]
+        b=[w, 1 - w], axis=0
     )
     log_p_both = log_pval_both(log_p_right, log_p_left)
     return log_p_right, log_p_left, log_p_both
