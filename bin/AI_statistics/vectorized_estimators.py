@@ -27,12 +27,14 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
 
     b = np.log(B)
     logit_p = logit(x / n)
-    if w == 0:
-        return expit(logit_p + b)
-    elif w == 1:
-        return expit(logit_p - b)
-    else:
-        return expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
+    return np.select(
+        [w == 0, w == 1],
+        [
+            expit(logit_p + b),
+            expit(logit_p - b),
+        ],
+        expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
+    )
 
 
 def calc_binom_variance(n, B, n_points=101):
