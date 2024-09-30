@@ -63,6 +63,7 @@ class AggregatedBimodalModel(EffectModel):
     def all_observations(self):
         self.check_sizes()
         individual_observations = [model.all_observations for model in self.models]
+        print(individual_observations)
         return generate_cartesian_product(individual_observations)
     
     def get_log_pmf_for_mode(self, bad_phasing_mode):
