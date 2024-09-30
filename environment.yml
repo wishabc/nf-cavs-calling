@@ -22,6 +22,7 @@ dependencies:
   - tectonic
   - pyarrow
   - r-lmertest
+  - r-data.table
   - pip:
     - babachi
 prefix: /home/sabramov/miniconda3/envs/cavs-calling
