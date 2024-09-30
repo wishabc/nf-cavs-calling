@@ -1,5 +1,5 @@
 from scipy.special import logsumexp, expit
-from base_models import cached_method, ScoringModel, BimodalBaseModel, cached_property, EffectModel
+from base_models import cached_method, ScoringModel, BimodalBaseModel, cached_property, EffectModel, SamplingModel
 from aggregation_models import AggregatedBimodalSamplingModel, AggregatedBimodalScoringModel
 import numpy as np
 
@@ -41,7 +41,11 @@ class CachedScoringModel:
         
     @cached_property
     def effect_size_estimates(self):
-        return self.model.effect_size_estimate(self.all_observations)
+        return self.model.calc_effect_size(self.all_observations)
+    
+    @cached_property
+    def fraction_effect_size_estimates(self):
+        return self.model.calc_effect_size(self.all_observations, return_frac=True)
     
     def get_signif_indices(self, signif_tr, side='both'):
         return self.log_p_value(side=side) <= np.log(signif_tr)
@@ -102,7 +106,7 @@ class ExactPowerEstimator:
     @cached_method
     def fraction_effect_size_stats(self, effect):
         log_pmf = self.get_effect_log_pmf(effect)
-        p_estimates = expit(self.scoring_model.effect_size_estimates * np.log(2))
+        p_estimates = self.scoring_model.fraction_effect_size_estimates
         p_expectation = np.exp(
             logsumexp(
                 log_pmf,
@@ -119,7 +123,7 @@ class ExactPowerEstimator:
 
 
 class SamplingPowerEstimator:
-    def __init__(self, null_model: AggregatedBimodalSamplingModel, scoring_model: AggregatedBimodalScoringModel, n_itter=10000, random_state=None, bad_phasing_mode=None):
+    def __init__(self, null_model: SamplingModel, scoring_model: ScoringModel, n_itter=10000, random_state=None, bad_phasing_mode=None):
         assert scoring_model.compatible_with(null_model), 'Scoring model cannot score the null model, wrong Ns'
         if random_state is None:
             random_state = np.random.randint(0, 100000)
@@ -153,3 +157,6 @@ class SamplingPowerEstimator:
     @cached_method
     def correct_side_sensitivity(self, effect, signif_tr):
         return self.sensitivity(effect=effect, signif_tr=signif_tr, correct_indices=True)
+    
+    def fraction_effect_size_stats(self, effect):
+        raise NotImplementedError

@@ -1,6 +1,6 @@
 import numpy as np
 from functools import wraps
-from scipy.special import logsumexp
+from scipy.special import logsumexp, logit
 import scipy.stats as st
 from collections import namedtuple
 
@@ -71,6 +71,10 @@ def cached_method(func):
 
     return wrapper
 
+
+Pvalues = namedtuple('Pvalues', ['right', 'left', 'both'])
+
+
 class EffectModel:
     """
     Base class to store parameters of a model
@@ -97,6 +101,29 @@ class EffectModel:
         raise NotImplementedError
     
     def get_log_pmf_for_mode(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class ScoringModel(EffectModel):
+    """
+    Base class that contains calc_pvalues method
+    """
+    def calc_log_pvalues(self, observations) -> Pvalues:
+        """
+        Calculates log10 p-values for right, left, and both-sided tests.
+        
+        Returns:
+            log_pvalues for right, left, and both-sided tests as a namedtuple
+        """
+        raise NotImplementedError
+    
+    def calc_effect_size(self, observations, return_frac=False):
+        es_fraction = self._get_effect_size_frac(observations)
+        if return_frac:
+            return es_fraction
+        return logit(es_fraction) / np.log(2)
+
+    def get_effect_size_frac(self, observations):
         raise NotImplementedError
 
 
@@ -132,30 +159,11 @@ class BimodalBaseModel(EffectModel):
         return log_pmf_for_mode
 
 
-class SamplingModel:
+class SamplingModel(EffectModel):
     """
     A model to simulate allelic imbalance data
     """
     def get_samples(self, **kwargs):
-        raise NotImplementedError
-
-
-Pvalues = namedtuple('Pvalues', ['right', 'left', 'both'])
-
-class ScoringModel:
-    """
-    Base class that contains calc_pvalues method
-    """
-    def calc_log_pvalues(self, observations) -> Pvalues:
-        """
-        Calculates log10 p-values for right, left, and both-sided tests.
-        
-        Returns:
-            log_pvalues for right, left, and both-sided tests as a namedtuple
-        """
-        raise NotImplementedError
-
-    def effect_size_estimate(self, observations):
         raise NotImplementedError
 
 

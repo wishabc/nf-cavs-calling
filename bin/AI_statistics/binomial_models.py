@@ -92,6 +92,6 @@ class BinomialScoringModel(BimodalScoringModel):
             return estimate_w_null(x, self.n, self.B)
         return expit(self.dist1.logpmf(x) - self.dist2.logpmf(x))
 
-    def effect_size_estimate(self, x):
+    def get_effect_size_frac(self, x):
         w = self.estimate_w(x)
-        return logit(es_fraction_estimate_vectorized(x, self.n, self.B, w)) / np.log(2)
+        return es_fraction_estimate_vectorized(x, self.n, self.B, w)

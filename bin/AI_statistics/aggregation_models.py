@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import logit
 from base_models import cached_method, EffectModel, BimodalBaseModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel, Pvalues
 from collections.abc import Sequence
 from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both
@@ -96,9 +97,9 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
         agg_log_p = log_pval_both(agg_log_p_left, agg_log_p_right)
         return Pvalues([agg_log_p_right, agg_log_p_left, agg_log_p])
 
-    def effect_size_estimate(self, samples):
+    def get_effect_size_frac(self, samples):
         self.check_samples(samples)
-        return aggregate_effect_size([model.effect_size_estimate(sample) for sample, model in zip(samples, self.models)], weights=self.weights)
+        return aggregate_effect_size([model.effect_size_estimate(sample, return_frac=True) for sample, model in zip(samples, self.models)], weights=self.weights)
     
     def check_samples(self, samples):
         samples = np.asarray(samples)
