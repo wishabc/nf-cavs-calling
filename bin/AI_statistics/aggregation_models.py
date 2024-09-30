@@ -28,8 +28,8 @@ class AggregatedBimodalModel(EffectModel):
 
     def __init__(self, models: Sequence[BimodalBaseModel], indivs=None, weights=None,
                  size_constraint=1e7):
-        assert all(isinstance(model, BimodalBaseModel) for model in models)
-        self.models = [self.__child_model__.from_model(model) for model in models]
+        assert all(isinstance(model, self.__child_model__) for model in models)
+        self.models = models
         len_models = len(self.models)
         self.indivs = _validate_list_argument(len_models, indivs)
         self.weights = _validate_list_argument(len_models, weights)
