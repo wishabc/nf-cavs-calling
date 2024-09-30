@@ -28,9 +28,6 @@ process filter_testable_snps {
 }
 
 process fit_random_effects_model {
-
-    // FIXME move to label
-    conda "/home/sabramov/miniconda3/envs/condR"
     tag "${chromosome}"
     label "med_mem"
 
