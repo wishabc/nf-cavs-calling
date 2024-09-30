@@ -83,8 +83,9 @@ class BinomialScoringModel(BimodalScoringModel, BinomialModel):
     """
     A model to score allelic imbalance data
     """
-    def calc_log_pvalues(self, x):
-        w = self.estimate_w(x)
+    def calc_log_pvalues(self, x, w=None):
+        if w is None:
+            w = self.estimate_w(x)
         p_right, p_left, p_both = calc_bimodal_pvalues(self.dist1, self.dist2, x, w)
         return Pvalues(right=p_right, left=p_left, both=p_both)
 
@@ -93,6 +94,7 @@ class BinomialScoringModel(BimodalScoringModel, BinomialModel):
             return estimate_w_null(x, self.n, self.B)
         return expit(self.dist1.logpmf(x) - self.dist2.logpmf(x))
 
-    def get_effect_size_frac(self, x):
-        w = self.estimate_w(x)
+    def get_effect_size_frac(self, x, w=None):
+        if w is None:
+            w = self.estimate_w(x)
         return es_fraction_estimate_vectorized(x, self.n, self.B, w)

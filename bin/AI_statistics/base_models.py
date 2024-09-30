@@ -112,7 +112,7 @@ class ScoringModel(EffectModel):
     """
     Base class that contains calc_pvalues method
     """
-    def calc_log_pvalues(self, observations) -> Pvalues:
+    def calc_log_pvalues(self, observations, *args, **kwargs) -> Pvalues:
         """
         Calculates log10 p-values for right, left, and both-sided tests.
         
@@ -121,8 +121,8 @@ class ScoringModel(EffectModel):
         """
         raise NotImplementedError
     
-    def calc_effect_size(self, observations, return_frac=False):
-        es_fraction = self.get_effect_size_frac(observations)
+    def calc_effect_size(self, observations, return_frac=False, *args, **kwargs):
+        es_fraction = self.get_effect_size_frac(observations, *args, **kwargs)
         if return_frac:
             return es_fraction
         return logit(es_fraction) / np.log(2)
