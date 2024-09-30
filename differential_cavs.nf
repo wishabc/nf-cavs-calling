@@ -88,6 +88,7 @@ workflow differentialCavs {
         }
         out = Channel.fromPath(params.nuclear_chroms)
             | splitText()
+            | map(it -> it.trim())
             | combine(data)
             | filter_testable_snps
             | fit_random_effects_model

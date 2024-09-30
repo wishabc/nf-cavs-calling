@@ -107,6 +107,7 @@ workflow annotateLD {
     main:
         out = Channel.fromPath(params.nuclear_chroms)
             | splitText()
+            | map(it -> it.trim())
             | combine(data)
             | ld_scores
             | collectFile(
