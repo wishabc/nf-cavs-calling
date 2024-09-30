@@ -3,6 +3,7 @@
 # -f moves symlink targets
 # -n perform a 'dry run', printing all the commands to be performed
 
+# TODO: add graceful error handling
 
 function extract_symlink () {
 	if ! [ -d "$1" ]; then
@@ -12,6 +13,7 @@ function extract_symlink () {
 	fi
 }
 export -f extract_symlink
+
 case $2 in
     "-n")
         find $1 -type l -exec bash -c 'a="$@"; b=$( realpath $a ); if [[ "$b" != "$a" ]]; then echo mv $b $a; fi' bash {} \;
