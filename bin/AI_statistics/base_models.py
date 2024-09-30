@@ -143,11 +143,19 @@ class BimodalBaseModel(EffectModel):
     
     @property
     def dist1(self) -> st.rv_discrete:
-        raise NotImplementedError
+        return self._dist1
+    
+    @dist1.setter
+    def _dist1(self, dist):
+        self._dist1 = dist
     
     @property
     def dist2(self) -> st.rv_discrete:
-        raise NotImplementedError
+        return self._dist2
+    
+    @dist2.setter
+    def _dist2(self, dist):
+        self._dist2 = dist
     
     def get_log_pmf_for_mode(self, bad_phasing_mode):
         assert bad_phasing_mode in [1, 2, None]
