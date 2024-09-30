@@ -16,7 +16,7 @@ process filter_testable_snps {
     script:
     tested = "${chromosome}.tested.bed"
     """
-    python3 $moduleDir/bin/lrt.py \
+    python3 $moduleDir/bin/find_testable_snps.py \
         ${input_data} \
         ${params.samples_file} \
         ${chromosome} \

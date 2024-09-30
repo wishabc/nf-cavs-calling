@@ -21,6 +21,7 @@ dependencies:
   - vcftools
   - tectonic
   - pyarrow
+  - r-lmertest
   - pip:
     - babachi
 prefix: /home/sabramov/miniconda3/envs/cavs-calling
