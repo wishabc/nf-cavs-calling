@@ -146,7 +146,7 @@ class BimodalBaseModel(EffectModel):
         return self._dist1
     
     @dist1.setter
-    def _dist1(self, dist):
+    def dist1(self, dist): 
         self._dist1 = dist
     
     @property
@@ -154,7 +154,7 @@ class BimodalBaseModel(EffectModel):
         return self._dist2
     
     @dist2.setter
-    def _dist2(self, dist):
+    def dist2(self, dist):
         self._dist2 = dist
     
     def get_log_pmf_for_mode(self, bad_phasing_mode):
