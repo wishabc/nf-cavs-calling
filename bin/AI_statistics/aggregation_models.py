@@ -68,7 +68,7 @@ class AggregatedBimodalModel(EffectModel):
     def get_log_pmf_for_mode(self, bad_phasing_mode):
         self.check_sizes()
         individual_log_pmfs = [model.get_log_pmf_for_mode(bad_phasing_mode) for model in self.models]
-        return generate_cartesian_product(*individual_log_pmfs)
+        return generate_cartesian_product(*individual_log_pmfs).sum(axis=0)
 
 
 class AggregatedBimodalSamplingModel(SamplingModel, AggregatedBimodalModel):
