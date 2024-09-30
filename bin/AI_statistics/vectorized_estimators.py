@@ -27,7 +27,12 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
 
     b = np.log(B)
     logit_p = logit(x / n)
-    return expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
+    if w == 0:
+        return expit(logit_p + b)
+    elif w == 1:
+        return expit(logit_p - b)
+    else:
+        return expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
 
 
 def calc_binom_variance(n, B, n_points=101):
@@ -89,11 +94,11 @@ def stouffer_combine_log_pvals(log_pvals, weights=None):
     A vectorized version of Stouffer's method for combining p-values
     """
     log_pvals = np.asarray(log_pvals)
-    print(log_pvals)
     if weights is None:
         weights = np.ones_like(log_pvals)
+    aggregated_z = -ndtri_exp(log_pvals)
     # return st.combine_pvalues(pvals, weights=weights, method='stouffer')[1]
-    return st.norm.logsf(weights.dot(-ndtri_exp(log_pvals)) / np.linalg.norm(weights))
+    return st.norm.logsf(weights.dot(aggregated_z) / np.linalg.norm(weights))
 
 
 # implementation of Storey method for FDR estimation
