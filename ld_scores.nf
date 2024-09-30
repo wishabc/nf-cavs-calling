@@ -105,8 +105,8 @@ workflow annotateLD {
         data
         samples
     main:
-        out = Channel.of(1..22)
-            | map(it -> "chr${it}")
+        out = Channel.fromPath(params.nuclear_chroms)
+            | splitText()
             | combine(data)
             | ld_scores
             | collectFile(

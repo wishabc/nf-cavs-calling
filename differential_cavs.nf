@@ -83,8 +83,8 @@ workflow differentialCavs {
     take:
         data
     main:
-        out = Channel.of(1..22)
-            | map(it -> "chr${it}")
+        out = Channel.fromPath(params.nuclear_chroms)
+            | splitText()
             | combine(data)
             | filter_testable_snps
             | fit_random_effects_model
