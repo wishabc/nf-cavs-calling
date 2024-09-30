@@ -29,7 +29,7 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
     return expit(w * (logit_p - b) + (1 - w) * (logit_p + b))
 
 
-def calc_variance(n, B, n_points=101):
+def calc_binom_variance(n, B, n_points=101):
     es_fraction = np.linspace(0, 1, n_points)
     x = np.arange(n + 1)
     p1 = expit(logit(es_fraction) + np.log(B))

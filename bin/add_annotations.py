@@ -1,6 +1,6 @@
 import pandas as pd
 import argparse
-from AI_statistics.vectorized_estimators import calc_variance
+from AI_statistics.vectorized_estimators import calc_binom_variance
 import numpy as np
 from tqdm import tqdm
 
@@ -14,7 +14,7 @@ def read_indicator(file_path):
 
 def calc_inverse_mse(row):
     n, B = row['coverage'], row['BAD']
-    return 1 / np.sqrt(calc_variance(n, B).mean())
+    return 1 / np.sqrt(calc_binom_variance(n, B).mean())
 
 
 if __name__ == '__main__':
