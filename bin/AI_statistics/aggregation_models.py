@@ -115,4 +115,4 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
     def check_samples(self, samples):
         samples = np.asarray(samples)
         assert samples.ndim == 2, f'(!) samples should be 2D array, got: {samples.ndim}'
-        assert samples.shape[0] == len(self.models), f'(!) number of models does not match number of samples'
+        assert samples.shape[0] == len(self.models), f'(!) number of models ({len(self.models)}) does not match number of samples: {samples.shape[0]} (Total shape {samples.shape})'
