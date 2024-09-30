@@ -9,7 +9,8 @@ from scipy import interpolate
 def estimate_w_null(x, n, B):
     b = np.log(B)
     delta = b * (n - 2 * x)
-    return expit(-delta)
+    flattened_delta = delta.flatten()
+    return expit(-flattened_delta).reshape(delta.shape)
 
 
 def mode1_expectation_vectorized(dist1: st.rv_discrete, func, x, *args, **kwargs):
