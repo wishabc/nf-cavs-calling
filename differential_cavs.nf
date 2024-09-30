@@ -8,7 +8,7 @@ process filter_testable_snps {
     label "high_mem"
 
     input:
-        tuple val(chromosome), path(input_data)
+        tuple val(chromosome), path(input_data), path(data_index)
 
     output:
         tuple val(chromosome), path(tested)
@@ -117,6 +117,6 @@ workflow differentialCavs {
 
 workflow {
     params.nonagr_pvals = "${params.outdir}/non_aggregated.${params.aggregation_key}.bed.gz"
-    Channel.fromPath(params.nonagr_pvals)
+    Channel.of(tuple(file(params.nonagr_pvals), file("${params.nonagr_pvals}.tbi")))
         | differentialCavs
 }
