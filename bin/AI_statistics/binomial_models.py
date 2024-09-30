@@ -16,7 +16,7 @@ class BinomialModel(BimodalBaseModel):
         - effect: effect size
         - B: background allelic dosage
         """
-        super.__init__(n, effect, B)
+        super().__init__(n, effect, B)
         self.p1 = expit(self.e * np.log(2) + np.log(B))
         self.p2 = expit(self.e * np.log(2) - np.log(B))
 
