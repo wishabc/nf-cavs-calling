@@ -78,13 +78,12 @@ class ExactPowerEstimator:
         return self.sum_probability_for_mode(effect_model, signif_indices & correct_indices)
 
     @cached_method
-    def specificity(self, signif_tr, side='both'):
+    def false_positive_rate(self, signif_tr, side='both'):
         signif_indices = self.scoring_model.get_signif_indices(signif_tr, side=side)
-        return 1 - self.sum_probability_for_mode(self.null_model, signif_indices)
+        return self.sum_probability_for_mode(self.null_model, signif_indices)
 
     def correct_side_sensitivity(self, effect, signif_tr, side='both'):
-        correct_side_indices = (self.scoring_model.log_p_right < self.scoring_model.log_p_left) == (
-                    (effect - self.null_model.e) > 0)
+        correct_side_indices = (self.scoring_model.log_p_right < self.scoring_model.log_p_left) == ((effect - self.null_model.e) > 0)
         return self.sensitivity(effect, signif_tr, side=side, correct_indices=correct_side_indices)
 
     def sum_probability_for_mode(self, model: EffectModel, indicators: np.ndarray):
@@ -148,10 +147,10 @@ class SamplingPowerEstimator:
         return np.sum((log_pval_both <= np.log(signif_tr)) & correct_indices) / self.n_itter
 
     @cached_method
-    def specificity(self, signif_tr):
+    def false_positive_rate(self, signif_tr):
         samples, _ = self.null_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
         log_pvals = self.scoring_model.calc_log_pvalues(samples).both
-        return 1 - np.sum(log_pvals <= np.log(signif_tr)) / self.n_itter
+        return np.sum(log_pvals <= np.log(signif_tr)) / self.n_itter
 
     @cached_method
     def correct_side_sensitivity(self, effect, signif_tr):
