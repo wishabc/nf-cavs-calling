@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import logit
 from base_models import cached_method, EffectModel, BimodalBaseModel, BimodalSamplingModel, BimodalScoringModel, SamplingModel, ScoringModel, Pvalues
 from collections.abc import Sequence
-from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both
+from vectorized_estimators import stouffer_combine_log_pvals, aggregate_effect_size, log_pval_both, generate_cartesian_product
 
 
 def is_iterable(obj):
@@ -27,7 +27,8 @@ def _validate_list_argument(len_models, arg):
 class AggregatedBimodalModel(EffectModel):
     __child_model__ = BimodalBaseModel
 
-    def __init__(self, models: Sequence[BimodalBaseModel], indivs=None, weights=None):
+    def __init__(self, models: Sequence[BimodalBaseModel], indivs=None, weights=None,
+                 size_constraint=1e7):
         assert all(isinstance(model, BimodalBaseModel) for model in models)
         self.models = [self.__child_model__.from_model(model) for model in models]
         len_models = len(self.models)
@@ -35,6 +36,8 @@ class AggregatedBimodalModel(EffectModel):
         self.weights = _validate_list_argument(len_models, weights)
         if weights is None:
             self.weights *= np.sqrt(np.array([model.n for model in self.models]))
+
+        self.size_constraint = size_constraint
 
         self._random_state_mod = 2 ** 32
         self.e = aggregate_effect_size([model.e for model in self.models], weights=self.weights)
@@ -47,12 +50,21 @@ class AggregatedBimodalModel(EffectModel):
     def compatible_with(self, other: 'AggregatedBimodalModel'):
         return np.all(x.compatible_with(y) for x, y in zip(self.models, other.models))
 
+    def check_sizes(self):
+        cartesian_size = np.prod(np.array([model.n for model in self.models]))
+        if cartesian_size > self.size_constraint:
+            raise ValueError(f"(!) Cartesian product of {cartesian_size} elements is too large. Increase size_constraint to proceed.")
+
     @property
     def all_observations(self):
-        raise NotImplementedError
+        self.check_sizes()
+        individual_observations = [model.all_observations for model in self.models]
+        return generate_cartesian_product(individual_observations)
     
-    def get_log_pmf_for_mode(self):
-        raise NotImplementedError
+    def get_log_pmf_for_mode(self, bad_phasing_mode):
+        self.check_sizes()
+        individual_log_pmfs = [model.get_log_pmf_for_mode(bad_phasing_mode) for model in self.models]
+        return generate_cartesian_product(individual_log_pmfs)
 
 
 class AggregatedBimodalSamplingModel(SamplingModel, AggregatedBimodalModel):

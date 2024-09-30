@@ -130,3 +130,18 @@ def qvalue(pvals, bootstrap=False):
         qvals[i] = min(pi0 * m * pvals[i]/float(i+1), qvals[i+1])
     qvals = qvals[rev_ind]
     return qvals
+
+# Cartesian product
+def generate_cartesian_product(*arrays):
+    """
+    Generates a matrix of dimensions [N, n1*n2*...*nN] where each column contains
+    one unique sample of 1 element per input list (array).
+    
+    Parameters:
+        *arrays: arbitrary number of input lists (arrays) of length n_i.
+        
+    Returns:
+        A numpy matrix of shape [N, n1*n2*...*nN].
+    """
+    meshgrids = np.meshgrid(*arrays, indexing='ij')
+    return np.vstack([np.ravel(grid) for grid in meshgrids])

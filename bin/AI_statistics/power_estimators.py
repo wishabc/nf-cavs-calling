@@ -159,4 +159,9 @@ class SamplingPowerEstimator:
         return self.sensitivity(effect=effect, signif_tr=signif_tr, correct_indices=True)
     
     def fraction_effect_size_stats(self, effect):
-        raise NotImplementedError
+        effect_model = self.null_model.get_effect_model(effect)
+        samples, _ = effect_model.get_samples(self.n_itter, random_state=self.random_state, bad_phasing_mode=self.bad_phasing_mode)
+        p_estimates = self.scoring_model.calc_effect_size(samples, return_frac=True)
+        p_expectation = np.mean(p_estimates)
+        p_variance = np.var(p_estimates)
+        return p_expectation, p_variance
