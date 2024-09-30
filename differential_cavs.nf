@@ -84,7 +84,7 @@ workflow differentialCavs {
         data
     main:
         if (params.aggregation_key == "all") {
-            error "Cannot run differential analysis on aggregation of all samples"
+            error "Cannot run differential analysis on aggregation of all samples. Make sure you specified the params.aggregation_key correctly"
         }
         out = Channel.fromPath(params.nuclear_chroms)
             | splitText()
