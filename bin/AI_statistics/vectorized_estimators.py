@@ -42,13 +42,14 @@ def calc_binom_variance(n, B, n_points=101):
     x = np.arange(n + 1)
     p1 = expit(logit(es_fraction) + np.log(B))
     dist1 = st.binom(n, p1)
-
-    yvals = mode1_expectation_vectorized(dist1, es_fraction_estimate_vectorized, x, n=n, B=B)
+    w = estimate_w_null(x, n, B)
+    kwargs = dict(n=n, B=B, w=w)
+    yvals = mode1_expectation_vectorized(dist1, es_fraction_estimate_vectorized, x, **kwargs)
 
     def es_estimate_squared(*args, **kwargs):
         return es_fraction_estimate_vectorized(*args, **kwargs) ** 2
 
-    yvals_squared_exp = mode1_expectation_vectorized(dist1, es_estimate_squared, x, n=n, B=B)    
+    yvals_squared_exp = mode1_expectation_vectorized(dist1, es_estimate_squared, x, **kwargs)    
 
     vars = yvals_squared_exp - yvals ** 2
     return (yvals - es_fraction) ** 2 + vars
