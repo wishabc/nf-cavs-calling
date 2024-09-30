@@ -9,8 +9,7 @@ from scipy import interpolate
 def estimate_w_null(x, n, B):
     b = np.log(B)
     delta = b * (n - 2 * x)
-    flattened_delta = delta.flatten()
-    return expit(-flattened_delta).reshape(delta.shape)
+    return expit(-delta)
 
 
 def mode1_expectation_vectorized(dist1: st.rv_discrete, func, x, *args, **kwargs):
@@ -146,7 +145,7 @@ def generate_cartesian_product(*arrays):
     num_columns = np.prod([len(arr) for arr in arrays])
     num_rows = len(arrays)
 
-    result_matrix = np.empty((num_rows, num_columns), dtype=object)
+    result_matrix = np.empty((num_rows, num_columns), dtype=float)
 
     repeat_factor = num_columns
     for i, arr in enumerate(arrays):
