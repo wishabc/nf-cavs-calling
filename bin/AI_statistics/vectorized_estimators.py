@@ -80,7 +80,7 @@ def calc_bimodal_pvalues(dist1: st.rv_discrete, dist2: st.rv_discrete, x: np.nda
 
 
 def log_pval_both(log_p_right, log_p_left):
-    return np.min(np.stack([log_p_right, log_p_left]), axis=0) + np.log(2)
+    return np.clip(np.min(np.stack([log_p_right, log_p_left]), axis=0) + np.log(2), -np.inf, 0)
 
 
 def stouffer_combine_log_pvals(log_pvals, weights):
