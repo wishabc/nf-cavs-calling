@@ -3,6 +3,7 @@ from scipy import stats as st
 import numpy as np
 from typing import Tuple
 from scipy import interpolate
+from scipy.special import ndtri_exp
 
 
 # Vectorized functions for effect size estimates, expectation, variance and MSE
@@ -83,15 +84,16 @@ def log_pval_both(log_p_right, log_p_left):
     return np.clip(np.min(np.stack([log_p_right, log_p_left]), axis=0) + np.log(2), -np.inf, 0)
 
 
-def stouffer_combine_log_pvals(log_pvals, weights):
+def stouffer_combine_log_pvals(log_pvals, weights=None):
     """
     A vectorized version of Stouffer's method for combining p-values
     """
+    log_pvals = np.asarray(log_pvals)
+    print(log_pvals)
     if weights is None:
         weights = np.ones_like(log_pvals)
-    pvals = np.exp(log_pvals)
     # return st.combine_pvalues(pvals, weights=weights, method='stouffer')[1]
-    return st.norm.logsf(weights.dot(st.norm.isf(pvals)) / np.linalg.norm(weights))
+    return st.norm.logsf(weights.dot(-ndtri_exp(log_pvals)) / np.linalg.norm(weights))
 
 
 # implementation of Storey method for FDR estimation
