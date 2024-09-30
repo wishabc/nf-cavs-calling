@@ -85,7 +85,8 @@ class BinomialScoringModel(BimodalScoringModel, BinomialModel):
     """
     def calc_log_pvalues(self, x):
         w = self.estimate_w(x)
-        return Pvalues(calc_bimodal_pvalues(self.dist1, self.dist2, x, w))
+        p_right, p_left, p_both = calc_bimodal_pvalues(self.dist1, self.dist2, x, w)
+        return Pvalues(right=p_right, left=p_left, both=p_both)
 
     def estimate_w(self, x):
         if self.e == 0:

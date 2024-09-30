@@ -106,8 +106,8 @@ class AggregatedBimodalScoringModel(ScoringModel, AggregatedBimodalModel):
         agg_log_p_right = stouffer_combine_log_pvals(log_p_right, self.weights) 
         agg_log_p_left = stouffer_combine_log_pvals(log_p_left, self.weights)
         agg_log_p = log_pval_both(agg_log_p_left, agg_log_p_right)
-        return Pvalues([agg_log_p_right, agg_log_p_left, agg_log_p])
-
+        return Pvalues(right=agg_log_p_right, left=agg_log_p_left, both=agg_log_p)
+    
     def get_effect_size_frac(self, samples):
         self.check_samples(samples)
         return aggregate_effect_size([model.effect_size_estimate(sample, return_frac=True) for sample, model in zip(samples, self.models)], weights=self.weights)
