@@ -5,7 +5,7 @@ process get_chromosomes {
     conda params.conda
 
     input:
-        path(input_data), path(data_index)
+        tuple path(input_data), path(data_index)
 
     output:
         stdout
