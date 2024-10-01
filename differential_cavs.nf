@@ -45,6 +45,7 @@ process filter_testable_snps {
 process fit_random_effects_model {
     tag "${chromosome}"
     label "med_mem"
+    conda params.conda
 
     input:
         tuple val(chromosome), path(input_data)
