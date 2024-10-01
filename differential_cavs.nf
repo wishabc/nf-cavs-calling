@@ -103,6 +103,7 @@ workflow differentialCavs {
         }
         out = data
             | get_chromosomes
+            | flatMap(n -> n.split())
             | combine(data)
             | filter_testable_snps
             | fit_random_effects_model
