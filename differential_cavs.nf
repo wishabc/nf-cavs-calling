@@ -1,6 +1,21 @@
 #!/usr/bin/env nextflow
 params.conda = "$moduleDir/environment.yml"
 
+process get_chromosomes {
+    conda params.conda
+
+    input:
+        path(input_data), path(data_index)
+
+    output:
+        stdout
+
+    script:
+    """
+    tabix -l ${input_data} | sort | uniq
+    """
+}
+
 
 process filter_testable_snps {
     conda params.conda
@@ -86,9 +101,8 @@ workflow differentialCavs {
         if (params.aggregation_key == "all") {
             error "Cannot run differential analysis on aggregation of all samples. Make sure you specified the params.aggregation_key correctly"
         }
-        out = Channel.fromPath(params.nuclear_chroms)
-            | splitText()
-            | map(it -> it.trim())
+        out = data
+            | get_chromosomes
             | combine(data)
             | filter_testable_snps
             | fit_random_effects_model
