@@ -14,9 +14,9 @@ function extract_symlink () {
 
         if [ -e "$target" ]; then
             local tmpdir
-            tmpdir=$(mktemp -d --suffix="_symlink_extract")
+            tmpdir=$(mktemp -d --tmpdir extract_XXXXXX_symlink)
 
-            cp -r "$target" "$tmpdir/" && rm "$link" && mv "$tmpdir/"* "$link"
+            cp -rL "$target" "$tmpdir/" && rm "$link" && mv "$tmpdir/"* "$link"
             rmdir "$tmpdir"  # Remove temp directory after use
         else
             echo "Error: Target '$target' does not exist" >&2
