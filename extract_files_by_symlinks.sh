@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: extract_symlink <target-dir> <-f | -n>
+# Usage: extract_symlink <target-dir> <-f | -n> [num_jobs]
 # -f moves symlink targets safely
 # -n performs a 'dry run', printing all the commands to be performed
 
@@ -31,20 +31,27 @@ if [ ! -d "$1" ]; then
     exit 1
 fi
 
+num_jobs="${3:-1}"
+if ! [[ "$num_jobs" =~ ^[0-9]+$ ]]; then
+    echo "Error: Number of jobs must be a positive integer" >&2
+    exit 1
+fi
+
+
 case "$2" in
     "-n")
         find "$1" -type l -print0 | while IFS= read -r -d '' link; do
             target=$(realpath "$link")
             if [[ -e "$target" ]]; then
                 dir=$(dirname "$link")
-                echo "cp -r \"$target\" \"$dir/tmpfile\" && rm \"$link\" && mv \"$dir/tmpfile\" \"$link\""
+                echo "cp -rL \"$target\" \"$dir/tmpfile\" && rm \"$link\" && mv \"$dir/tmpfile\" \"$link\""
             else
                 echo "Error: Target '$target' does not exist" >&2
             fi
         done
         ;;
     "-f")
-        find "$1" -type l -print0 | xargs -0 -I {} bash -c 'extract_symlink "$@"' _ {}
+        find "$1" -type l -print0 | parallel -0 -j "$num_jobs" extract_symlink "{}"
         ;;
     *)
         echo "Error: Neither -f nor -n are provided" >&2
