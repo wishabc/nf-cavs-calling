@@ -37,15 +37,6 @@ if ! [[ "$num_jobs" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-total_symlinks=$(find "$1" -type l | wc -l)
-
-if [[ "$total_symlinks" -eq 0 ]]; then
-    echo "No symlinks found in the directory."
-    exit 0
-fi
-
-echo "Processing $total_symlinks symlinks..."
-
 
 case "$2" in
     "-n")
