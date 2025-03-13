@@ -13,17 +13,17 @@ function extract_symlink () {
         target=$(realpath "$link")
 
         if [ -e "$target" ]; then
-            local dir
-            dir=$(dirname "$link")
-            local tmpfile
-            tmpfile=$(mktemp --tmpdir="$dir" "symlink_extract_XXXXXX")
+            local tmpdir
+            tmpdir=$(mktemp -d --suffix="_symlink_extract")
 
-            cp -r "$target" "$tmpfile" && rm "$link" && mv "$tmpfile" "$link"
+            cp -r "$target" "$tmpdir/" && rm "$link" && mv "$tmpdir/"* "$link"
+            rmdir "$tmpdir"  # Remove temp directory after use
         else
             echo "Error: Target '$target' does not exist" >&2
         fi
     fi
 }
+
 export -f extract_symlink
 
 if [ ! -d "$1" ]; then
