@@ -37,6 +37,15 @@ if ! [[ "$num_jobs" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+total_symlinks=$(find "$1" -type l | wc -l)
+
+if [[ "$total_symlinks" -eq 0 ]]; then
+    echo "No symlinks found in the directory."
+    exit 0
+fi
+
+echo "Processing $total_symlinks symlinks..."
+
 
 case "$2" in
     "-n")
@@ -51,7 +60,7 @@ case "$2" in
         done
         ;;
     "-f")
-        find "$1" -type l -print0 | parallel -0 -j "$num_jobs" extract_symlink "{}"
+        find "$1" -type l -print0 | parallel --bar -0 -j "$num_jobs" extract_symlink "{}"
         ;;
     *)
         echo "Error: Neither -f nor -n are provided" >&2
