@@ -57,14 +57,8 @@ fi
 
 # ---- Mode handling ----
 case "$mode_flag" in
-    -n) 
-        parallel_func="build_extract_command"
-        additional_args=""
-        ;;
-    -f) 
-        parallel_func="extract_symlink" 
-        additional_args="--bar"
-        ;;
+    -n) parallel_func="build_extract_command" ;;
+    -f) parallel_func="extract_symlink" ;;
     *)
         echo "Error: Unknown mode flag '$mode_flag'. Use -f or -n." >&2
         exit 1
@@ -73,4 +67,4 @@ esac
 
 # ---- Run parallel ----
 find "$target_dir" -type l -print0 \
-    | parallel "$additional_args" -0 -j "$num_jobs" "$parallel_func" "{}"
+    | parallel --bar -0 -j "$num_jobs" "$parallel_func" "{}"
