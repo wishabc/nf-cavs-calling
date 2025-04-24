@@ -3,6 +3,7 @@
 # -f replaces symlinks with targets (via move)
 # -n prints the shell commands (dry run)
 # num_jobs is optional (default = 1)
+# Note: Progressbar writes to stderr
 
 set -euo pipefail
 
