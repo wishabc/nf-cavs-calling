@@ -25,7 +25,7 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
     if w is None:
         w = estimate_w_null(x, n, B)
     x, n, B = map(np.asarray, [x, n, B])
-    print(x.shape, n.shape, B.shape)
+    print(x.shape, n, B, w.shape)
     b = np.log(B)
     logit_p = logit(x / n)
     return np.select(
