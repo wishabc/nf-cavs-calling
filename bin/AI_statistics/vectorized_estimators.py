@@ -25,7 +25,7 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
     if w is None:
         w = estimate_w_null(x, n, B)
     x, n, B = map(np.asarray, [x, n, B])
-
+    print(x.shape, n.shape, B.shape)
     b = np.log(B)
     logit_p = logit(x / n)
     return np.select(
@@ -48,7 +48,6 @@ def calc_binom_variance(n, B, n_points=101):
     dist1 = st.binom(n, p1)
     w = estimate_w_null(x, n, B)
     kwargs = dict(n=n, B=B, w=w)
-    print(w.shape, x.shape, n.shape, B.shape)
     yvals = mode1_expectation_vectorized(dist1, es_fraction_estimate_vectorized, x, **kwargs)
 
     def es_estimate_squared(*args, **kwargs):
