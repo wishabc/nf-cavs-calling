@@ -68,9 +68,9 @@ process apply_babachi {
         exit 0
     fi
 
+    # -j ${task.cpus} 
     babachi snps.common.bed \
         -O ${badmap_file} \
-        -j ${task.cpus} \
         -p ${params.prior} \
         ${prior_params} \
         -s ${params.states} \
