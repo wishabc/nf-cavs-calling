@@ -16,6 +16,7 @@ def estimate_w_null(x, n, B):
 def mode1_expectation_vectorized(dist1: st.rv_discrete, func, x, *args, **kwargs):
     log_pmf_values = dist1.logpmf(x[:, None])
     func_values = func(x[:, None], *args, **kwargs)
+    print(log_pmf_values.shape, func_values.shape)
     expectations = logsumexp(log_pmf_values, b=func_values, axis=0)
     return np.exp(expectations)
 
@@ -52,7 +53,12 @@ def calc_binom_variance(n, B, n_points=101):
     def es_estimate_squared(*args, **kwargs):
         return es_fraction_estimate_vectorized(*args, **kwargs) ** 2
 
-    yvals_squared_exp = mode1_expectation_vectorized(dist1, es_estimate_squared, x, **kwargs)    
+    yvals_squared_exp = mode1_expectation_vectorized(
+        dist1,
+        es_estimate_squared,
+        x,
+        **kwargs
+    )    
 
     vars = yvals_squared_exp - yvals ** 2
     return (yvals - es_fraction) ** 2 + vars
