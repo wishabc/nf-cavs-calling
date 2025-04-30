@@ -15,8 +15,7 @@ def estimate_w_null(x, n, B):
 
 def mode1_expectation_vectorized(dist1: st.rv_discrete, func, x, *args, **kwargs):
     log_pmf_values = dist1.logpmf(x[:, None])
-    func_values = func(x[:, None], *args, **kwargs)
-    print(log_pmf_values.shape, func_values.shape)
+    func_values = func(x, *args, **kwargs)[:, None]
     expectations = logsumexp(log_pmf_values, b=func_values, axis=0)
     return np.exp(expectations)
 
@@ -25,7 +24,6 @@ def es_fraction_estimate_vectorized(x, n, B, w=None):
     if w is None:
         w = estimate_w_null(x, n, B)
     x, n, B = map(np.asarray, [x, n, B])
-    print(x.shape, n, B, w.shape)
     b = np.log(B)
     logit_p = logit(x / n)
     return np.select(
