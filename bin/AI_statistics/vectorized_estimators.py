@@ -48,6 +48,7 @@ def calc_binom_variance(n, B, n_points=101):
     dist1 = st.binom(n, p1)
     w = estimate_w_null(x, n, B)
     kwargs = dict(n=n, B=B, w=w)
+    print(w.shape, x.shape, n.shape, B.shape)
     yvals = mode1_expectation_vectorized(dist1, es_fraction_estimate_vectorized, x, **kwargs)
 
     def es_estimate_squared(*args, **kwargs):
