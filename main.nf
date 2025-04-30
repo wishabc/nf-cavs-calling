@@ -131,10 +131,10 @@ process annotate_variants {
             # Nextflow needs an input file. Mock file was passed here.
             awk '{print "-"}' \$1 > \$3
         else
-            if [[ "\${bname}" == *".starch" ]]; then
+            if [[ "\${bname}" == *".bed.gz" ]]; then
                 bedmap --indicator \$1 \$2 > \$3 || true
             else
-                grep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
+                zgrep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
             fi
         fi
     }

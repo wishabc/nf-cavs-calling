@@ -11,10 +11,6 @@ set -euo pipefail
 function build_extract_command () {
     local link="$1"
 
-    if [[ ! -h "$link" ]]; then
-        return 1
-    fi
-
     local target
     target=$(realpath "$link") || {
         echo "Error: Failed to resolve symlink: $link" >&2
