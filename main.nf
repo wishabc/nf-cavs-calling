@@ -132,9 +132,9 @@ process annotate_variants {
             awk '{print "-"}' \$1 > \$3
         else
             if [[ "\${bname}" == *".bed.gz" ]]; then
-                bedmap --indicator \$1 \$2 > \$3 || true
+                (bedmap --indicator \$1 \$2 > \$3) || true
             else
-                zgrep -v '#' \$2 | bedmap --indicator \$1 - > \$3 || true
+                (zgrep -v '#' \$2 | bedmap --indicator \$1 - > \$3) || true
             fi
         fi
     }
@@ -234,10 +234,10 @@ workflow annotateWithFootprints {
         annotations = Channel.fromPath(params.samples_file)
             | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(
-                    row.ag_id,
-                    check_var(row?.peaks_file, 'peaks'), 
+                    row.sample_id,
+                    check_var(row['peaks_file_0.001fdr'], 'peaks'), 
                     check_var(row?.footprints_file, 'fp'),
-                    check_var(row?.hotspots_file, 'hs')
+                    check_var(row['hotspots_file_0.05fdr'], 'hs')
                     )
                 )
         out = pval_files

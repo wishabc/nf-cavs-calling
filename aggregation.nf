@@ -152,7 +152,7 @@ workflow aggregation {
                 | splitCsv(header: true, sep: '\t')
                 | map{ row ->
                     if (row.containsKey(params.aggregation_key)) {
-                        return tuple(row.ag_id, row[params.aggregation_key])
+                        return tuple(row.sample_id, row[params.aggregation_key])
                     } else {
                         throw new Exception("Column '${params.aggregation_key}' does not exist in the samples file '${params.samples_file}'")
                     }

@@ -29,7 +29,7 @@ def find_testable_pairs(melt, min_indivs_per_group, min_groups_per_variant, cove
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Find variants to fit random effects model')
     parser.add_argument('input_data', help='Non-aggregated file with tested CAVs')
-    parser.add_argument('metadata', help='Samples metadata with ag_id to indiv_id correspondence')
+    parser.add_argument('metadata', help='Samples metadata with sample_id to indiv_id correspondence')
     parser.add_argument('prefix', help='Prefix to files to save output files into')
     parser.add_argument('--min_indivs_per_group', type=int, help='Number of indivs in each group for the variant', default=3)
     parser.add_argument('--min_groups', type=int, help='Number of groups for the variant', default=2)
@@ -51,8 +51,8 @@ if __name__ == '__main__':
     
 
     input_df.query('BAD <= 1', inplace=True)
-    ag_id2indiv_id = pd.read_table(args.metadata).set_index('ag_id')['indiv_id'].to_dict()
-    input_df['indiv_id'] = input_df['sample_id'].map(ag_id2indiv_id)
+    sample_id2indiv_id = pd.read_table(args.metadata).set_index('sample_id')['indiv_id'].to_dict()
+    input_df['indiv_id'] = input_df['sample_id'].map(sample_id2indiv_id)
     input_df['variant_id'] = input_df['#chr'] + "@" + input_df['end'].astype(str) + "@" + input_df['alt']
 
     print("Finished reading non-aggregated file, shape:", input_df.shape)
