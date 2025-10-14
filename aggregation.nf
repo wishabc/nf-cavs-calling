@@ -45,12 +45,12 @@ process merge_files {
     echo "`head -n 1 ${files[0]}`\tgroup_id" > ${name}
     tail -n +2 -q ${files} \
         | awk -v OFS='\t' \
-            -v val="'${group_key}'" \
+            -v val='${group_key}' \
             '
                 NR==1 {print \$0, "group_id"}
                 NR>1 {print \$0, val}
             '
-    tail -n +2 -q ${files} | sed "s/\$/\t'${group_key}'/" | sort-bed - >> ${name}
+        | sort-bed - >> ${name}
     """
 }
 
