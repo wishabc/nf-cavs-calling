@@ -10,16 +10,16 @@ def set_key_for_group_tuple(ch) {
 
 process aggregate_pvals {
     conda params.conda
-    tag "${sample_id}"
+    tag "${group_key}"
 
     input:
-        tuple val(sample_id), path(pval_file)
+        tuple val(group_key), path(pval_file)
 
     output:
-        tuple val(sample_id), path(name)
+        tuple val(group_key), path(name)
 
     script:
-    name = "${sample_id}.aggregation.bed"
+    name = "aggregation.bed"
     """
     python3 $moduleDir/bin/aggregation.py \
         -I ${pval_file} \
@@ -40,40 +40,14 @@ process merge_files {
         tuple val(group_key), path(name)
 
     script:
-    name = "${group_key}.sorted.bed"
+    name = "merged.sorted.bed"
     """
     echo "`head -n 1 ${files[0]}`\tgroup_id" > ${name}
-    tail -n +2 -q ${files} | sed "s/\$/\t${group_key}/" | sort-bed - >> ${name}
+    tail -n +2 -q ${files} | sed "s/\$/\t'${group_key}'/" | sort-bed - >> ${name}
     """
 }
 
-process filter_bad1 {
-    conda params.conda
-    tag "${sample_id}"
 
-    input:
-        tuple val(sample_id), path(non_aggregated)
-    
-    output:
-        tuple val(sample_id), path(name)
-    script:
-    name = "${sample_id}_BAD1.nonaggregated.bed"
-    """
-    awk -v OFS='\t' -F'\t' '
-        NR == 1 { \
-            for (i=1; i<=NF; i++) { \
-                if (\$i == "BAD") { \
-                    badCol = i; \
-                    print \$0; \
-                    break; \
-                } \
-            } \
-        } \
-        NR > 1 && \$(badCol) == 1.0 { \
-            print \$0; \
-        }' ${non_aggregated} > ${name}
-    """
-}
 
 process pack_data {
     conda params.conda
@@ -115,10 +89,29 @@ process pack_data {
 
 }
 
+process get_correspondence_map {
+
+    conda params.conda
+    publishDir params.outdir
+
+    output:
+        path name
+
+    script:
+    name = "${params.aggregation_key}.correspondence_map.tsv"
+    """
+    python3 $moduleDir/bin/get_value_for_agg_key.py \
+        ${params.samples_file} \
+        ${params.aggregation_key} \
+        ${name}
+    """
+}
+
 workflow packData {
     take:
         merged_files
         aggregation_key
+
     main:
         aggregated_merged = merged_files
             | aggregate_pvals
@@ -147,30 +140,23 @@ workflow aggregation {
         sample_split_pvals
     main:
         params.aggregation_key = params.aggregation_key ?: "all"
-        if (params.aggregation_key != 'all') {
-            sample_cl_correspondence = Channel.fromPath(params.samples_file)
-                | splitCsv(header: true, sep: '\t')
-                | map{ row ->
-                    if (row.containsKey(params.aggregation_key)) {
-                        return tuple(row.sample_id, row[params.aggregation_key])
-                    } else {
-                        throw new Exception("Column '${params.aggregation_key}' does not exist in the samples file '${params.samples_file}'")
-                    }
-                }
-            pvals = sample_split_pvals
-                | join(sample_cl_correspondence)
-                | filter(it -> !it[2].isEmpty())
-                | map(it -> tuple(it[2], it[1]))
-                | set_key_for_group_tuple 
-                | groupTuple() 
-        } else {
-            pvals = sample_split_pvals
-                | map(it -> it[1])
-                | collect(sort: true)
-                | map(it -> tuple('all', it)) 
-        }
 
-        packed = packData(merge_files(pvals), params.aggregation_key)
+        sample_cl_correspondence = get_correspondence_map()
+            | splitCsv(header: true, sep: '\t')
+            | map(row -> tuple(row.sample_id, row.value))
+
+        merged_pvals = sample_split_pvals // sample_id, file
+            | join(sample_cl_correspondence) // sample_id, file, value
+            | filter(it -> !it[2].isEmpty())
+            | map(it -> tuple(it[2], it[1])) // value, file
+            | set_key_for_group_tuple 
+            | groupTuple()
+            | merge_files
+
+        packed = packData(
+            merged_pvals,
+            params.aggregation_key
+        )
     emit:
         packed[0]
         packed[1]
@@ -184,6 +170,34 @@ workflow {
     Channel.fromPath("${params.main_run_outdir}/by_sample/*.bed")
         | map(it -> tuple(it.name.replaceAll('.nonaggregated.bed', ""), it))
         | aggregation
+}
+
+process filter_bad1 {
+    conda params.conda
+    tag "${sample_id}"
+
+    input:
+        tuple val(sample_id), path(non_aggregated)
+    
+    output:
+        tuple val(sample_id), path(name)
+    script:
+    name = "${sample_id}_BAD1.nonaggregated.bed"
+    """
+    awk -v OFS='\t' -F'\t' '
+        NR == 1 { \
+            for (i=1; i<=NF; i++) { \
+                if (\$i == "BAD") { \
+                    badCol = i; \
+                    print \$0; \
+                    break; \
+                } \
+            } \
+        } \
+        NR > 1 && \$(badCol) == 1.0 { \
+            print \$0; \
+        }' ${non_aggregated} > ${name}
+    """
 }
 
 workflow bad1Aggregation {
