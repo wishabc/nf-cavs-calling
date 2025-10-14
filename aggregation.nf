@@ -49,7 +49,7 @@ process merge_files {
             '
                 NR==1 {print \$0, "group_id"}
                 NR>1 {print \$0, val}
-            '
+            ' \
         | sort-bed - >> ${name}
     """
 }
