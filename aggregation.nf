@@ -43,6 +43,13 @@ process merge_files {
     name = "merged.sorted.bed"
     """
     echo "`head -n 1 ${files[0]}`\tgroup_id" > ${name}
+    tail -n +2 -q ${files} \
+        | awk -v OFS='\t' \
+            -v val="'${group_key}'" \
+            '
+                NR==1 {print \$0, "group_id"}
+                NR>1 {print \$0, val}
+            '
     tail -n +2 -q ${files} | sed "s/\$/\t'${group_key}'/" | sort-bed - >> ${name}
     """
 }
@@ -92,7 +99,9 @@ process pack_data {
 process get_correspondence_map {
 
     conda params.conda
-    publishDir params.outdir
+
+    input:
+        path samples_file
 
     output:
         path name
@@ -101,7 +110,7 @@ process get_correspondence_map {
     name = "${params.aggregation_key}.correspondence_map.tsv"
     """
     python3 $moduleDir/bin/get_value_for_agg_key.py \
-        ${params.samples_file} \
+        ${samples_file} \
         ${params.aggregation_key} \
         ${name}
     """
@@ -140,8 +149,8 @@ workflow aggregation {
         sample_split_pvals
     main:
         params.aggregation_key = params.aggregation_key ?: "all"
-
-        sample_cl_correspondence = get_correspondence_map()
+        sample_cl_correspondence = Channel.fromPath(params.samples_file)
+            | get_correspondence_map
             | splitCsv(header: true, sep: '\t')
             | map(row -> tuple(row.sample_id, row.value))
 
