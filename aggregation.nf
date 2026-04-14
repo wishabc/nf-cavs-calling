@@ -46,10 +46,7 @@ process merge_files {
     tail -n +2 -q ${files} \
         | awk -v OFS='\t' \
             -v val='${group_key}' \
-            '
-                NR==1 {print \$0, "group_id"}
-                NR>1 {print \$0, val}
-            ' \
+	    '{print \$0, val}' \
         | sort-bed - >> ${name}
     """
 }
